@@ -1,0 +1,105 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  STAFF_ADMIN
+  SUPER_ADMIN
+}
+
+enum OrderStatus {
+  PENDING_PAYMENT
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+  COMPLETED
+}
+
+enum OrderType {
+  EXCHANGE
+  GAME_TOPUP
+}
+
+model User {
+  id            String         @id @default(cuid())
+  username      String         @unique
+  email         String         @unique
+  password      String
+  role          Role           @default(USER)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  orders        Order[]
+  transactions  Transaction[]
+  notifications Notification[]
+}
+
+model Game {
+  id        String   @id @default(cuid())
+  name      String
+  logo      String?
+  buyRate   Float    @default(0)
+  sellRate  Float    @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  orders    Order[]
+}
+
+model ExchangeRate {
+  id        String   @id @default(cuid())
+  type      String   @unique // e.g., "USD_TO_USDT", "USDT_TO_USD"
+  rate      Float
+  updatedAt DateTime @updatedAt
+}
+
+model QRCode {
+  id        String   @id @default(cuid())
+  image     String
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+model Order {
+  id           String      @id @default(cuid())
+  userId       String
+  user         User        @relation(fields: [userId], references: [id])
+  type         OrderType
+  amount       Float
+  rate         Float
+  total        Float
+  status       OrderStatus @default(PENDING_PAYMENT)
+  screenshot   String?
+  adminNote    String?
+  gameId       String?
+  game         Game?       @relation(fields: [gameId], references: [id])
+  gameUsername String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  transaction  Transaction?
+}
+
+model Transaction {
+  id        String   @id @default(cuid())
+  orderId   String   @unique
+  order     Order    @relation(fields: [orderId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  amount    Float
+  status    String   // e.g., "SUCCESS", "FAILED"
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
