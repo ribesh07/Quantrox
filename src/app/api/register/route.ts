@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+export const dynamic = "force-dynamic";
 const registerSchema = z.object({
   username: z.string().min(3),
   email: z.string().email(),
