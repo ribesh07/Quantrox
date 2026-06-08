@@ -1,6 +1,7 @@
 import { PrismaClient, Role, PaymentMethodCategory } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
+export const dynamic = "force-dynamic";
 const prisma = new PrismaClient();
 
 async function main() {

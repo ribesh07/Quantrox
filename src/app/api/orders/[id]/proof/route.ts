@@ -6,6 +6,7 @@ import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import { OrderStatus } from "@prisma/client";
 
+export const dynamic = "force-dynamic";
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
