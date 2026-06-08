@@ -21,6 +21,7 @@ services:
       INTERNAL_API_URL: "http://backend:3001/api"
       NEXTAUTH_URL: "http://localhost:3056"
       NEXTAUTH_SECRET: "your_production_nextauth_secret_here"
+      PORT: 3056
     depends_on:
       - backend
     ports:
