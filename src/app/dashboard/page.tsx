@@ -16,37 +16,45 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
+
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
   const userId = (session?.user as any)?.id;
 
-  if (!userId) return null;
+  if (!userId) {
+    redirect("/login");
+  }
 
-  const orders = await prisma.order.findMany({
-    where: { userId },
-    orderBy: { createdAt: "desc" },
-    take: 5,
-    include: { game: true, paymentMethod: true }
-  });
-
-  const wallets = await prisma.wallet.findMany({
-    where: { userId },
-    include: { paymentMethod: true }
-  });
+  const [orders, wallets, stats] = await Promise.all([
+    prisma.order.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+      include: { game: true, paymentMethod: true }
+    }),
+    prisma.wallet.findMany({
+      where: { userId },
+      include: { paymentMethod: true }
+    }),
+    prisma.order.groupBy({
+      by: ["status"],
+      where: { userId },
+      _count: true,
+    })
+  ]);
 
   const totalBalance = wallets.reduce((acc, w) => acc + w.balance, 0);
-
-  const stats = await prisma.order.groupBy({
-    by: ["status"],
-    where: { userId },
-    _count: true,
-  });
-
   const totalOrders = stats.reduce((acc, s) => acc + s._count, 0);
   const completedOrders = stats.find((s) => s.status === "COMPLETED")?._count || 0;
-  const pendingOrders = stats.find((s) => s.status === "PENDING_REVIEW" || s.status === "PENDING_PAYMENT")?._count || 0;
+  const pendingOrders = stats.reduce((acc, s) => {
+    if (s.status === "PENDING_REVIEW" || s.status === "PENDING_PAYMENT") {
+      return acc + s._count;
+    }
+    return acc;
+  }, 0);
 
   const cards = [
     {
@@ -161,7 +169,7 @@ export default async function DashboardPage() {
                       </div>
                       <div>
                         <p className="font-bold text-sm text-white">
-                          {order.type} via {order.paymentMethod?.name}
+                          {order.type} via {order.paymentMethod?.name || "Method"}
                         </p>
                         <p className="text-xs text-[#848E9C] font-medium">
                           {new Date(order.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
@@ -206,7 +214,7 @@ export default async function DashboardPage() {
               ) : (
                 wallets.map((wallet) => (
                   <div key={wallet.id} className="bg-white/10 backdrop-blur-md p-3 rounded-xl border border-white/10 flex justify-between items-center">
-                    <span className="text-xs font-bold uppercase tracking-wider">{wallet.paymentMethod.name}</span>
+                    <span className="text-xs font-bold uppercase tracking-wider">{wallet.paymentMethod?.name || "Method"}</span>
                     <span className="font-black">${wallet.balance.toFixed(2)}</span>
                   </div>
                 ))
