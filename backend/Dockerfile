@@ -40,6 +40,7 @@ COPY --from=builder /app/shared/dist ./shared/dist
 COPY --from=builder /app/shared/prisma ./shared/prisma
 COPY --from=builder /app/backend/dist ./backend/dist
 COPY --from=builder /app/node_modules/@prisma/client ./node_modules/@prisma/client
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 
 EXPOSE 3001
 

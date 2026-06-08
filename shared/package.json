@@ -7,6 +7,9 @@
     "build": "npm run prisma:generate && tsc",
     "prisma:generate": "prisma generate --schema=./prisma/schema.prisma"
   },
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
+  },
   "dependencies": {
     "@prisma/client": "^6.19.1",
     "zod": "^3.25.76"
