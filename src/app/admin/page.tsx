@@ -1,6 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
+import { authOptions } from "@/lib/auth";
+import { getServerSession } from "next-auth";
 import {
   Users,
   TrendingUp,
@@ -15,9 +17,19 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import { OrderType, OrderStatus } from "@prisma/client";
+import { redirect } from "next/navigation";
+import { OrderType, OrderStatus, Role } from "@prisma/client";
+
+export const dynamic = "force-dynamic";
 
 export default async function AdminDashboard() {
+  const session = await getServerSession(authOptions);
+  const userRole = (session?.user as any)?.role;
+
+  if (!session || (userRole !== Role.SUPER_ADMIN && userRole !== Role.STAFF_ADMIN)) {
+    redirect("/dashboard");
+  }
+
   const [
     totalUsers,
     totalDeposits,
@@ -161,7 +173,7 @@ export default async function AdminDashboard() {
                     </div>
                     <div>
                       <p className="font-bold text-sm text-white">
-                        {order.user.username} — {order.type} via {order.paymentMethod?.name}
+                        {order.user.username} — {order.type} via {order.paymentMethod?.name || "Method"}
                       </p>
                       <p className="text-xs text-[#848E9C] font-medium">
                         {new Date(order.createdAt).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })} • #{order.id.slice(-6).toUpperCase()}
