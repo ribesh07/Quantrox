@@ -40,7 +40,7 @@ const routes = [
   {
     label: "Rates & Fees",
     icon: BarChart3,
-    href: "/admin/rates",
+    href: "/admin/payment-settings",
   },
   {
     label: "Games",
