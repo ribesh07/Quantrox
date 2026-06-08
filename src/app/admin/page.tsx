@@ -192,7 +192,7 @@ export default async function AdminDashboard() {
           </CardHeader>
           <CardContent className="grid gap-3">
             {[
-              { label: "Rates & Fees", href: "/admin/rates", icon: TrendingUp, color: "text-primary", bg: "bg-primary/10" },
+              { label: "Rates & Fees", href: "/admin/payment-settings", icon: TrendingUp, color: "text-primary", bg: "bg-primary/10" },
               { label: "Review Orders", href: "/admin/orders", icon: Clock, color: "text-primary", bg: "bg-primary/10" },
               { label: "User Accounts", href: "/admin/users", icon: Users, color: "text-blue-500", bg: "bg-blue-500/10" },
               { label: "Game Settings", href: "/admin/games", icon: Gamepad2, color: "text-[#0ECB81]", bg: "bg-[#0ECB81]/10" },
