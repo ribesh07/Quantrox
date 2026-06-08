@@ -1,0 +1,43 @@
+services:
+  db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres_password
+      POSTGRES_DB: quantrox
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    restart: always
+    environment:
+      DATABASE_URL: "postgresql://postgres:postgres_password@db:5432/quantrox?schema=public"
+      PORT: 3001
+      JWT_SECRET: "your_production_jwt_secret_here"
+    depends_on:
+      - db
+    ports:
+      - "3001:3001"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    restart: always
+    environment:
+      NEXT_PUBLIC_API_URL: "http://localhost:3001/api"
+      NEXTAUTH_URL: "http://localhost:3056"
+      NEXTAUTH_SECRET: "your_production_nextauth_secret_here"
+    depends_on:
+      - backend
+    ports:
+      - "3056:3056"
+
+volumes:
+  postgres_data:
