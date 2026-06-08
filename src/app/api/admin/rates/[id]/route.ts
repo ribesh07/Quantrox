@@ -11,18 +11,18 @@ export async function PATCH(
   const { id } = await params;
   const session = await getServerSession(authOptions);
 
-  if (!session || (session.user as any).role !== "SUPER_ADMIN") {
-    return NextResponse.json({ message: "Only Super Admins can change roles" }, { status: 401 });
+  if (!session || (session.user as any).role === "USER") {
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
 
   try {
-    const { role } = await req.json();
-    const user = await prisma.user.update({
+    const { rate } = await req.json();
+    const updatedRate = await prisma.exchangeRate.update({
       where: { id },
-      data: { role },
+      data: { rate: parseFloat(rate) },
     });
-    return NextResponse.json(user);
+    return NextResponse.json(updatedRate);
   } catch (error) {
-    return NextResponse.json({ message: "Error updating role" }, { status: 500 });
+    return NextResponse.json({ message: "Error updating rate" }, { status: 500 });
   }
 }
