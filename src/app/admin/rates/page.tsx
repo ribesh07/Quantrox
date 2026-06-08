@@ -10,88 +10,149 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 
-export default function RatesPage() {
+export default function PaymentMethodsPage() {
   const queryClient = useQueryClient();
-  const { data: rates, isLoading } = useQuery({
-    queryKey: ["rates"],
+  const { data: methods, isLoading } = useQuery({
+    queryKey: ["admin-payment-methods"],
     queryFn: async () => {
-      const res = await fetch("/api/admin/rates");
-      const data = await res.json();
-      return Array.isArray(data) ? data : [];
+      const res = await fetch("/api/admin/payment-methods");
+      return res.json();
     },
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, rate }: { id: string; rate: number }) => {
-      const res = await fetch(`/api/admin/rates/${id}`, {
+    mutationFn: async ({ id, ...data }: any) => {
+      const res = await fetch(`/api/admin/payment-methods/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rate }),
+        body: JSON.stringify(data),
       });
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["rates"] });
-      toast.success("Rate updated successfully");
+      queryClient.invalidateQueries({ queryKey: ["admin-payment-methods"] });
+      toast.success("Payment method updated successfully");
     },
   });
 
-  const handleUpdate = (id: string, rate: string) => {
-    const numRate = parseFloat(rate);
-    if (isNaN(numRate)) return;
-    updateMutation.mutate({ id, rate: numRate });
+  const handleUpdate = (id: string, data: any) => {
+    updateMutation.mutate({ id, ...data });
   };
 
   if (isLoading) return <div>Loading...</div>;
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Exchange Rates</h1>
-        <p className="text-muted-foreground">Manage global exchange rates</p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold">Payment Methods & Rates</h1>
+          <p className="text-muted-foreground">Manage fees, rates, and active status for all payment methods</p>
+        </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        {Array.isArray(rates) && rates.map((rate: any) => (
-          <Card key={rate.id}>
-            <CardHeader>
-              <CardTitle>{rate.type.replace(/_/g, " ")}</CardTitle>
-              <CardDescription>
-                Current Rate: 1 {rate.type.split("_")[0]} = {rate.rate}{" "}
-                {rate.type.split("_")[2]}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-end gap-4">
-                <div className="flex-1 space-y-2">
-                  <Label htmlFor={`rate-${rate.id}`}>New Rate</Label>
-                  <Input
-                    id={`rate-${rate.id}`}
-                    defaultValue={rate.rate}
-                    type="number"
-                    step="0.01"
-                  />
-                </div>
-                <Button
-                  onClick={() => {
-                    const input = document.getElementById(
-                      `rate-${rate.id}`
-                    ) as HTMLInputElement;
-                    handleUpdate(rate.id, input.value);
-                  }}
-                  disabled={updateMutation.isPending}
-                >
-                  Update
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>All Methods</CardTitle>
+          <CardDescription>Configure deposit and exchange settings</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Method Name</TableHead>
+                <TableHead>Category</TableHead>
+                <TableHead>Rate</TableHead>
+                <TableHead>Fee (%)</TableHead>
+                <TableHead>Limits</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {Array.isArray(methods) && methods.map((method: any) => (
+                <TableRow key={method.id}>
+                  <TableCell className="font-medium">{method.name}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline">{method.category}</Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        className="w-24 h-8"
+                        type="number"
+                        step="0.01"
+                        defaultValue={method.rate}
+                        onBlur={(e) => handleUpdate(method.id, { rate: e.target.value })}
+                      />
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        className="w-20 h-8"
+                        type="number"
+                        step="0.1"
+                        defaultValue={method.feePercentage}
+                        onBlur={(e) => handleUpdate(method.id, { feePercentage: e.target.value })}
+                      />
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex flex-col gap-1 text-xs">
+                      <span className="flex items-center gap-1">
+                        Min: 
+                        <Input
+                          className="w-16 h-6 p-1"
+                          type="number"
+                          defaultValue={method.minAmount}
+                          onBlur={(e) => handleUpdate(method.id, { minAmount: e.target.value })}
+                        />
+                      </span>
+                      <span className="flex items-center gap-1">
+                        Max: 
+                        <Input
+                          className="w-16 h-6 p-1"
+                          type="number"
+                          defaultValue={method.maxAmount}
+                          onBlur={(e) => handleUpdate(method.id, { maxAmount: e.target.value })}
+                        />
+                      </span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Switch
+                      checked={method.active}
+                      onCheckedChange={(checked) => handleUpdate(method.id, { active: checked })}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Button variant="ghost" size="sm" onClick={() => {
+                      // Logic for details/QR code could go here in a dialog
+                      toast.info("Detailed editing coming soon");
+                    }}>
+                      Edit Info
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 }

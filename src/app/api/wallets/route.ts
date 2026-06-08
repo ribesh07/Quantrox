@@ -7,10 +7,16 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const session = await getServerSession(authOptions);
 
-  if (!session || (session.user as any).role === "USER") {
+  if (!session) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
 
-  const rates = await prisma.exchangeRate.findMany();
-  return NextResponse.json(rates);
+  const wallets = await prisma.wallet.findMany({
+    where: { userId: (session.user as any).id },
+    include: {
+      paymentMethod: true,
+    },
+  });
+
+  return NextResponse.json(wallets);
 }

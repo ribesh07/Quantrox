@@ -6,11 +6,12 @@ import {
   CheckCircle2,
   Clock,
   LayoutDashboard,
-  Wallet,
-  XCircle,
+  Wallet as WalletIcon,
   ArrowUpRight,
   TrendingUp,
   Gamepad2,
+  ArrowRightLeft,
+  PlusCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -19,14 +20,23 @@ import Link from "next/link";
 export const dynamic = "force-dynamic";
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
-  const userId = (session?.user as any).id;
+  const userId = (session?.user as any)?.id;
+
+  if (!userId) return null;
 
   const orders = await prisma.order.findMany({
     where: { userId },
     orderBy: { createdAt: "desc" },
     take: 5,
-    include: { game: true }
+    include: { game: true, paymentMethod: true }
   });
+
+  const wallets = await prisma.wallet.findMany({
+    where: { userId },
+    include: { paymentMethod: true }
+  });
+
+  const totalBalance = wallets.reduce((acc, w) => acc + w.balance, 0);
 
   const stats = await prisma.order.groupBy({
     by: ["status"],
@@ -40,10 +50,10 @@ export default async function DashboardPage() {
 
   const cards = [
     {
-      title: "Total Orders",
+      title: "Total Transactions",
       value: totalOrders,
       icon: LayoutDashboard,
-      description: "Total orders placed",
+      description: "Lifetime history",
       color: "text-[#848E9C]",
       bg: "bg-[#1E2329]",
     },
@@ -51,7 +61,7 @@ export default async function DashboardPage() {
       title: "Completed",
       value: completedOrders,
       icon: CheckCircle2,
-      description: "Successfully processed",
+      description: "Processed successfully",
       color: "text-[#0ECB81]",
       bg: "bg-[#0ECB81]/10",
     },
@@ -59,15 +69,15 @@ export default async function DashboardPage() {
       title: "Pending",
       value: pendingOrders,
       icon: Clock,
-      description: "Awaiting action",
+      description: "Awaiting approval",
       color: "text-primary",
       bg: "bg-primary/10",
     },
     {
-      title: "Wallet Balance",
-      value: "$0.00",
-      icon: Wallet,
-      description: "Available balance",
+      title: "Total Assets",
+      value: `$${totalBalance.toFixed(2)}`,
+      icon: WalletIcon,
+      description: "Across all wallets",
       color: "text-primary",
       bg: "bg-primary/10",
     },
@@ -77,9 +87,9 @@ export default async function DashboardPage() {
     <div className="space-y-10 pb-10 bg-[#0B0E11] min-h-screen">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-black text-white tracking-tight">Welcome, {(session?.user as any).username}</h1>
+          <h1 className="text-3xl font-black text-white tracking-tight">Welcome, {(session?.user as any)?.username}</h1>
           <p className="text-[#848E9C] mt-1 font-medium">
-            Manage your digital assets and gaming credits.
+            Manage your gaming assets and wallet exchange.
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -87,7 +97,14 @@ export default async function DashboardPage() {
             <Link href="/dashboard/orders">History</Link>
           </Button>
           <Button asChild className="rounded-xl shadow-lg shadow-primary/20 bg-primary text-primary-foreground hover:bg-primary/90 font-bold">
-            <Link href="/dashboard/exchange">Exchange Now</Link>
+            <Link href="/dashboard/deposit">
+              <PlusCircle className="mr-2 h-4 w-4" /> Deposit
+            </Link>
+          </Button>
+          <Button asChild variant="secondary" className="rounded-xl font-bold">
+            <Link href="/dashboard/exchange">
+              <ArrowRightLeft className="mr-2 h-4 w-4" /> Exchange
+            </Link>
           </Button>
         </div>
       </div>
@@ -127,7 +144,7 @@ export default async function DashboardPage() {
                   <div className="bg-[#0B0E11] p-4 rounded-full">
                     <TrendingUp className="h-8 w-8 text-[#848E9C]" />
                   </div>
-                  <p className="text-sm text-[#848E9C] font-medium">No recent orders found.</p>
+                  <p className="text-sm text-[#848E9C] font-medium">No recent transactions found.</p>
                 </div>
               ) : (
                 orders.map((order) => (
@@ -140,11 +157,11 @@ export default async function DashboardPage() {
                         "p-3 rounded-xl",
                         order.type === "EXCHANGE" ? "bg-primary/10 text-primary" : "bg-[#0ECB81]/10 text-[#0ECB81]"
                       )}>
-                        {order.type === "EXCHANGE" ? <ArrowUpRight className="h-5 w-5" /> : <Gamepad2 className="h-5 w-5" />}
+                        {order.type === "EXCHANGE" ? <ArrowRightLeft className="h-5 w-5" /> : <PlusCircle className="h-5 w-5" />}
                       </div>
                       <div>
                         <p className="font-bold text-sm text-white">
-                          {order.type === "EXCHANGE" ? "USD to USDT" : `${order.game?.name || 'Game'} Topup`}
+                          {order.type} via {order.paymentMethod?.name}
                         </p>
                         <p className="text-xs text-[#848E9C] font-medium">
                           {new Date(order.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
@@ -171,30 +188,39 @@ export default async function DashboardPage() {
 
         <Card className="md:col-span-3 border-none bg-primary text-primary-foreground overflow-hidden relative shadow-xl shadow-primary/10">
           <div className="absolute top-0 right-0 p-8 opacity-10">
-            <Wallet className="h-40 w-40 rotate-12" />
+            <WalletIcon className="h-40 w-40 rotate-12" />
           </div>
           <CardHeader>
-            <CardTitle className="font-black text-2xl">Asset Wallet</CardTitle>
-            <CardDescription className="text-primary-foreground/80 font-medium text-sm">Securely manage your balances.</CardDescription>
+            <CardTitle className="font-black text-2xl">Asset Wallets</CardTitle>
+            <CardDescription className="text-primary-foreground/80 font-medium text-sm">Individual balances per method.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-8 relative z-10 pt-4">
+          <CardContent className="space-y-6 relative z-10 pt-4">
             <div className="space-y-1">
-              <p className="text-xs font-bold text-primary-foreground/70 uppercase tracking-widest">Total Estimated Balance</p>
-              <div className="text-5xl font-black">$0.00</div>
+              <p className="text-xs font-bold text-primary-foreground/70 uppercase tracking-widest">Total Combined Balance</p>
+              <div className="text-5xl font-black">${totalBalance.toFixed(2)}</div>
             </div>
-            <div className="grid grid-cols-2 gap-4 pt-4">
-              <div className="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/10">
-                <p className="text-[10px] uppercase font-black opacity-70 tracking-wider">Locked</p>
-                <p className="font-black text-lg">$0.00</p>
-              </div>
-              <div className="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/10">
-                <p className="text-[10px] uppercase font-black opacity-70 tracking-wider">Available</p>
-                <p className="font-black text-lg">$0.00</p>
-              </div>
+            
+            <div className="space-y-3 max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
+              {wallets.length === 0 ? (
+                <p className="text-sm opacity-70 italic">No active balances yet.</p>
+              ) : (
+                wallets.map((wallet) => (
+                  <div key={wallet.id} className="bg-white/10 backdrop-blur-md p-3 rounded-xl border border-white/10 flex justify-between items-center">
+                    <span className="text-xs font-bold uppercase tracking-wider">{wallet.paymentMethod.name}</span>
+                    <span className="font-black">${wallet.balance.toFixed(2)}</span>
+                  </div>
+                ))
+              )}
             </div>
-            <Button className="w-full bg-white text-primary hover:bg-white/90 rounded-2xl h-14 font-black text-lg shadow-lg">
-              Deposit Funds
-            </Button>
+
+            <div className="flex gap-3">
+              <Button asChild className="flex-1 bg-white text-primary hover:bg-white/90 rounded-2xl h-12 font-black shadow-lg">
+                <Link href="/dashboard/deposit">Deposit</Link>
+              </Button>
+              <Button asChild variant="outline" className="flex-1 border-white/20 bg-transparent text-white hover:bg-white/10 rounded-2xl h-12 font-black">
+                <Link href="/dashboard/exchange">Exchange</Link>
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
