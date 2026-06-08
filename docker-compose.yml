@@ -1,0 +1,27 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    restart: always
+    environment:
+      DATABASE_URL: "postgres://postgres:eH6cCMOgHUamwljD8UsVmzKrLJ8KGqlGe38UxRQp3cg0pDg94atPMX95plRbJQ9j@217.216.33.200:5656/quantrox"
+      PORT: 3001
+      JWT_SECRET: "your_production_jwt_secret_here"
+    ports:
+      - "3001:3001"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    restart: always
+    environment:
+      NEXT_PUBLIC_API_URL: "http://localhost:3001/api"
+      INTERNAL_API_URL: "http://backend:3001/api"
+      NEXTAUTH_URL: "http://localhost:3056"
+      NEXTAUTH_SECRET: "your_production_nextauth_secret_here"
+    depends_on:
+      - backend
+    ports:
+      - "3056:3056"
