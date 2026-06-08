@@ -1,4 +1,4 @@
-import { PrismaClient, Role } from "@prisma/client";
+import { PrismaClient, Role, PaymentMethodCategory } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
@@ -20,24 +20,44 @@ async function main() {
 
   console.log({ admin });
 
-  // Create default exchange rates
-  await prisma.exchangeRate.upsert({
-    where: { type: "USD_TO_USDT" },
-    update: {},
-    create: {
-      type: "USD_TO_USDT",
-      rate: 0.95, // 1 USD = 0.95 USDT
-    },
-  });
+  // Payment Methods
+  const paymentMethods = [
+    // Deposit Methods
+    { name: "USDT (TRC20)", category: PaymentMethodCategory.DEPOSIT, feePercentage: 0, rate: 1.0 },
+    { name: "USDT (BEP20)", category: PaymentMethodCategory.DEPOSIT, feePercentage: 0, rate: 1.0 },
+    { name: "USDT (ERC20)", category: PaymentMethodCategory.DEPOSIT, feePercentage: 0, rate: 1.0 },
+    { name: "Cash App", category: PaymentMethodCategory.BOTH, feePercentage: 5, rate: 0.95 },
+    { name: "Zelle", category: PaymentMethodCategory.BOTH, feePercentage: 5, rate: 0.97 },
+    { name: "Venmo", category: PaymentMethodCategory.BOTH, feePercentage: 5, rate: 0.95 },
+    { name: "Chime", category: PaymentMethodCategory.BOTH, feePercentage: 5, rate: 0.96 },
+    { name: "Stripe", category: PaymentMethodCategory.DEPOSIT, feePercentage: 5, rate: 1.0 },
+    { name: "Stripe Cash App Pay", category: PaymentMethodCategory.DEPOSIT, feePercentage: 5, rate: 1.0 },
+    { name: "PayPal", category: PaymentMethodCategory.BOTH, feePercentage: 5, rate: 0.92 },
+    { name: "Apple Pay", category: PaymentMethodCategory.DEPOSIT, feePercentage: 5, rate: 1.0 },
+    
+    // Exchange Specific Methods
+    { name: "Cash App Card Cash Out", category: PaymentMethodCategory.EXCHANGE, feePercentage: 2, rate: 0.94 },
+    { name: "Cash App P2P", category: PaymentMethodCategory.EXCHANGE, feePercentage: 2, rate: 0.95 },
+    { name: "Chime P2P", category: PaymentMethodCategory.EXCHANGE, feePercentage: 2, rate: 0.96 },
+    { name: "Apple Pay P2P", category: PaymentMethodCategory.EXCHANGE, feePercentage: 2, rate: 0.98 },
+  ];
 
-  await prisma.exchangeRate.upsert({
-    where: { type: "USDT_TO_USD" },
-    update: {},
-    create: {
-      type: "USDT_TO_USD",
-      rate: 1.05, // 1 USDT = 1.05 USD
-    },
-  });
+  for (const method of paymentMethods) {
+    await prisma.paymentMethod.upsert({
+      where: { name: method.name },
+      update: {
+        category: method.category,
+        feePercentage: method.feePercentage,
+        rate: method.rate,
+      },
+      create: {
+        name: method.name,
+        category: method.category,
+        feePercentage: method.feePercentage,
+        rate: method.rate,
+      },
+    });
+  }
 
   // Create some default games with posters
   const games = [
@@ -87,7 +107,7 @@ async function main() {
 
   for (const game of games) {
     await prisma.game.upsert({
-      where: { id: game.name.toLowerCase().replace(/\s+/g, '-') }, // Using a predictable ID for seed
+      where: { id: game.name.toLowerCase().replace(/\s+/g, '-') },
       update: {
         logo: game.logo,
         buyRate: game.buyRate,

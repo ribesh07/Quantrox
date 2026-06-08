@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
+import { OrderStatus } from "@prisma/client";
 
 export async function POST(
   req: Request,
@@ -18,7 +19,7 @@ export async function POST(
 
   try {
     const formData = await req.formData();
-    const file = formData.get("screenshot") as File;
+    const file = (formData.get("file") || formData.get("screenshot")) as File;
     const note = formData.get("note") as string;
 
     if (!file) {
@@ -39,7 +40,7 @@ export async function POST(
       data: {
         screenshot: imageUrl,
         adminNote: note || null,
-        status: "PENDING_REVIEW",
+        status: OrderStatus.PENDING_REVIEW,
       },
     });
 

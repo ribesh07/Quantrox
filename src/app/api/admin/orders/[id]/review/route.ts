@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { NextResponse } from "next/server";
+import { OrderType, OrderStatus } from "@prisma/client";
 
 export async function PATCH(
   req: Request,
@@ -17,6 +18,15 @@ export async function PATCH(
   try {
     const { status, adminNote } = await req.json();
 
+    const oldOrder = await prisma.order.findUnique({
+      where: { id },
+      include: { paymentMethod: true }
+    });
+
+    if (!oldOrder) {
+      return NextResponse.json({ message: "Order not found" }, { status: 404 });
+    }
+
     const order = await prisma.order.update({
       where: { id },
       data: {
@@ -25,13 +35,35 @@ export async function PATCH(
       },
     });
 
-    // Create a transaction record if completed
-    if (status === "COMPLETED") {
+    // Handle Balance Updates
+    if (status === OrderStatus.COMPLETED || status === OrderStatus.APPROVED) {
+      if (oldOrder.type === OrderType.DEPOSIT) {
+        // Increase user's wallet balance for the specific payment method
+        await prisma.wallet.upsert({
+          where: {
+            userId_paymentMethodId: {
+              userId: order.userId,
+              paymentMethodId: order.paymentMethodId
+            }
+          },
+          update: {
+            balance: { increment: order.receivedAmount }
+          },
+          create: {
+            userId: order.userId,
+            paymentMethodId: order.paymentMethodId,
+            balance: order.receivedAmount
+          }
+        });
+      }
+
+      // Create a transaction record
       await prisma.transaction.create({
         data: {
           orderId: order.id,
           userId: order.userId,
-          amount: order.total,
+          amount: order.receivedAmount,
+          type: order.type,
           status: "SUCCESS",
         },
       });
@@ -40,19 +72,43 @@ export async function PATCH(
       await prisma.notification.create({
         data: {
           userId: order.userId,
-          title: "Order Completed",
-          message: `Your order #${order.id.slice(-6)} has been approved and completed.`,
+          title: `${order.type} Approved`,
+          message: `Your ${order.type.toLowerCase()} request #${order.id.slice(-6)} has been approved.`,
         },
       });
-    } else if (status === "REJECTED") {
+    } else if (status === OrderStatus.REJECTED) {
+      // If it was an exchange, refund the wallet
+      if (oldOrder.type === OrderType.EXCHANGE) {
+        await prisma.wallet.update({
+          where: {
+            userId_paymentMethodId: {
+              userId: order.userId,
+              paymentMethodId: order.paymentMethodId
+            }
+          },
+          data: {
+            balance: { increment: order.amount }
+          }
+        });
+      }
+
       await prisma.notification.create({
         data: {
           userId: order.userId,
-          title: "Order Rejected",
-          message: `Your order #${order.id.slice(-6)} was rejected. Reason: ${adminNote || "No reason provided."}`,
+          title: `${order.type} Rejected`,
+          message: `Your ${order.type.toLowerCase()} request #${order.id.slice(-6)} was rejected. Reason: ${adminNote || "No reason provided."}`,
         },
       });
     }
+
+    // Log admin action
+    await prisma.adminLog.create({
+      data: {
+        adminId: (session.user as any).id,
+        action: `REVIEW_ORDER_${status}`,
+        details: `Reviewed order #${id} as ${status}`,
+      },
+    });
 
     return NextResponse.json(order);
   } catch (error) {

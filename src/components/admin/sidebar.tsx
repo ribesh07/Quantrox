@@ -33,24 +33,19 @@ const routes = [
     href: "/admin",
   },
   {
-    label: "Orders",
+    label: "Transactions",
     icon: TrendingUp,
     href: "/admin/orders",
+  },
+  {
+    label: "Rates & Fees",
+    icon: BarChart3,
+    href: "/admin/rates",
   },
   {
     label: "Games",
     icon: Gamepad2,
     href: "/admin/games",
-  },
-  {
-    label: "Exchange Rates",
-    icon: BarChart3,
-    href: "/admin/rates",
-  },
-  {
-    label: "QR Codes",
-    icon: QrCode,
-    href: "/admin/qr-codes",
   },
   {
     label: "Users",

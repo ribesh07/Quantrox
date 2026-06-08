@@ -22,8 +22,15 @@ enum OrderStatus {
 }
 
 enum OrderType {
+  DEPOSIT
   EXCHANGE
   GAME_TOPUP
+}
+
+enum PaymentMethodCategory {
+  DEPOSIT
+  EXCHANGE
+  BOTH
 }
 
 model User {
@@ -37,6 +44,20 @@ model User {
   orders        Order[]
   transactions  Transaction[]
   notifications Notification[]
+  wallets       Wallet[]
+  adminLogs     AdminLog[]
+}
+
+model Wallet {
+  id              String        @id @default(cuid())
+  userId          String
+  user            User          @relation(fields: [userId], references: [id])
+  paymentMethodId String
+  paymentMethod   PaymentMethod @relation(fields: [paymentMethodId], references: [id])
+  balance         Float         @default(0)
+  updatedAt       DateTime      @updatedAt
+
+  @@unique([userId, paymentMethodId])
 }
 
 model Game {
@@ -50,11 +71,21 @@ model Game {
   orders    Order[]
 }
 
-model ExchangeRate {
-  id        String   @id @default(cuid())
-  type      String   @unique // e.g., "USD_TO_USDT", "USDT_TO_USD"
-  rate      Float
-  updatedAt DateTime @updatedAt
+model PaymentMethod {
+  id            String                @id @default(cuid())
+  name          String                @unique // e.g., "Cash App", "USDT (TRC20)"
+  category      PaymentMethodCategory @default(BOTH)
+  qrCode        String?
+  details       String?               // e.g., account email or wallet address
+  feePercentage Float                 @default(0)
+  rate          Float                 @default(1)
+  active        Boolean               @default(true)
+  minAmount     Float                 @default(0)
+  maxAmount     Float                 @default(1000000)
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+  orders        Order[]
+  wallets       Wallet[]
 }
 
 model QRCode {
@@ -65,22 +96,27 @@ model QRCode {
 }
 
 model Order {
-  id           String      @id @default(cuid())
-  userId       String
-  user         User        @relation(fields: [userId], references: [id])
-  type         OrderType
-  amount       Float
-  rate         Float
-  total        Float
-  status       OrderStatus @default(PENDING_PAYMENT)
-  screenshot   String?
-  adminNote    String?
-  gameId       String?
-  game         Game?       @relation(fields: [gameId], references: [id])
-  gameUsername String?
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
-  transaction  Transaction?
+  id              String        @id @default(cuid())
+  userId          String
+  user            User          @relation(fields: [userId], references: [id])
+  type            OrderType
+  paymentMethodId String
+  paymentMethod   PaymentMethod @relation(fields: [paymentMethodId], references: [id])
+  amount          Float         // The input amount
+  fee             Float         @default(0)
+  total           Float         // amount + fee (for deposit) or amount - fee (for exchange)
+  rate            Float         @default(1)
+  receivedAmount  Float         @default(0) // Final amount received (in USDT or Game Points)
+  status          OrderStatus   @default(PENDING_PAYMENT)
+  screenshot      String?
+  adminNote       String?
+  walletAddress   String?       // For USDT withdrawals/exchanges
+  gameId          String?
+  game            Game?         @relation(fields: [gameId], references: [id])
+  gameUsername    String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  transaction     Transaction?
 }
 
 model Transaction {
@@ -90,7 +126,8 @@ model Transaction {
   userId    String
   user      User     @relation(fields: [userId], references: [id])
   amount    Float
-  status    String   // e.g., "SUCCESS", "FAILED"
+  type      String   // DEPOSIT, WITHDRAWAL, EXCHANGE, GAME_TOPUP
+  status    String   // SUCCESS, FAILED, PENDING
   createdAt DateTime @default(now())
 }
 
@@ -101,5 +138,14 @@ model Notification {
   title     String
   message   String
   read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model AdminLog {
+  id        String   @id @default(cuid())
+  adminId   String
+  admin     User     @relation(fields: [adminId], references: [id])
+  action    String
+  details   String?
   createdAt DateTime @default(now())
 }

@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Check, Eye, X } from "lucide-react";
+import { Check, Eye, X, ExternalLink } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -65,10 +65,12 @@ export default function AdminOrdersPage() {
         return <Badge className="bg-green-500">Completed</Badge>;
       case "PENDING_REVIEW":
         return <Badge className="bg-yellow-500">Pending Review</Badge>;
+      case "PENDING_PAYMENT":
+        return <Badge className="bg-blue-400">Awaiting Payment</Badge>;
       case "REJECTED":
         return <Badge variant="destructive">Rejected</Badge>;
       case "APPROVED":
-        return <Badge className="bg-blue-500">Approved</Badge>;
+        return <Badge className="bg-blue-600">Approved</Badge>;
       default:
         return <Badge variant="secondary">{status.replace("_", " ")}</Badge>;
     }
@@ -76,23 +78,27 @@ export default function AdminOrdersPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Order Management</h1>
-        <p className="text-muted-foreground">Review and manage user orders</p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold">Transaction Management</h1>
+          <p className="text-muted-foreground">Review and manage deposits and exchange requests</p>
+        </div>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>All Orders</CardTitle>
+          <CardTitle>Recent Transactions</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Order ID</TableHead>
+                <TableHead>ID</TableHead>
                 <TableHead>User</TableHead>
                 <TableHead>Type</TableHead>
+                <TableHead>Method</TableHead>
                 <TableHead>Amount</TableHead>
+                <TableHead>Received</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Date</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -101,12 +107,16 @@ export default function AdminOrdersPage() {
             <TableBody>
               {Array.isArray(orders) && orders.map((order: any) => (
                 <TableRow key={order.id}>
-                  <TableCell className="font-mono text-xs">{order.id}</TableCell>
+                  <TableCell className="font-mono text-xs">#{order.id.slice(-6)}</TableCell>
                   <TableCell>{order.user.username}</TableCell>
-                  <TableCell className="capitalize">
-                    {order.type.replace("_", " ")}
+                  <TableCell>
+                    <Badge variant="outline">{order.type}</Badge>
                   </TableCell>
+                  <TableCell>{order.paymentMethod?.name || "N/A"}</TableCell>
                   <TableCell>${order.amount.toFixed(2)}</TableCell>
+                  <TableCell className="font-bold text-green-600">
+                    {order.type === 'EXCHANGE' ? `${order.receivedAmount.toFixed(2)} USDT` : `${order.receivedAmount.toFixed(2)} Points`}
+                  </TableCell>
                   <TableCell>{getStatusBadge(order.status)}</TableCell>
                   <TableCell>
                     {new Date(order.createdAt).toLocaleDateString()}
@@ -130,7 +140,7 @@ export default function AdminOrdersPage() {
       <Dialog open={!!selectedOrder} onOpenChange={() => setSelectedOrder(null)}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Order Details</DialogTitle>
+            <DialogTitle>Transaction Details - #{selectedOrder?.id.slice(-6)}</DialogTitle>
           </DialogHeader>
           {selectedOrder && (
             <div className="space-y-6">
@@ -141,17 +151,37 @@ export default function AdminOrdersPage() {
                 </div>
                 <div>
                   <p className="text-muted-foreground">Type</p>
-                  <p className="font-medium capitalize">{selectedOrder.type.replace("_", " ")}</p>
+                  <p className="font-medium capitalize">{selectedOrder.type}</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">Amount</p>
+                  <p className="text-muted-foreground">Method</p>
+                  <p className="font-medium">{selectedOrder.paymentMethod?.name}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Status</p>
+                  <p className="font-medium">{getStatusBadge(selectedOrder.status)}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Input Amount</p>
                   <p className="font-medium">${selectedOrder.amount.toFixed(2)}</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">Rate / Total</p>
+                  <p className="text-muted-foreground">Fee / Rate</p>
                   <p className="font-medium">
-                    {selectedOrder.rate} / {selectedOrder.total.toFixed(2)}
+                    ${selectedOrder.fee.toFixed(2)} / {selectedOrder.rate}
                   </p>
+                </div>
+                <div className="col-span-2 p-3 bg-muted rounded-lg border">
+                  <p className="text-muted-foreground text-xs uppercase font-bold mb-1">Final Amount to Deliver</p>
+                  <p className="text-2xl font-bold text-green-600">
+                    {selectedOrder.receivedAmount.toFixed(2)} {selectedOrder.type === 'EXCHANGE' ? 'USDT' : 'Game Points'}
+                  </p>
+                  {selectedOrder.walletAddress && (
+                    <div className="mt-2 pt-2 border-t">
+                      <p className="text-muted-foreground text-xs">Destination Address</p>
+                      <p className="font-mono text-sm break-all">{selectedOrder.walletAddress}</p>
+                    </div>
+                  )}
                 </div>
                 {selectedOrder.game && (
                   <>
@@ -167,10 +197,15 @@ export default function AdminOrdersPage() {
                 )}
               </div>
 
-              {selectedOrder.screenshot ? (
+              {selectedOrder.screenshot && (
                 <div className="space-y-2">
-                  <p className="text-sm font-medium">Payment Proof</p>
-                  <div className="relative aspect-video w-full overflow-hidden rounded-lg border">
+                  <p className="text-sm font-medium flex items-center gap-2">
+                    Payment Proof
+                    <a href={selectedOrder.screenshot} target="_blank" rel="noreferrer" className="text-blue-500 hover:underline flex items-center text-xs">
+                      <ExternalLink className="h-3 w-3 mr-1" /> View Full
+                    </a>
+                  </p>
+                  <div className="relative aspect-video w-full overflow-hidden rounded-lg border bg-black">
                     <Image
                       src={selectedOrder.screenshot}
                       alt="Proof"
@@ -178,44 +213,47 @@ export default function AdminOrdersPage() {
                       className="object-contain"
                     />
                   </div>
-                  <Button
-                    variant="link"
-                    className="p-0 h-auto text-xs"
-                    asChild
-                  >
-                    <a href={selectedOrder.screenshot} target="_blank" rel="noreferrer">
-                      View Full Image
-                    </a>
-                  </Button>
-                </div>
-              ) : (
-                <div className="rounded-lg bg-muted p-4 text-center text-sm text-muted-foreground">
-                  No proof uploaded yet
                 </div>
               )}
 
               <div className="flex gap-4">
-                <Button
-                  className="flex-1 bg-green-600 hover:bg-green-700"
-                  disabled={reviewMutation.isPending || selectedOrder.status === "COMPLETED"}
-                  onClick={() => reviewMutation.mutate({ id: selectedOrder.id, status: "COMPLETED" })}
-                >
-                  <Check className="mr-2 h-4 w-4" /> Approve & Complete
-                </Button>
-                <Button
-                  variant="destructive"
-                  className="flex-1"
-                  disabled={reviewMutation.isPending || selectedOrder.status === "REJECTED"}
-                  onClick={() => {
-                    const note = prompt("Enter rejection reason:");
-                    if (note) {
-                      reviewMutation.mutate({ id: selectedOrder.id, status: "REJECTED", adminNote: note });
-                    }
-                  }}
-                >
-                  <X className="mr-2 h-4 w-4" /> Reject
-                </Button>
+                {selectedOrder.status !== 'COMPLETED' && selectedOrder.status !== 'REJECTED' && (
+                  <>
+                    <Button
+                      className="flex-1 bg-blue-600 hover:bg-blue-700"
+                      disabled={reviewMutation.isPending}
+                      onClick={() => reviewMutation.mutate({ id: selectedOrder.id, status: "APPROVED" })}
+                    >
+                      <Check className="mr-2 h-4 w-4" /> Approve
+                    </Button>
+                    <Button
+                      className="flex-1 bg-green-600 hover:bg-green-700"
+                      disabled={reviewMutation.isPending}
+                      onClick={() => reviewMutation.mutate({ id: selectedOrder.id, status: "COMPLETED" })}
+                    >
+                      <Check className="mr-2 h-4 w-4" /> Mark Completed
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      className="flex-1"
+                      disabled={reviewMutation.isPending}
+                      onClick={() => {
+                        const note = prompt("Enter rejection reason:");
+                        if (note) {
+                          reviewMutation.mutate({ id: selectedOrder.id, status: "REJECTED", adminNote: note });
+                        }
+                      }}
+                    >
+                      <X className="mr-2 h-4 w-4" /> Reject
+                    </Button>
+                  </>
+                )}
               </div>
+              {selectedOrder.adminNote && (
+                <div className="p-3 bg-red-50 text-red-700 text-sm rounded border border-red-100">
+                  <strong>Admin Note:</strong> {selectedOrder.adminNote}
+                </div>
+              )}
             </div>
           )}
         </DialogContent>

@@ -32,7 +32,12 @@ const routes = [
     href: "/dashboard",
   },
   {
-    label: "Exchange USD/USDT",
+    label: "Deposit Funds",
+    icon: TrendingUp,
+    href: "/dashboard/deposit",
+  },
+  {
+    label: "Wallet Exchange",
     icon: ArrowLeftRight,
     href: "/dashboard/exchange",
   },
@@ -42,7 +47,7 @@ const routes = [
     href: "/dashboard/games",
   },
   {
-    label: "Order History",
+    label: "History",
     icon: History,
     href: "/dashboard/orders",
   },

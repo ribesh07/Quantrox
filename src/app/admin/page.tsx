@@ -10,29 +10,44 @@ import {
   ArrowRight,
   Gamepad2,
   Calendar,
+  ArrowRightLeft,
+  CheckCircle2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import { OrderType, OrderStatus } from "@prisma/client";
 
 export default async function AdminDashboard() {
   const [
     totalUsers,
-    totalOrders,
-    pendingOrders,
+    totalDeposits,
+    totalExchanges,
     totalRevenue,
+    pendingRequests,
+    completedRequests,
     recentOrders,
   ] = await Promise.all([
     prisma.user.count(),
-    prisma.order.count(),
-    prisma.order.count({ where: { status: "PENDING_REVIEW" } }),
+    prisma.order.count({ where: { type: OrderType.DEPOSIT } }),
+    prisma.order.count({ where: { type: OrderType.EXCHANGE } }),
     prisma.order.aggregate({
-      where: { status: "COMPLETED" },
-      _sum: { total: true },
+      where: { status: OrderStatus.COMPLETED },
+      _sum: { fee: true },
     }),
+    prisma.order.count({ 
+      where: { 
+        status: { in: [OrderStatus.PENDING_REVIEW, OrderStatus.PENDING_PAYMENT] } 
+      } 
+    }),
+    prisma.order.count({ where: { status: OrderStatus.COMPLETED } }),
     prisma.order.findMany({
       take: 6,
       orderBy: { createdAt: "desc" },
-      include: { user: { select: { username: true } }, game: true },
+      include: { 
+        user: { select: { username: true } }, 
+        game: true,
+        paymentMethod: true 
+      },
     }),
   ]);
 
@@ -46,26 +61,42 @@ export default async function AdminDashboard() {
       bg: "bg-[#1E2329]",
     },
     {
-      title: "Total Orders",
-      value: totalOrders,
+      title: "Total Deposits",
+      value: totalDeposits,
       icon: TrendingUp,
-      description: "All time orders",
+      description: "Lifetime deposits",
       color: "text-primary",
       bg: "bg-primary/10",
     },
     {
-      title: "Pending Review",
-      value: pendingOrders,
-      icon: Clock,
-      description: "Awaiting approval",
+      title: "Total Exchanges",
+      value: totalExchanges,
+      icon: ArrowRightLeft,
+      description: "Lifetime exchanges",
       color: "text-primary",
       bg: "bg-primary/10",
     },
     {
       title: "Total Revenue",
-      value: `$${(totalRevenue._sum.total || 0).toFixed(2)}`,
+      value: `$${(totalRevenue._sum.fee || 0).toFixed(2)}`,
       icon: DollarSign,
-      description: "Completed volume",
+      description: "Fees collected",
+      color: "text-[#0ECB81]",
+      bg: "bg-[#0ECB81]/10",
+    },
+    {
+      title: "Pending Requests",
+      value: pendingRequests,
+      icon: Clock,
+      description: "Awaiting action",
+      color: "text-orange-500",
+      bg: "bg-orange-500/10",
+    },
+    {
+      title: "Completed Requests",
+      value: completedRequests,
+      icon: CheckCircle2,
+      description: "Successfully processed",
       color: "text-[#0ECB81]",
       bg: "bg-[#0ECB81]/10",
     },
@@ -84,7 +115,7 @@ export default async function AdminDashboard() {
         </div>
       </div>
 
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {stats.map((stat, i) => (
           <Card key={i} className="border border-[#2B3139] bg-[#1E2329] shadow-sm overflow-hidden group hover:border-primary/50 transition-all duration-300">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -105,8 +136,8 @@ export default async function AdminDashboard() {
         <Card className="lg:col-span-8 border border-[#2B3139] bg-[#1E2329] shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between border-b border-[#2B3139] pb-6">
             <div>
-              <CardTitle className="text-white font-bold">Recent Orders</CardTitle>
-              <CardDescription className="text-[#848E9C]">Latest platform transactions.</CardDescription>
+              <CardTitle className="text-white font-bold">Recent Transactions</CardTitle>
+              <CardDescription className="text-[#848E9C]">Latest platform activity.</CardDescription>
             </div>
             <Button variant="ghost" size="sm" className="text-primary font-bold hover:bg-primary/10" asChild>
               <Link href="/admin/orders">View All <ArrowRight className="ml-2 h-4 w-4" /></Link>
@@ -114,7 +145,9 @@ export default async function AdminDashboard() {
           </CardHeader>
           <CardContent className="pt-6">
             <div className="grid gap-4">
-              {recentOrders.map((order) => (
+              {recentOrders.length === 0 ? (
+                <div className="py-10 text-center text-[#848E9C]">No transactions yet.</div>
+              ) : recentOrders.map((order) => (
                 <div
                   key={order.id}
                   className="flex items-center justify-between p-4 rounded-2xl bg-[#0B0E11] hover:bg-[#1E2329] border border-transparent hover:border-[#2B3139] transition-all group"
@@ -122,16 +155,16 @@ export default async function AdminDashboard() {
                   <div className="flex items-center gap-4">
                     <div className={cn(
                       "p-3 rounded-xl",
-                      order.type === "EXCHANGE" ? "bg-primary/10 text-primary" : "bg-[#0ECB81]/10 text-[#0ECB81]"
+                      order.type === OrderType.EXCHANGE ? "bg-primary/10 text-primary" : "bg-[#0ECB81]/10 text-[#0ECB81]"
                     )}>
-                      {order.type === "EXCHANGE" ? <ArrowUpRight className="h-5 w-5" /> : <Gamepad2 className="h-5 w-5" />}
+                      {order.type === OrderType.EXCHANGE ? <ArrowRightLeft className="h-5 w-5" /> : <TrendingUp className="h-5 w-5" />}
                     </div>
                     <div>
                       <p className="font-bold text-sm text-white">
-                        {order.user.username} — {order.type === "EXCHANGE" ? "USD to USDT" : `${order.game?.name || 'Game'} Topup`}
+                        {order.user.username} — {order.type} via {order.paymentMethod?.name}
                       </p>
                       <p className="text-xs text-[#848E9C] font-medium">
-                        {new Date(order.createdAt).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })} • {order.id.slice(-8).toUpperCase()}
+                        {new Date(order.createdAt).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })} • #{order.id.slice(-6).toUpperCase()}
                       </p>
                     </div>
                   </div>
@@ -139,9 +172,8 @@ export default async function AdminDashboard() {
                     <p className="font-black text-sm text-white">${order.amount.toFixed(2)}</p>
                     <div className={cn(
                       "inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider mt-1",
-                      order.status === "COMPLETED" ? "bg-[#0ECB81]/10 text-[#0ECB81]" :
-                      order.status === "REJECTED" ? "bg-destructive/10 text-destructive" :
-                      order.status === "PENDING_REVIEW" ? "bg-primary/10 text-primary" :
+                      order.status === OrderStatus.COMPLETED ? "bg-[#0ECB81]/10 text-[#0ECB81]" :
+                      order.status === OrderStatus.REJECTED ? "bg-destructive/10 text-destructive" :
                       "bg-primary/10 text-primary"
                     )}>
                       {order.status.replace("_", " ")}
@@ -155,15 +187,15 @@ export default async function AdminDashboard() {
 
         <Card className="lg:col-span-4 border border-[#2B3139] bg-[#1E2329] shadow-sm">
           <CardHeader>
-            <CardTitle className="text-white font-bold">Quick Actions</CardTitle>
-            <CardDescription className="text-[#848E9C]">Common management tools.</CardDescription>
+            <CardTitle className="text-white font-bold">Management Tools</CardTitle>
+            <CardDescription className="text-[#848E9C]">Quick access to system settings.</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-3">
             {[
-              { label: "Update Rates", href: "/admin/rates", icon: TrendingUp, color: "text-primary", bg: "bg-primary/10" },
+              { label: "Rates & Fees", href: "/admin/rates", icon: TrendingUp, color: "text-primary", bg: "bg-primary/10" },
               { label: "Review Orders", href: "/admin/orders", icon: Clock, color: "text-primary", bg: "bg-primary/10" },
-              { label: "Manage Games", href: "/admin/games", icon: Gamepad2, color: "text-[#0ECB81]", bg: "bg-[#0ECB81]/10" },
-              { label: "QR Codes", href: "/admin/qr-codes", icon: DollarSign, color: "text-[#0ECB81]", bg: "bg-[#0ECB81]/10" },
+              { label: "User Accounts", href: "/admin/users", icon: Users, color: "text-blue-500", bg: "bg-blue-500/10" },
+              { label: "Game Settings", href: "/admin/games", icon: Gamepad2, color: "text-[#0ECB81]", bg: "bg-[#0ECB81]/10" },
             ].map((action, i) => (
               <Button
                 key={i}
