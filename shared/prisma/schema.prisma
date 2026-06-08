@@ -1,0 +1,151 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  STAFF_ADMIN
+  SUPER_ADMIN
+}
+
+enum OrderStatus {
+  PENDING_PAYMENT
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+  COMPLETED
+}
+
+enum OrderType {
+  DEPOSIT
+  EXCHANGE
+  GAME_TOPUP
+}
+
+enum PaymentMethodCategory {
+  DEPOSIT
+  EXCHANGE
+  BOTH
+}
+
+model User {
+  id            String         @id @default(cuid())
+  username      String         @unique
+  email         String         @unique
+  password      String
+  role          Role           @default(USER)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  orders        Order[]
+  transactions  Transaction[]
+  notifications Notification[]
+  wallets       Wallet[]
+  adminLogs     AdminLog[]
+}
+
+model Wallet {
+  id              String        @id @default(cuid())
+  userId          String
+  user            User          @relation(fields: [userId], references: [id])
+  paymentMethodId String
+  paymentMethod   PaymentMethod @relation(fields: [paymentMethodId], references: [id])
+  balance         Float         @default(0)
+  updatedAt       DateTime      @updatedAt
+
+  @@unique([userId, paymentMethodId])
+}
+
+model Game {
+  id        String   @id @default(cuid())
+  name      String
+  logo      String?
+  buyRate   Float    @default(0)
+  sellRate  Float    @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  orders    Order[]
+}
+
+model PaymentMethod {
+  id            String                @id @default(cuid())
+  name          String                @unique // e.g., "Cash App", "USDT (TRC20)"
+  category      PaymentMethodCategory @default(BOTH)
+  qrCode        String?
+  details       String?               // e.g., account email or wallet address
+  feePercentage Float                 @default(0)
+  rate          Float                 @default(1)
+  active        Boolean               @default(true)
+  minAmount     Float                 @default(0)
+  maxAmount     Float                 @default(1000000)
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+  orders        Order[]
+  wallets       Wallet[]
+}
+
+model QRCode {
+  id        String   @id @default(cuid())
+  image     String
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+model Order {
+  id              String        @id @default(cuid())
+  userId          String
+  user            User          @relation(fields: [userId], references: [id])
+  type            OrderType
+  paymentMethodId String
+  paymentMethod   PaymentMethod @relation(fields: [paymentMethodId], references: [id])
+  amount          Float         // The input amount
+  fee             Float         @default(0)
+  total           Float         // amount + fee (for deposit) or amount - fee (for exchange)
+  rate            Float         @default(1)
+  receivedAmount  Float         @default(0) // Final amount received (in USDT or Game Points)
+  status          OrderStatus   @default(PENDING_PAYMENT)
+  screenshot      String?
+  adminNote       String?
+  walletAddress   String?       // For USDT withdrawals/exchanges
+  gameId          String?
+  game            Game?         @relation(fields: [gameId], references: [id])
+  gameUsername    String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  transaction     Transaction?
+}
+
+model Transaction {
+  id        String   @id @default(cuid())
+  orderId   String   @unique
+  order     Order    @relation(fields: [orderId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  amount    Float
+  type      String   // DEPOSIT, WITHDRAWAL, EXCHANGE, GAME_TOPUP
+  status    String   // SUCCESS, FAILED, PENDING
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model AdminLog {
+  id        String   @id @default(cuid())
+  adminId   String
+  admin     User     @relation(fields: [adminId], references: [id])
+  action    String
+  details   String?
+  createdAt DateTime @default(now())
+}
