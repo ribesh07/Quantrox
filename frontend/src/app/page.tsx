@@ -6,13 +6,14 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-screen bg-[#0B0E11] text-[#EAECEF]">
       {/* Navbar */}
-      <header className="fixed top-0 w-full z-50 px-4 lg:px-6 h-16 flex items-center bg-[#0B0E11]/80 backdrop-blur-md border-b border-[#2B3139]">
+      <header className="fixed top-0 w-full z-50 px-4 lg:px-6 h-20 flex items-center bg-[#0B0E11]/80 backdrop-blur-md border-b border-[#2B3139]">
         <div className="container mx-auto flex items-center justify-between">
           <Link className="flex items-center justify-center gap-2" href="/">
-            <div className="bg-primary p-1.5 rounded-lg">
-              <TrendingUp className="h-5 w-5 text-primary-foreground" />
-            </div>
-            <span className="font-bold text-xl tracking-tight text-white">Quantrox</span>
+                           <img
+  src="/icons/logo.png"
+  alt="SettlerPay"
+  className="h-8 sm:h-10 md:h-11 lg:h-12 w-auto object-contain"
+/>
           </Link>
           <nav className="hidden md:flex gap-8">
             <Link className="text-sm font-medium text-[#848E9C] hover:text-primary transition-colors" href="#features">
@@ -174,10 +175,16 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
             <div className="col-span-1 md:col-span-2 space-y-6">
               <Link className="flex items-center gap-2" href="/">
-                <div className="bg-primary p-1.5 rounded-lg">
+                {/* <div className="bg-primary p-1.5 rounded-lg">
                   <TrendingUp className="h-5 w-5 text-primary-foreground" />
-                </div>
-                <span className="font-black text-2xl text-white">Quantrox</span>
+                </div> */}
+                {/* <span className="font-black text-2xl text-white">Settlerpay</span>
+                 */}
+                 <img
+  src="/icons/logo.png"
+  alt="SettlerPay"
+  className="h-8 sm:h-10 md:h-11 lg:h-12 w-auto object-contain"
+/>
               </Link>
               <p className="text-[#848E9C] text-lg max-w-sm font-medium">
                 The most trusted digital asset exchange for Cash App users and gaming enthusiasts worldwide.
@@ -202,7 +209,7 @@ export default function Home() {
           </div>
           <div className="mt-20 pt-8 border-t border-[#2B3139] flex flex-col sm:flex-row justify-between items-center gap-6">
             <p className="text-[#848E9C] text-sm font-medium">
-              © 2026 Quantrox Platform. All rights reserved.
+              © 2026 Settlerpay Platform. All rights reserved.
             </p>
           </div>
         </div>

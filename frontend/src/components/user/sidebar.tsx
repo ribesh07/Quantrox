@@ -68,7 +68,7 @@ export function UserSidebar() {
           <div className="bg-primary p-1.5 rounded-lg">
             <TrendingUp className="h-5 w-5 text-primary-foreground" />
           </div>
-          <span className="text-white">Quantrox</span>
+          <span className="text-white">Settlerpay</span>
         </Link>
       </div>
       <nav className="flex-1 space-y-1 p-4">
@@ -120,7 +120,7 @@ export function MobileUserNav() {
               <div className="bg-primary p-1.5 rounded-lg">
                 <TrendingUp className="h-5 w-5 text-primary-foreground" />
               </div>
-              <span>Quantrox</span>
+              <span>Settlerpay</span>
             </SheetTitle>
           </SheetHeader>
           <nav className="flex-1 space-y-1 p-4">
@@ -154,7 +154,7 @@ export function MobileUserNav() {
       </Sheet>
       <Link href="/dashboard" className="flex items-center gap-2 font-bold text-lg text-white">
         <TrendingUp className="h-5 w-5 text-primary" />
-        <span>Quantrox</span>
+        <span>Settlerpay</span>
       </Link>
     </div>
   );

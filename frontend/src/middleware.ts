@@ -26,6 +26,7 @@ export default withAuth(
           path === "/login" ||
           path === "/register" ||
           path.startsWith("/api/auth") ||
+           path.startsWith("/icons") ||
           path.startsWith("/api/register")
         ) {
           return true;

@@ -69,7 +69,7 @@ export function Sidebar() {
           <div className="bg-primary p-1.5 rounded-lg">
             <TrendingUp className="h-5 w-5 text-primary-foreground" />
           </div>
-          <span className="text-white">Quantrox</span>
+          <span className="text-white">Settlerpay</span>
         </Link>
       </div>
       <nav className="flex-1 space-y-1 p-4">
@@ -121,7 +121,7 @@ export function MobileAdminNav() {
               <div className="bg-primary p-1.5 rounded-lg">
                 <TrendingUp className="h-5 w-5 text-primary-foreground" />
               </div>
-              <span>Quantrox Admin</span>
+              <span>Settlerpay Admin</span>
             </SheetTitle>
           </SheetHeader>
           <nav className="flex-1 space-y-1 p-4">
@@ -155,7 +155,7 @@ export function MobileAdminNav() {
       </Sheet>
       <Link href="/admin" className="flex items-center gap-2 font-bold text-lg text-white">
         <TrendingUp className="h-5 w-5 text-primary" />
-        <span>Quantrox</span>
+        <span>Settlerpay</span>
       </Link>
     </div>
   );
