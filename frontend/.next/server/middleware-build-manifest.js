@@ -2,6 +2,7 @@ globalThis.__BUILD_MANIFEST = {
   "polyfillFiles": [
     "static/chunks/polyfills.js"
   ],
+<<<<<<< HEAD
   "devFiles": [
     "static/chunks/react-refresh.js"
   ],
@@ -23,6 +24,15 @@ globalThis.__BUILD_MANIFEST = {
       "static/chunks/main.js",
       "static/chunks/pages/_error.js"
     ]
+=======
+  "devFiles": [],
+  "ampDevFiles": [],
+  "lowPriorityFiles": [],
+  "rootMainFiles": [],
+  "rootMainFilesTree": {},
+  "pages": {
+    "/_app": []
+>>>>>>> 3479cbca (fixes)
   },
   "ampFirstPages": []
 };

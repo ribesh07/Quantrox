@@ -1,4 +1,5 @@
 {
+<<<<<<< HEAD
   "pages": {
     "/api/auth/[...nextauth]/route": [
       "static/chunks/webpack.js",
@@ -17,4 +18,7 @@
       "static/chunks/app/page.js"
     ]
   }
+=======
+  "pages": {}
+>>>>>>> 3479cbca (fixes)
 }
