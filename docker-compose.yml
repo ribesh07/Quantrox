@@ -5,9 +5,10 @@ services:
       dockerfile: backend/Dockerfile
     restart: always
     environment:
-      DATABASE_URL: "postgres://postgres:eH6cCMOgHUamwljD8UsVmzKrLJ8KGqlGe38UxRQp3cg0pDg94atPMX95plRbJQ9j@217.216.33.200:5656/quantrox"
-      PORT: 3001
-      JWT_SECRET: "your_production_jwt_secret_here"
+      DATABASE_URL: "${DATABASE_URL}"
+      PORT: "${PORT:-3001}"
+      JWT_SECRET: "${JWT_SECRET}"
+      CORS_ORIGIN: "${CORS_ORIGIN:-http://localhost:3056}"
     ports:
       - "3001:3001"
 
@@ -17,10 +18,10 @@ services:
       dockerfile: frontend/Dockerfile
     restart: always
     environment:
-      NEXT_PUBLIC_API_URL: "http://localhost:3001/api"
-      INTERNAL_API_URL: "http://backend:3001/api"
-      NEXTAUTH_URL: "http://localhost:3056"
-      NEXTAUTH_SECRET: "your_production_nextauth_secret_here"
+      NEXT_PUBLIC_API_URL: "${NEXT_PUBLIC_API_URL}"
+      INTERNAL_API_URL: "${INTERNAL_API_URL:-http://backend:3001/api}"
+      NEXTAUTH_URL: "${NEXTAUTH_URL}"
+      NEXTAUTH_SECRET: "${NEXTAUTH_SECRET}"
     depends_on:
       - backend
     ports:

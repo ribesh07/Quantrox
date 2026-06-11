@@ -12,7 +12,7 @@ export default withAuth(
     }
 
     // Redirect logged in users away from auth pages
-    if ((path === "/login" || path === "/register") && !!token) {
+    if ((path === "/login" || path === "/register" || path === "/forgot-password") && !!token) {
       return NextResponse.redirect(new URL("/dashboard", req.url));
     }
   },
@@ -25,6 +25,7 @@ export default withAuth(
           path === "/" ||
           path === "/login" ||
           path === "/register" ||
+          path === "/forgot-password" ||
           path.startsWith("/api/auth") ||
           path.startsWith("/api/register")
         ) {

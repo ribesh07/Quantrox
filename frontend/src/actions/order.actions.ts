@@ -2,10 +2,12 @@
 
 import api from "@/lib/api";
 import { revalidatePath } from "next/cache";
+import { getAuthenticatedRequestConfig } from "./_auth";
 
 export async function createOrderAction(data: any) {
   try {
-    const response = await api.post("/orders", data);
+    const config = await getAuthenticatedRequestConfig();
+    const response = await api.post("/orders", data, config);
     revalidatePath("/dashboard");
     revalidatePath("/dashboard/orders");
     return { success: true, order: response.data.order };
@@ -17,21 +19,32 @@ export async function createOrderAction(data: any) {
 
 export async function getUserOrdersAction() {
   try {
-    const response = await api.get("/orders");
+    const config = await getAuthenticatedRequestConfig();
+    const response = await api.get("/orders", config);
     return { success: true, orders: response.data.orders };
   } catch (error: any) {
     console.error("Get Orders Error:", error.response?.data || error.message);
     return { success: false, error: "Error fetching orders" };
   }
 }
+export async function getOrderByIdAction(orderId: string) {
+  try {
+    const config = await getAuthenticatedRequestConfig();
+    const response = await api.get(`/orders/${orderId}`, config);
+    return { success: true, order: response.data.order };
+  } catch (error: any) {
+    console.error("Get Order Error:", error.response?.data || error.message);
+    return {
+      success: false,
+      error: error.response?.data?.message || "Error fetching order details",
+    };
+  }
+}
 
 export async function uploadOrderProofAction(orderId: string, formData: FormData) {
   try {
-    const response = await api.post(`/orders/${orderId}/proof`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    const config = await getAuthenticatedRequestConfig();
+    const response = await api.post(`/orders/${orderId}/proof`, formData, config);
 
     revalidatePath("/dashboard/orders");
     revalidatePath("/admin/orders");

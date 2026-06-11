@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { prisma, registerSchema, loginSchema } from '@quantrox/shared';
+import { env } from '../config/env';
 
 export const register = async (req: Request, res: Response) => {
   try {
@@ -47,7 +48,7 @@ export const login = async (req: Request, res: Response) => {
 
     const token = jwt.sign(
       { userId: user.id, role: user.role },
-      process.env.JWT_SECRET || 'your-secret-key',
+      env.jwtSecret,
       { expiresIn: '1d' }
     );
 

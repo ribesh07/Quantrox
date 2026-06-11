@@ -3,8 +3,7 @@ import { AuthRequest } from '../middleware/auth.middleware';
 import { OrderService } from '../services/order.service';
 import { createOrderSchema, prisma } from '@quantrox/shared';
 import { OrderStatus } from '@prisma/client';
-import path from 'path';
-import fs from 'fs/promises';
+import { saveUploadedFile } from '../utils/uploads';
 
 export const createOrder = async (req: AuthRequest, res: Response) => {
   try {
@@ -58,15 +57,12 @@ export const uploadProof = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ success: false, message: "No file uploaded" });
     }
 
-    const uploadDir = path.join(process.cwd(), '..', 'frontend', 'public', 'uploads', 'proofs');
-    await fs.mkdir(uploadDir, { recursive: true });
-
-    const filename = `${id}-${Date.now()}-${file.originalname.replace(/\s+/g, "-")}`;
-    const targetPath = path.join(uploadDir, filename);
-
-    await fs.rename(file.path, targetPath);
-
-    const imageUrl = `/uploads/proofs/${filename}`;
+    const imageUrl = await saveUploadedFile({
+      tempPath: file.path,
+      originalName: file.originalname,
+      prefix: id,
+      subdirectory: 'proofs',
+    });
 
     const order = await prisma.order.update({
       where: { id },

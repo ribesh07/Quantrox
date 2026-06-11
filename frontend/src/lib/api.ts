@@ -1,9 +1,20 @@
 import axios from 'axios';
+const resolveApiBaseUrl = () => {
+  const serverUrl = process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL;
+  const clientUrl = process.env.NEXT_PUBLIC_API_URL;
+  const fallbackUrl = 'http://localhost:3001/api';
+  const resolvedUrl = typeof window === 'undefined' ? serverUrl : clientUrl;
+  if (!resolvedUrl || !resolvedUrl.trim()) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('Missing NEXT_PUBLIC_API_URL configuration.');
+    }
+    return fallbackUrl;
+  }
+  return resolvedUrl.replace(/\/+$/, '');
+};
 
 const api = axios.create({
-  baseURL: typeof window === 'undefined' 
-    ? (process.env.INTERNAL_API_URL || 'http://localhost:3001/api')
-    : (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'),
+  baseURL: resolveApiBaseUrl(),
 });
 
 api.interceptors.request.use((config) => {

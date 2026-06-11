@@ -1,0 +1,21 @@
+{
+  "/_not-found/page": "/_not-found",
+  "/api/auth/[...nextauth]/route": "/api/auth/[...nextauth]",
+  "/(auth)/login/page": "/login",
+  "/(auth)/register/page": "/register",
+  "/(auth)/forgot-password/page": "/forgot-password",
+  "/page": "/",
+  "/admin/games/page": "/admin/games",
+  "/admin/payment-settings/page": "/admin/payment-settings",
+  "/dashboard/exchange/page": "/dashboard/exchange",
+  "/admin/orders/page": "/admin/orders",
+  "/admin/users/page": "/admin/users",
+  "/admin/qr-codes/page": "/admin/qr-codes",
+  "/dashboard/games/page": "/dashboard/games",
+  "/dashboard/orders/[id]/payment/page": "/dashboard/orders/[id]/payment",
+  "/dashboard/deposit/page": "/dashboard/deposit",
+  "/dashboard/profile/page": "/dashboard/profile",
+  "/dashboard/orders/page": "/dashboard/orders",
+  "/admin/page": "/admin",
+  "/dashboard/page": "/dashboard"
+}

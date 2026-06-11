@@ -27,7 +27,7 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+  const API_URL = (process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api').replace(/\/+$/, '');
 
   try {
     const [ordersResponse, walletsResponse, statsResponse] = await Promise.all([

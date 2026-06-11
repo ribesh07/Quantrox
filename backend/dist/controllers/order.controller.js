@@ -1,14 +1,10 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.reviewOrder = exports.getAllOrders = exports.uploadProof = exports.getOrderById = exports.getUserStats = exports.getUserOrders = exports.createOrder = void 0;
 const order_service_1 = require("../services/order.service");
 const shared_1 = require("@quantrox/shared");
 const client_1 = require("@prisma/client");
-const path_1 = __importDefault(require("path"));
-const promises_1 = __importDefault(require("fs/promises"));
+const uploads_1 = require("../utils/uploads");
 const createOrder = async (req, res) => {
     try {
         const validatedData = shared_1.createOrderSchema.parse(req.body);
@@ -64,12 +60,12 @@ const uploadProof = async (req, res) => {
         if (!file) {
             return res.status(400).json({ success: false, message: "No file uploaded" });
         }
-        const uploadDir = path_1.default.join(process.cwd(), '..', 'frontend', 'public', 'uploads', 'proofs');
-        await promises_1.default.mkdir(uploadDir, { recursive: true });
-        const filename = `${id}-${Date.now()}-${file.originalname.replace(/\s+/g, "-")}`;
-        const targetPath = path_1.default.join(uploadDir, filename);
-        await promises_1.default.rename(file.path, targetPath);
-        const imageUrl = `/uploads/proofs/${filename}`;
+        const imageUrl = await (0, uploads_1.saveUploadedFile)({
+            tempPath: file.path,
+            originalName: file.originalname,
+            prefix: id,
+            subdirectory: 'proofs',
+        });
         const order = await shared_1.prisma.order.update({
             where: { id },
             data: {
