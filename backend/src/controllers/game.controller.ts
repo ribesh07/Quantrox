@@ -1,6 +1,14 @@
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { GameService } from '../services/game.service';
+export const getPublicGames = async (req: Request, res: Response) => {
+  try {
+    const games = await GameService.getAll(true);
+    res.json({ success: true, games });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
 
 export const getAllGames = async (req: AuthRequest, res: Response) => {
   try {

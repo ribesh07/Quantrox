@@ -1,12 +1,8 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deleteQRCode = exports.updateQRCode = exports.createQRCode = exports.getAllQRCodes = void 0;
 const qr_service_1 = require("../services/qr.service");
-const path_1 = __importDefault(require("path"));
-const promises_1 = __importDefault(require("fs/promises"));
+const uploads_1 = require("../utils/uploads");
 const getAllQRCodes = async (req, res) => {
     try {
         const qrCodes = await qr_service_1.QRCodeService.getAll();
@@ -23,12 +19,11 @@ const createQRCode = async (req, res) => {
         if (!file) {
             return res.status(400).json({ success: false, message: "No file uploaded" });
         }
-        const uploadDir = path_1.default.join(process.cwd(), '..', 'frontend', 'public', 'uploads', 'qrs');
-        await promises_1.default.mkdir(uploadDir, { recursive: true });
-        const filename = `${Date.now()}-${file.originalname.replace(/\s+/g, "-")}`;
-        const targetPath = path_1.default.join(uploadDir, filename);
-        await promises_1.default.rename(file.path, targetPath);
-        const imageUrl = `/uploads/qrs/${filename}`;
+        const imageUrl = await (0, uploads_1.saveUploadedFile)({
+            tempPath: file.path,
+            originalName: file.originalname,
+            subdirectory: 'qrs',
+        });
         const qrCode = await qr_service_1.QRCodeService.create(imageUrl);
         res.status(201).json({ success: true, qrCode });
     }

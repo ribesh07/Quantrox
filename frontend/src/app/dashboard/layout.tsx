@@ -19,7 +19,7 @@ export default async function DashboardLayout({
       <UserSidebar />
       <div className="flex flex-col flex-1">
         <MobileUserNav />
-        <main className="flex-1 p-4 md:p-8 lg:p-10">{children}</main>
+        <main className="flex-1 p-3 sm:p-4 md:p-6 lg:p-8">{children}</main>
       </div>
     </div>
   );

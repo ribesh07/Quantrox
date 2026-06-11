@@ -3,11 +3,13 @@
 import api from "@/lib/api";
 import { Role, OrderStatus } from "@prisma/client";
 import { revalidatePath } from "next/cache";
+import { getAuthenticatedRequestConfig } from "./_auth";
 
 // Order Actions
 export async function getAllOrdersAction() {
   try {
-    const response = await api.get("/admin/orders");
+    const config = await getAuthenticatedRequestConfig();
+    const response = await api.get("/admin/orders", config);
     return { success: true, orders: response.data.orders };
   } catch (error: any) {
     return { success: false, error: error.response?.data?.message || error.message };
@@ -16,7 +18,8 @@ export async function getAllOrdersAction() {
 
 export async function reviewOrderAction(id: string, status: OrderStatus, adminNote?: string) {
   try {
-    const response = await api.patch(`/admin/orders/${id}/review`, { status, adminNote });
+    const config = await getAuthenticatedRequestConfig();
+    const response = await api.patch(`/admin/orders/${id}/review`, { status, adminNote }, config);
     revalidatePath("/admin/orders");
     revalidatePath("/dashboard");
     return { success: true, order: response.data.order };
@@ -28,7 +31,8 @@ export async function reviewOrderAction(id: string, status: OrderStatus, adminNo
 // User Actions
 export async function getAllUsersAction() {
   try {
-    const response = await api.get("/admin/users");
+    const config = await getAuthenticatedRequestConfig();
+    const response = await api.get("/admin/users", config);
     return { success: true, users: response.data.users };
   } catch (error: any) {
     return { success: false, error: error.response?.data?.message || error.message };
@@ -37,7 +41,8 @@ export async function getAllUsersAction() {
 
 export async function updateUserRoleAction(userId: string, role: Role) {
   try {
-    const response = await api.patch(`/admin/users/${userId}/role`, { role });
+    const config = await getAuthenticatedRequestConfig();
+    const response = await api.patch(`/admin/users/${userId}/role`, { role }, config);
     revalidatePath("/admin/users");
     return { success: true, user: response.data.user };
   } catch (error: any) {
@@ -47,7 +52,8 @@ export async function updateUserRoleAction(userId: string, role: Role) {
 
 export async function deleteUserAction(userId: string) {
   try {
-    await api.delete(`/admin/users/${userId}`);
+    const config = await getAuthenticatedRequestConfig();
+    await api.delete(`/admin/users/${userId}`, config);
     revalidatePath("/admin/users");
     return { success: true };
   } catch (error: any) {
@@ -58,7 +64,8 @@ export async function deleteUserAction(userId: string) {
 // Payment Actions
 export async function getAllPaymentMethodsAction() {
   try {
-    const response = await api.get("/admin/payment-methods");
+    const config = await getAuthenticatedRequestConfig();
+    const response = await api.get("/admin/payment-methods", config);
     return { success: true, methods: response.data.methods };
   } catch (error: any) {
     return { success: false, error: error.response?.data?.message || error.message };
@@ -67,7 +74,8 @@ export async function getAllPaymentMethodsAction() {
 
 export async function updatePaymentMethodAction(id: string, data: any) {
   try {
-    const response = await api.patch(`/admin/payment-methods/${id}`, data);
+    const config = await getAuthenticatedRequestConfig();
+    const response = await api.patch(`/admin/payment-methods/${id}`, data, config);
     revalidatePath("/admin/payment-settings");
     return { success: true, method: response.data.method };
   } catch (error: any) {
@@ -78,7 +86,8 @@ export async function updatePaymentMethodAction(id: string, data: any) {
 // Game Actions
 export async function getAllGamesAction() {
   try {
-    const response = await api.get("/admin/games");
+    const config = await getAuthenticatedRequestConfig();
+    const response = await api.get("/admin/games", config);
     return { success: true, games: response.data.games };
   } catch (error: any) {
     return { success: false, error: error.response?.data?.message || error.message };
@@ -87,7 +96,8 @@ export async function getAllGamesAction() {
 
 export async function createGameAction(data: any) {
   try {
-    const response = await api.post("/admin/games", data);
+    const config = await getAuthenticatedRequestConfig();
+    const response = await api.post("/admin/games", data, config);
     revalidatePath("/admin/games");
     return { success: true, game: response.data.game };
   } catch (error: any) {
@@ -97,7 +107,8 @@ export async function createGameAction(data: any) {
 
 export async function updateGameAction(id: string, data: any) {
   try {
-    const response = await api.patch(`/admin/games/${id}`, data);
+    const config = await getAuthenticatedRequestConfig();
+    const response = await api.patch(`/admin/games/${id}`, data, config);
     revalidatePath("/admin/games");
     return { success: true, game: response.data.game };
   } catch (error: any) {
@@ -107,7 +118,8 @@ export async function updateGameAction(id: string, data: any) {
 
 export async function deleteGameAction(id: string) {
   try {
-    await api.delete(`/admin/games/${id}`);
+    const config = await getAuthenticatedRequestConfig();
+    await api.delete(`/admin/games/${id}`, config);
     revalidatePath("/admin/games");
     return { success: true };
   } catch (error: any) {
@@ -118,7 +130,8 @@ export async function deleteGameAction(id: string) {
 // QR Code Actions
 export async function getAllQRCodesAction() {
   try {
-    const response = await api.get("/admin/qr-codes");
+    const config = await getAuthenticatedRequestConfig();
+    const response = await api.get("/admin/qr-codes", config);
     return { success: true, qrCodes: response.data.qrCodes };
   } catch (error: any) {
     return { success: false, error: error.response?.data?.message || error.message };
@@ -127,11 +140,8 @@ export async function getAllQRCodesAction() {
 
 export async function createQRCodeAction(formData: FormData) {
   try {
-    const response = await api.post("/admin/qr-codes", formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    const config = await getAuthenticatedRequestConfig();
+    const response = await api.post("/admin/qr-codes", formData, config);
     revalidatePath("/admin/qr-codes");
     return { success: true, qrCode: response.data.qrCode };
   } catch (error: any) {
@@ -141,7 +151,8 @@ export async function createQRCodeAction(formData: FormData) {
 
 export async function updateQRCodeAction(id: string, active: boolean) {
   try {
-    const response = await api.patch(`/admin/qr-codes/${id}`, { active });
+    const config = await getAuthenticatedRequestConfig();
+    const response = await api.patch(`/admin/qr-codes/${id}`, { active }, config);
     revalidatePath("/admin/qr-codes");
     return { success: true, qrCode: response.data.qrCode };
   } catch (error: any) {
@@ -151,7 +162,8 @@ export async function updateQRCodeAction(id: string, active: boolean) {
 
 export async function deleteQRCodeAction(id: string) {
   try {
-    await api.delete(`/admin/qr-codes/${id}`);
+    const config = await getAuthenticatedRequestConfig();
+    await api.delete(`/admin/qr-codes/${id}`, config);
     revalidatePath("/admin/qr-codes");
     return { success: true };
   } catch (error: any) {

@@ -1,7 +1,17 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteGame = exports.updateGame = exports.createGame = exports.getAllGames = void 0;
+exports.deleteGame = exports.updateGame = exports.createGame = exports.getAllGames = exports.getPublicGames = void 0;
 const game_service_1 = require("../services/game.service");
+const getPublicGames = async (req, res) => {
+    try {
+        const games = await game_service_1.GameService.getAll(true);
+        res.json({ success: true, games });
+    }
+    catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+exports.getPublicGames = getPublicGames;
 const getAllGames = async (req, res) => {
     try {
         const games = await game_service_1.GameService.getAll();

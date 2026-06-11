@@ -1,8 +1,7 @@
 import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { QRCodeService } from '../services/qr.service';
-import path from 'path';
-import fs from 'fs/promises';
+import { saveUploadedFile } from '../utils/uploads';
 
 export const getAllQRCodes = async (req: AuthRequest, res: Response) => {
   try {
@@ -20,15 +19,11 @@ export const createQRCode = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ success: false, message: "No file uploaded" });
     }
 
-    const uploadDir = path.join(process.cwd(), '..', 'frontend', 'public', 'uploads', 'qrs');
-    await fs.mkdir(uploadDir, { recursive: true });
-
-    const filename = `${Date.now()}-${file.originalname.replace(/\s+/g, "-")}`;
-    const targetPath = path.join(uploadDir, filename);
-
-    await fs.rename(file.path, targetPath);
-
-    const imageUrl = `/uploads/qrs/${filename}`;
+    const imageUrl = await saveUploadedFile({
+      tempPath: file.path,
+      originalName: file.originalname,
+      subdirectory: 'qrs',
+    });
     const qrCode = await QRCodeService.create(imageUrl);
 
     res.status(201).json({ success: true, qrCode });

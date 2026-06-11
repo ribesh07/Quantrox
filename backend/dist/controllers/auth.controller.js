@@ -7,6 +7,7 @@ exports.login = exports.register = void 0;
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const shared_1 = require("@quantrox/shared");
+const env_1 = require("../config/env");
 const register = async (req, res) => {
     try {
         const validatedData = shared_1.registerSchema.parse(req.body);
@@ -42,7 +43,7 @@ const login = async (req, res) => {
         if (!user || !(await bcryptjs_1.default.compare(password, user.password))) {
             return res.status(401).json({ success: false, message: "Invalid email or password" });
         }
-        const token = jsonwebtoken_1.default.sign({ userId: user.id, role: user.role }, process.env.JWT_SECRET || 'your-secret-key', { expiresIn: '1d' });
+        const token = jsonwebtoken_1.default.sign({ userId: user.id, role: user.role }, env_1.env.jwtSecret, { expiresIn: '1d' });
         res.json({
             success: true,
             token,

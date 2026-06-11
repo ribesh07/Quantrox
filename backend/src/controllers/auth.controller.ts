@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { prisma, registerSchema, loginSchema } from '@quantrox/shared';
+import { env } from '../config/env';
 
 export const register = async (req: Request, res: Response) => {
   try {
@@ -44,11 +45,11 @@ export const login = async (req: Request, res: Response) => {
     if (!user || !(await bcrypt.compare(password, user.password))) {
       return res.status(401).json({ success: false, message: "Invalid email or password" });
     }
-    const jwtSecret = process.env.JWT_SECRET;
+    const jwtSecret = env.jwtSecret || process.env.JWT_SECRET;
 
-      if (!jwtSecret) {
-        throw new Error("JWT_SECRET is not configured");
-      }
+    if (!jwtSecret) {
+      throw new Error("JWT_SECRET is not configured");
+    }
 
     const token = jwt.sign(
       { userId: user.id, role: user.role },

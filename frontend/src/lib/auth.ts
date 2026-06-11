@@ -3,7 +3,23 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import axios from "axios";
 
 export const dynamic = "force-dynamic";
+
+const resolveServerApiUrl = () => {
+  const apiUrl = process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL;
+  if (apiUrl?.trim()) {
+    return apiUrl.replace(/\/+$/, "");
+  }
+
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("Missing INTERNAL_API_URL or NEXT_PUBLIC_API_URL for authentication.");
+  }
+
+  return "http://localhost:3001/api";
+};
+
+const SERVER_API_URL = resolveServerApiUrl();
 export const authOptions: NextAuthOptions = {
+  secret: process.env.NEXTAUTH_SECRET,
   session: {
     strategy: "jwt",
   },
@@ -23,7 +39,7 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
-          const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/auth/login`, {
+          const response = await axios.post(`${SERVER_API_URL}/auth/login`, {
             email: credentials.email,
             password: credentials.password,
           });
@@ -38,7 +54,12 @@ export const authOptions: NextAuthOptions = {
           }
           return null;
         } catch (error: any) {
-          throw new Error(error.response?.data?.message || "Invalid credentials");
+          if (error.response?.status === 401) {
+            return null;
+          }
+          throw new Error(
+            error.response?.data?.message || "Authentication service is unavailable. Please try again."
+          );
         }
       },
     }),

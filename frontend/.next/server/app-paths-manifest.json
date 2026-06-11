@@ -1,8 +1,0 @@
-<<<<<<< HEAD
-{
-  "/api/auth/[...nextauth]/route": "app/api/auth/[...nextauth]/route.js",
-  "/page": "app/page.js"
-}
-=======
-{}
->>>>>>> 3479cbca (fixes)
