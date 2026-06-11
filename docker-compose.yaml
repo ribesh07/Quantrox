@@ -7,7 +7,7 @@ services:
     environment:
       DATABASE_URL: "postgres://postgres:eH6cCMOgHUamwljD8UsVmzKrLJ8KGqlGe38UxRQp3cg0pDg94atPMX95plRbJQ9j@217.216.33.200:5656/quantrox"
       PORT: 3001
-      JWT_SECRET: "9H8nqfQKk7rYjV4jzL6Nx3Pq2sR5TtYwA1BcDeFgHiJdf390980dishafsd="
+      JWT_SECRET: "your-suuooopop099uho9====iohh9="
     ports:
       - "3001:3001"
 
@@ -17,10 +17,10 @@ services:
       dockerfile: frontend/Dockerfile
     restart: always
     environment:
-      NEXT_PUBLIC_API_URL: "http://localhost:3001/api"
+      NEXT_PUBLIC_API_URL: "https://api.settlerpay.com/api"
       INTERNAL_API_URL: "http://backend:3001/api"
-      NEXTAUTH_URL: "http://localhost:3056"
-      NEXTAUTH_SECRET: "9H8nqfQKk7rYjV4jzL6Nx3Pq2sR5TtYwA1BcDeFgHiJdasfadsfew="
+      NEXTAUTH_URL: "https://web.settlerpay.com"
+      NEXTAUTH_SECRET: "your-nsadfae90f4huosaf=asdasd=f"
       PORT: 3056
     depends_on:
       - backend
