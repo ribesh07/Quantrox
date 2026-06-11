@@ -1,7 +1,7 @@
 import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { OrderService } from '../services/order.service';
-import { createOrderSchema, prisma } from '@quantrox/shared';
+import { createOrderSchema, prisma } from '../shared';
 import { OrderStatus } from '@prisma/client';
 import { saveUploadedFile } from '../utils/uploads';
 

@@ -1,4 +1,4 @@
-import { prisma } from "@quantrox/shared";
+import { prisma } from "../shared";
 import { PaymentMethodCategory } from "@prisma/client";
 
 export const PaymentService = {

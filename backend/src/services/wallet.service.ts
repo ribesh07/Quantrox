@@ -1,4 +1,4 @@
-import { prisma } from "@quantrox/shared";
+import { prisma } from "../shared";
 
 export const WalletService = {
   async getUserWallets(userId: string) {

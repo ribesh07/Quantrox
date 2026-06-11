@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.OrderService = void 0;
-const shared_1 = require("@quantrox/shared");
+const shared_1 = require("../shared");
 const client_1 = require("@prisma/client");
 exports.OrderService = {
     async create(data) {

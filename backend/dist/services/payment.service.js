@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PaymentService = void 0;
-const shared_1 = require("@quantrox/shared");
+const shared_1 = require("../shared");
 exports.PaymentService = {
     async getAllActive(category) {
         const where = { active: true };
