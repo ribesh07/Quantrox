@@ -41,8 +41,8 @@ router.get('/unread', async (req: AuthRequest, res: Response) => {
 // Mark notification as read
 router.patch('/:id/read', async (req: AuthRequest, res: Response) => {
   try {
-    const { id } = req.params;
-    const notification = await NotificationService.markAsRead(id);
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const notification = await NotificationService.markAsRead(id as string);
     res.json({ success: true, notification });
   } catch (error: any) {
     res.status(400).json({ success: false, message: error.message });
@@ -62,8 +62,8 @@ router.patch('/all/read', async (req: AuthRequest, res: Response) => {
 // Delete notification
 router.delete('/:id', async (req: AuthRequest, res: Response) => {
   try {
-    const { id } = req.params;
-    await NotificationService.delete(id);
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    await NotificationService.delete(id as string);
     res.json({ success: true });
   } catch (error: any) {
     res.status(400).json({ success: false, message: error.message });

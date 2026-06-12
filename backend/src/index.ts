@@ -51,7 +51,6 @@ app.use('/api/exchanges', exchangeRoutes);
 app.use('/api/game-point-orders', gamePointOrderRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/2fa', twoFactorRoutes);
-
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });
@@ -68,9 +67,43 @@ const startServer = async () => {
   await ensureUploadDirectory('proofs');
   await ensureUploadDirectory('qrs');
 
-  app.listen(env.port, () => {
+  const server = app.listen(env.port, () => {
     console.log(`Backend server running on http://localhost:${env.port}`);
   });
+
+  // WebSocket (Socket.IO) for real-time notifications
+  try {
+    // require() used to avoid ESM interop issues in ts-node
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { Server } = require('socket.io');
+    const io = new Server(server, { cors: { origin: env.corsOrigins.length ? env.corsOrigins : '*' } });
+
+    // If REDIS_URL is provided, use the Redis adapter to scale across nodes
+    if (process.env.REDIS_URL) {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const { createAdapter } = require('@socket.io/redis-adapter');
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const Redis = require('ioredis');
+      const pubClient = new Redis(process.env.REDIS_URL);
+      const subClient = pubClient.duplicate();
+      io.adapter(createAdapter(pubClient, subClient));
+      console.log('Socket.IO configured with Redis adapter');
+    }
+
+    // attach to global for other modules to use
+    (global as any).io = io;
+    io.on('connection', (socket: any) => {
+      console.log('WS client connected', socket.id);
+      socket.on('join', (userId: string) => {
+        socket.join(`user_${userId}`);
+      });
+      socket.on('disconnect', () => {
+        console.log('WS client disconnected', socket.id);
+      });
+    });
+  } catch (err) {
+    console.warn('Socket.IO not available:', err);
+  }
 };
 
 startServer().catch((error) => {

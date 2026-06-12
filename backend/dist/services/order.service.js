@@ -202,5 +202,90 @@ exports.OrderService = {
             },
         });
         return order;
+    },
+    async getByStatus(status, limit = 50, offset = 0) {
+        const [orders, count] = await Promise.all([
+            shared_1.prisma.order.findMany({
+                where: { status },
+                orderBy: { createdAt: 'desc' },
+                take: limit,
+                skip: offset,
+                include: {
+                    user: { select: { username: true, email: true } },
+                    game: true,
+                    paymentMethod: true,
+                },
+            }),
+            shared_1.prisma.order.count({ where: { status } }),
+        ]);
+        return { orders, count };
+    },
+    async getPendingReviewOrders(limit = 50) {
+        return shared_1.prisma.order.findMany({
+            where: {
+                status: client_1.OrderStatus.PENDING_REVIEW,
+            },
+            orderBy: { createdAt: 'asc' },
+            take: limit,
+            include: {
+                user: { select: { username: true, email: true } },
+                game: true,
+                paymentMethod: true,
+            },
+        });
+    },
+    async getOrdersByDateRange(fromDate, toDate, limit = 100) {
+        return shared_1.prisma.order.findMany({
+            where: {
+                createdAt: {
+                    gte: fromDate,
+                    lte: toDate,
+                },
+            },
+            orderBy: { createdAt: 'desc' },
+            take: limit,
+            include: {
+                user: { select: { username: true, email: true } },
+                game: true,
+                paymentMethod: true,
+            },
+        });
+    },
+    async getTotalAmountByStatus(status) {
+        const result = await shared_1.prisma.order.aggregate({
+            where: { status },
+            _sum: {
+                amount: true,
+                fee: true,
+                receivedAmount: true,
+            },
+        });
+        return result._sum;
+    },
+    async getOrdersByType(type, limit = 50) {
+        return shared_1.prisma.order.findMany({
+            where: { type },
+            orderBy: { createdAt: 'desc' },
+            take: limit,
+            include: {
+                user: { select: { username: true, email: true } },
+                game: true,
+                paymentMethod: true,
+            },
+        });
+    },
+    async bulkUpdateStatus(orderIds, newStatus, adminId) {
+        const orders = await shared_1.prisma.order.updateMany({
+            where: { id: { in: orderIds } },
+            data: { status: newStatus },
+        });
+        await shared_1.prisma.adminLog.create({
+            data: {
+                adminId,
+                action: 'BULK_UPDATE_ORDERS',
+                details: `Updated ${orderIds.length} orders to ${newStatus}`,
+            },
+        });
+        return orders;
     }
 };

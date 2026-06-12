@@ -14,8 +14,8 @@ export const getFeeSettings = async (req: AuthRequest, res: Response) => {
 
 export const getFeeSettingById = async (req: AuthRequest, res: Response) => {
   try {
-    const { id } = req.params;
-    const fee = await FeeSettingService.getById(id);
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const fee = await FeeSettingService.getById(id as string);
     if (!fee) {
       return res.status(404).json({ success: false, message: "Fee setting not found" });
     }
@@ -46,9 +46,9 @@ export const createFeeSetting = async (req: AuthRequest, res: Response) => {
 
 export const updateFeeSetting = async (req: AuthRequest, res: Response) => {
   try {
-    const { id } = req.params;
-    const oldFee = await FeeSettingService.getById(id);
-    const fee = await FeeSettingService.update(id, req.body);
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const oldFee = await FeeSettingService.getById(id as string);
+    const fee = await FeeSettingService.update(id as string, req.body);
 
     await AuditLogService.log({
       userId: req.user!.userId,
@@ -68,8 +68,8 @@ export const updateFeeSetting = async (req: AuthRequest, res: Response) => {
 
 export const deleteFeeSetting = async (req: AuthRequest, res: Response) => {
   try {
-    const { id } = req.params;
-    await FeeSettingService.delete(id);
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    await FeeSettingService.delete(id as string);
 
     await AuditLogService.log({
       userId: req.user!.userId,

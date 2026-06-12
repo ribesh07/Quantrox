@@ -22,11 +22,23 @@ export default function ForgotPasswordPage() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      const form = e.target as HTMLFormElement;
+      const formData = new FormData(form);
+      const email = formData.get('email');
+      const res = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      if (!res.ok) throw new Error('Failed to send reset link');
       setSubmitted(true);
-    }, 1500);
+    } catch (err) {
+      console.error(err);
+      alert('Unable to send reset link.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

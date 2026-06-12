@@ -10,7 +10,7 @@ export const NotificationService = {
     referenceType?: string;
     referenceId?: string;
   }) {
-    return prisma.notification.create({
+    const created = await prisma.notification.create({
       data: {
         userId: data.userId,
         title: data.title,
@@ -21,6 +21,18 @@ export const NotificationService = {
         sentViaInApp: true,
       },
     });
+
+    // emit via WebSocket if available
+    try {
+      const io = (global as any).io;
+      if (io) {
+        io.to(`user_${data.userId}`).emit('notification', created);
+      }
+    } catch (err) {
+      console.warn('Failed to emit notification via WS', err);
+    }
+
+    return created;
   },
 
   async getUnread(userId: string, limit = 20) {

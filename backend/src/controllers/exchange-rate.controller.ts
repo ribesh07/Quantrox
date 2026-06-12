@@ -14,8 +14,8 @@ export const getExchangeRates = async (req: AuthRequest, res: Response) => {
 
 export const getExchangeRateById = async (req: AuthRequest, res: Response) => {
   try {
-    const { id } = req.params;
-    const rate = await ExchangeRateService.getById(id);
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const rate = await ExchangeRateService.getById(id as string);
     if (!rate) {
       return res.status(404).json({ success: false, message: "Exchange rate not found" });
     }
@@ -27,8 +27,8 @@ export const getExchangeRateById = async (req: AuthRequest, res: Response) => {
 
 export const getExchangeRateByPaymentMethod = async (req: AuthRequest, res: Response) => {
   try {
-    const { paymentMethodId } = req.params;
-    const rate = await ExchangeRateService.getByPaymentMethodId(paymentMethodId);
+    const paymentMethodId = Array.isArray(req.params.paymentMethodId) ? req.params.paymentMethodId[0] : req.params.paymentMethodId;
+    const rate = await ExchangeRateService.getByPaymentMethodId(paymentMethodId as string);
     if (!rate) {
       return res.status(404).json({ success: false, message: "No active exchange rate found" });
     }
@@ -59,9 +59,9 @@ export const createExchangeRate = async (req: AuthRequest, res: Response) => {
 
 export const updateExchangeRate = async (req: AuthRequest, res: Response) => {
   try {
-    const { id } = req.params;
-    const oldRate = await ExchangeRateService.getById(id);
-    const rate = await ExchangeRateService.update(id, req.body);
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const oldRate = await ExchangeRateService.getById(id as string);
+    const rate = await ExchangeRateService.update(id as string, req.body);
 
     await AuditLogService.log({
       userId: req.user!.userId,
@@ -81,8 +81,8 @@ export const updateExchangeRate = async (req: AuthRequest, res: Response) => {
 
 export const deactivateExchangeRate = async (req: AuthRequest, res: Response) => {
   try {
-    const { id } = req.params;
-    const rate = await ExchangeRateService.deactivate(id);
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const rate = await ExchangeRateService.deactivate(id as string);
 
     await AuditLogService.log({
       userId: req.user!.userId,
@@ -101,8 +101,8 @@ export const deactivateExchangeRate = async (req: AuthRequest, res: Response) =>
 
 export const deleteExchangeRate = async (req: AuthRequest, res: Response) => {
   try {
-    const { id } = req.params;
-    await ExchangeRateService.delete(id);
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    await ExchangeRateService.delete(id as string);
 
     await AuditLogService.log({
       userId: req.user!.userId,

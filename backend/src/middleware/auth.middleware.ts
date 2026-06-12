@@ -6,6 +6,7 @@ export interface AuthRequest extends Request {
   user?: {
     userId: string;
     role: string;
+    email?: string;
   };
   file?: Express.Multer.File;
   files?: { [fieldname: string]: Express.Multer.File[] } | Express.Multer.File[];
@@ -19,7 +20,7 @@ export const authenticate = (req: AuthRequest, res: Response, next: NextFunction
   }
 
   try {
-    const decoded = jwt.verify(token, env.jwtSecret) as { userId: string, role: string };
+    const decoded = jwt.verify(token, env.jwtSecret) as { userId: string, role: string, email?: string };
     req.user = decoded;
     next();
   } catch (error) {

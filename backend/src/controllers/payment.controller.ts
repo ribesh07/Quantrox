@@ -29,7 +29,7 @@ export const createPaymentMethod = async (req: AuthRequest, res: Response) => {
 
     await AuditLogService.log({
       userId: req.user!.userId,
-      userEmail: req.user!.email,
+      userEmail: (req.user as any).email || null,
       action: 'CREATE_PAYMENT_METHOD',
       resource: 'PaymentMethod',
       resourceId: method.id,
@@ -50,7 +50,7 @@ export const updatePaymentMethod = async (req: AuthRequest, res: Response) => {
 
     await AuditLogService.log({
       userId: req.user!.userId,
-      userEmail: req.user!.email,
+      userEmail: (req.user as any).email || null,
       action: 'UPDATE_PAYMENT_METHOD',
       resource: 'PaymentMethod',
       resourceId: id,
@@ -71,7 +71,7 @@ export const deletePaymentMethod = async (req: AuthRequest, res: Response) => {
 
     await AuditLogService.log({
       userId: req.user!.userId,
-      userEmail: req.user!.email,
+      userEmail: (req.user as any).email || null,
       action: 'DELETE_PAYMENT_METHOD',
       resource: 'PaymentMethod',
       resourceId: id,

@@ -30,5 +30,6 @@ export const env = {
   jwtSecret: getRequiredEnv('JWT_SECRET'),
   uploadDir: path.resolve(process.env.UPLOAD_DIR || path.join(process.cwd(), 'uploads')),
   corsOrigins,
+  frontendUrl: process.env.FRONTEND_URL || process.env.FRONTEND || `http://localhost:3000`,
 };
 
