@@ -231,5 +231,100 @@ export const OrderService = {
     });
 
     return order;
+  },
+
+  async getByStatus(status: OrderStatus, limit = 50, offset = 0) {
+    const [orders, count] = await Promise.all([
+      prisma.order.findMany({
+        where: { status },
+        orderBy: { createdAt: 'desc' },
+        take: limit,
+        skip: offset,
+        include: {
+          user: { select: { username: true, email: true } },
+          game: true,
+          paymentMethod: true,
+        },
+      }),
+      prisma.order.count({ where: { status } }),
+    ]);
+
+    return { orders, count };
+  },
+
+  async getPendingReviewOrders(limit = 50) {
+    return prisma.order.findMany({
+      where: {
+        status: OrderStatus.PENDING_REVIEW,
+      },
+      orderBy: { createdAt: 'asc' },
+      take: limit,
+      include: {
+        user: { select: { username: true, email: true } },
+        game: true,
+        paymentMethod: true,
+      },
+    });
+  },
+
+  async getOrdersByDateRange(fromDate: Date, toDate: Date, limit = 100) {
+    return prisma.order.findMany({
+      where: {
+        createdAt: {
+          gte: fromDate,
+          lte: toDate,
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+      include: {
+        user: { select: { username: true, email: true } },
+        game: true,
+        paymentMethod: true,
+      },
+    });
+  },
+
+  async getTotalAmountByStatus(status: OrderStatus) {
+    const result = await prisma.order.aggregate({
+      where: { status },
+      _sum: {
+        amount: true,
+        fee: true,
+        receivedAmount: true,
+      },
+    });
+
+    return result._sum;
+  },
+
+  async getOrdersByType(type: OrderType, limit = 50) {
+    return prisma.order.findMany({
+      where: { type },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+      include: {
+        user: { select: { username: true, email: true } },
+        game: true,
+        paymentMethod: true,
+      },
+    });
+  },
+
+  async bulkUpdateStatus(orderIds: string[], newStatus: OrderStatus, adminId: string) {
+    const orders = await prisma.order.updateMany({
+      where: { id: { in: orderIds } },
+      data: { status: newStatus },
+    });
+
+    await prisma.adminLog.create({
+      data: {
+        adminId,
+        action: 'BULK_UPDATE_ORDERS',
+        details: `Updated ${orderIds.length} orders to ${newStatus}`,
+      },
+    });
+
+    return orders;
   }
 };

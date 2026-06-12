@@ -6,6 +6,10 @@ import adminRoutes from './routes/admin.routes';
 import walletRoutes from './routes/wallet.routes';
 import paymentRoutes from './routes/payment.routes';
 import gameRoutes from './routes/game.routes';
+import exchangeRoutes from './routes/exchange.routes';
+import gamePointOrderRoutes from './routes/game-point-order.routes';
+import notificationRoutes from './routes/notification.routes';
+import twoFactorRoutes from './routes/two-factor.routes';
 import { logger } from './middleware/logger.middleware';
 import { env } from './config/env';
 import { ensureUploadDirectory, getUploadDirectory } from './utils/uploads';
@@ -43,6 +47,10 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/wallets', walletRoutes);
 app.use('/api/payment-methods', paymentRoutes);
 app.use('/api/games', gameRoutes);
+app.use('/api/exchanges', exchangeRoutes);
+app.use('/api/game-point-orders', gamePointOrderRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/2fa', twoFactorRoutes);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
