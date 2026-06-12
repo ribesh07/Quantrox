@@ -13,6 +13,7 @@ import twoFactorRoutes from './routes/two-factor.routes';
 import { logger } from './middleware/logger.middleware';
 import { env } from './config/env';
 import { ensureUploadDirectory, getUploadDirectory } from './utils/uploads';
+import { initPrisma } from './shared/prisma';
 
 
 const app = express();
@@ -66,6 +67,15 @@ app.use((error: Error, req: express.Request, res: express.Response, next: expres
 const startServer = async () => {
   await ensureUploadDirectory('proofs');
   await ensureUploadDirectory('qrs');
+
+  // Initialize Prisma connection before starting the server
+  try {
+    await initPrisma();
+  } catch (err) {
+    console.error('[BOOT_ERROR] Prisma initialization failed:', err);
+    // Fail fast — without DB the app cannot operate safely
+    process.exit(1);
+  }
 
   const server = app.listen(env.port, '0.0.0.0', () => {
     console.log(`Backend server running on http://0.0.0.0:${env.port}`);
