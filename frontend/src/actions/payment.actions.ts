@@ -1,7 +1,7 @@
 "use server";
 
 import api from "@/lib/api";
-import { PaymentMethodCategory } from "@prisma/client";
+import { PaymentMethodCategory } from "@/lib/prisma-types";
 
 export async function getPaymentMethodsAction(category?: PaymentMethodCategory) {
   try {

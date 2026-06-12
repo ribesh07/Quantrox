@@ -1,11 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+// Frontend should not instantiate Prisma directly.
+// Use the backend API instead for database access.
 
-const globalForPrisma = global as unknown as { prisma: PrismaClient };
-
-export const prisma =
-  globalForPrisma.prisma ||
-  new PrismaClient({
-    log: ["query"],
-  });
-
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+export const prisma = null as unknown as never;

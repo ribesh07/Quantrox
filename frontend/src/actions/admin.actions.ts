@@ -1,7 +1,7 @@
 "use server";
 
 import api from "@/lib/api";
-import { Role, OrderStatus } from "@prisma/client";
+import { Role, OrderStatus } from "@/lib/prisma-types";
 import { revalidatePath } from "next/cache";
 import { getAuthenticatedRequestConfig } from "./_auth";
 

@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { getAllUsersAction, updateUserRoleAction, deleteUserAction } from "@/actions/admin.actions";
-import { Role } from "@prisma/client";
+import { Role } from "@/lib/prisma-types";
 
 export default function AdminUsersPage() {
   const queryClient = useQueryClient();

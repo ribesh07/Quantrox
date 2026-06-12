@@ -18,7 +18,7 @@ import {
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { OrderType, OrderStatus, Role } from "@prisma/client";
+import { OrderType, OrderStatus, Role } from "@/lib/prisma-types";
 import axios from "axios";
 
 export const dynamic = "force-dynamic";
