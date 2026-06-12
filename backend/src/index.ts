@@ -67,8 +67,8 @@ const startServer = async () => {
   await ensureUploadDirectory('proofs');
   await ensureUploadDirectory('qrs');
 
-  const server = app.listen(env.port, () => {
-    console.log(`Backend server running on http://localhost:${env.port}`);
+  const server = app.listen(env.port, '0.0.0.0', () => {
+    console.log(`Backend server running on http://0.0.0.0:${env.port}`);
   });
 
   // WebSocket (Socket.IO) for real-time notifications
