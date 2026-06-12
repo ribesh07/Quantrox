@@ -37,7 +37,6 @@ export const saveUploadedFile = async ({
   const filename = `${filenamePrefix}${Date.now()}-${safeFilename}`;
   const key = `${subdirectory}/${filename}`;
 
-  // Use S3 when configured, otherwise move to local upload dir
   const result = await uploadFileToStorage({ localPath: tempPath, key, contentType: 'application/octet-stream' });
   return result;
 };

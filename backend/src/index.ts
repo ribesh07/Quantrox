@@ -78,18 +78,6 @@ const startServer = async () => {
     const { Server } = require('socket.io');
     const io = new Server(server, { cors: { origin: env.corsOrigins.length ? env.corsOrigins : '*' } });
 
-    // If REDIS_URL is provided, use the Redis adapter to scale across nodes
-    if (process.env.REDIS_URL) {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const { createAdapter } = require('@socket.io/redis-adapter');
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const Redis = require('ioredis');
-      const pubClient = new Redis(process.env.REDIS_URL);
-      const subClient = pubClient.duplicate();
-      io.adapter(createAdapter(pubClient, subClient));
-      console.log('Socket.IO configured with Redis adapter');
-    }
-
     // attach to global for other modules to use
     (global as any).io = io;
     io.on('connection', (socket: any) => {
