@@ -27,7 +27,8 @@ ENV NODE_ENV=production
 
 # Copy standalone output and static files
 COPY --from=builder /app/frontend/public ./frontend/public
-COPY --from=builder /app/frontend/.next/standalone ./
+# Place the Next.js standalone into the `frontend` folder so `frontend/server.js` exists
+COPY --from=builder /app/frontend/.next/standalone ./frontend/
 COPY --from=builder /app/frontend/.next/static ./frontend/.next/static
 
 EXPOSE 3056
