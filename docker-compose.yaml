@@ -19,6 +19,7 @@ services:
     restart: always
     environment:
       NEXT_PUBLIC_API_URL: "${NEXT_PUBLIC_API_URL}"
+      PORT: 3056
       INTERNAL_API_URL: "${INTERNAL_API_URL:-http://backend:3001/api}"
       NEXTAUTH_URL: "${NEXTAUTH_URL}"
       NEXTAUTH_SECRET: "${NEXTAUTH_SECRET}"
