@@ -34,6 +34,8 @@ COPY --from=builder /app/backend/dist ./dist
 COPY --from=builder /app/backend/node_modules ./node_modules
 # Copy Prisma schema/migrations so the runner can apply migrations at startup
 COPY --from=builder /app/backend/prisma ./prisma
+# Copy runtime helper scripts used by the entrypoint
+COPY --from=builder /app/backend/scripts ./scripts
 # Copy entrypoint script to run migrations and start the app
 COPY --from=builder /app/backend/docker-entrypoint.sh ./docker-entrypoint.sh
 RUN chmod +x ./docker-entrypoint.sh
