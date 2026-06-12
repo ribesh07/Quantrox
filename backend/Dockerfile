@@ -16,7 +16,7 @@ WORKDIR /app/backend
 RUN npm install
 
 # Generate Prisma client for the Linux deployment runtime
-RUN chmod +x ./node_modules/.bin/prisma && npx prisma generate
+RUN node ./node_modules/prisma/build/index.js generate
 
 # Ensure TypeScript compiler is executable and then build backend
 RUN chmod +x ./node_modules/.bin/tsc && npm run build
