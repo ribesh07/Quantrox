@@ -12,14 +12,14 @@ COPY backend/ ./backend/
 
 WORKDIR /app/backend
 
-# Install backend dependencies
-RUN npm install
+# Install backend dependencies, including dev dependencies needed for build tooling
+RUN npm install --include=dev
 
 # Generate Prisma client for the Linux deployment runtime
-RUN chmod +x ./node_modules/.bin/prisma && npx prisma generate
+RUN node ./node_modules/prisma/build/index.js generate
 
 # Ensure TypeScript compiler is executable and then build backend
-RUN chmod +x ./node_modules/.bin/tsc && npm run build
+RUN node ./node_modules/typescript/bin/tsc
 
 # Stage 2: Runner
 FROM node:20-slim AS runner
