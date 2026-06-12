@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { prisma, registerSchema, loginSchema } from '@quantrox/shared';
+import { prisma, registerSchema, loginSchema } from '../shared';
 import { env } from '../config/env';
 
 export const register = async (req: Request, res: Response) => {

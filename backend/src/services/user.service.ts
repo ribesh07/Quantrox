@@ -1,4 +1,4 @@
-import { prisma } from "@quantrox/shared";
+import { prisma } from "../shared";
 import { Role } from "@prisma/client";
 
 export const UserService = {

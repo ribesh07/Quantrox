@@ -6,7 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.login = exports.register = void 0;
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
-const shared_1 = require("@quantrox/shared");
+const shared_1 = require("../shared");
 const env_1 = require("../config/env");
 const register = async (req, res) => {
     try {

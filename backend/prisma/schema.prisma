@@ -57,7 +57,7 @@ model PaymentMethod {
   minAmount     Float                 @default(0)
   maxAmount     Float                 @default(1000000)
   createdAt     DateTime              @default(now())
-  updatedAt     DateTime              @updatedAt
+  updatedAt     DateTime              @default(now())
   orders        Order[]
   wallets       Wallet[]
 }
@@ -86,7 +86,7 @@ model Order {
   gameId          String?
   gameUsername    String?
   createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  updatedAt       DateTime      @default(now())
   game            Game?         @relation(fields: [gameId], references: [id])
   paymentMethod   PaymentMethod @relation(fields: [paymentMethodId], references: [id])
   user            User          @relation(fields: [userId], references: [id])

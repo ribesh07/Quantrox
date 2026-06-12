@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserService = void 0;
-const shared_1 = require("@quantrox/shared");
+const shared_1 = require("../shared");
 exports.UserService = {
     async getAll() {
         return shared_1.prisma.user.findMany({

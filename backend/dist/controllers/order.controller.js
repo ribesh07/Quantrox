@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.reviewOrder = exports.getAllOrders = exports.uploadProof = exports.getOrderById = exports.getUserStats = exports.getUserOrders = exports.createOrder = void 0;
 const order_service_1 = require("../services/order.service");
-const shared_1 = require("@quantrox/shared");
+const shared_1 = require("../shared");
 const client_1 = require("@prisma/client");
 const uploads_1 = require("../utils/uploads");
 const createOrder = async (req, res) => {

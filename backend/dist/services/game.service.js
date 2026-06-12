@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.GameService = void 0;
-const shared_1 = require("@quantrox/shared");
+const shared_1 = require("../shared");
 exports.GameService = {
     async getAll(activeOnly = false) {
         return shared_1.prisma.game.findMany({

@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.WalletService = void 0;
-const shared_1 = require("@quantrox/shared");
+const shared_1 = require("../shared");
 exports.WalletService = {
     async getUserWallets(userId) {
         return shared_1.prisma.wallet.findMany({

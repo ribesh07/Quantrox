@@ -1,4 +1,4 @@
-import { prisma } from "@quantrox/shared";
+import { prisma } from "../shared";
 
 export const QRCodeService = {
   async getAll() {
