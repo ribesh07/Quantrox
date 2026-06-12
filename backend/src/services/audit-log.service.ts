@@ -3,7 +3,7 @@ import { prisma } from "../shared";
 export const AuditLogService = {
   async log(data: {
     userId: string;
-    userEmail: string;
+    userEmail?: string;
     action: string;
     resource: string;
     resourceId?: string;
@@ -16,7 +16,7 @@ export const AuditLogService = {
     return prisma.auditLog.create({
       data: {
         userId: data.userId,
-        userEmail: data.userEmail,
+        userEmail: data.userEmail || '',
         action: data.action,
         resource: data.resource,
         resourceId: data.resourceId,

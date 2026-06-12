@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.reviewOrder = exports.getAllOrders = exports.uploadProof = exports.getOrderById = exports.getUserStats = exports.getUserOrders = exports.createOrder = void 0;
+exports.reviewOrder = exports.getPendingOrders = exports.getAllOrders = exports.uploadProof = exports.getOrderById = exports.getUserStats = exports.getUserOrders = exports.createOrder = void 0;
 const order_service_1 = require("../services/order.service");
 const shared_1 = require("../shared");
 const client_1 = require("@prisma/client");
@@ -91,6 +91,16 @@ const getAllOrders = async (req, res) => {
     }
 };
 exports.getAllOrders = getAllOrders;
+const getPendingOrders = async (req, res) => {
+    try {
+        const orders = await order_service_1.OrderService.getPendingReviewOrders();
+        res.json({ success: true, orders });
+    }
+    catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+exports.getPendingOrders = getPendingOrders;
 const reviewOrder = async (req, res) => {
     try {
         const id = req.params.id;

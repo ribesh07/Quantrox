@@ -49,10 +49,10 @@ export const getMyGamePointOrders = async (req: AuthRequest, res: Response) => {
 
 export const getGamePointOrderById = async (req: AuthRequest, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
     const isAdmin = req.user?.role === 'SUPER_ADMIN' || req.user?.role === 'STAFF_ADMIN';
 
-    const gamePointOrder = await GamePointOrderService.getById(id);
+    const gamePointOrder = await GamePointOrderService.getById(id as string);
     if (!gamePointOrder) {
       return res.status(404).json({ success: false, message: "Game point order not found" });
     }
@@ -97,10 +97,10 @@ export const getPendingGamePointOrders = async (req: AuthRequest, res: Response)
 
 export const fulfillGamePointOrder = async (req: AuthRequest, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
     const { notes } = req.body;
 
-    const gamePointOrder = await GamePointOrderService.markFulfilled(id, notes);
+    const gamePointOrder = await GamePointOrderService.markFulfilled(id as string, notes);
 
     await AuditLogService.log({
       userId: req.user!.userId,
@@ -128,10 +128,10 @@ export const fulfillGamePointOrder = async (req: AuthRequest, res: Response) => 
 
 export const failGamePointOrder = async (req: AuthRequest, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
     const { reason } = req.body;
 
-    const gamePointOrder = await GamePointOrderService.markFailed(id, reason);
+    const gamePointOrder = await GamePointOrderService.markFailed(id as string, reason);
 
     await AuditLogService.log({
       userId: req.user!.userId,
@@ -159,10 +159,10 @@ export const failGamePointOrder = async (req: AuthRequest, res: Response) => {
 
 export const cancelGamePointOrder = async (req: AuthRequest, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
     const { reason } = req.body;
 
-    const gamePointOrder = await GamePointOrderService.cancel(id, reason);
+    const gamePointOrder = await GamePointOrderService.cancel(id as string, reason);
 
     res.json({ success: true, gamePointOrder });
   } catch (error: any) {

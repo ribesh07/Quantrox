@@ -1,3 +1,5 @@
+import { useEffect } from 'react';
+import { initSocket } from '@/lib/ws';
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
@@ -16,6 +18,7 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Socket initialization moved to dashboard layout (authenticated pages)
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>

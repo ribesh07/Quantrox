@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { ExchangeRequestService } from '../services/exchange-request.service';
+import { prisma } from '../shared';
 import { AuditLogService } from '../services/audit-log.service';
 import { NotificationService } from '../services/notification.service';
 
@@ -47,7 +48,7 @@ export const getMyExchangeRequests = async (req: AuthRequest, res: Response) => 
 
 export const getExchangeRequestById = async (req: AuthRequest, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
     const isAdmin = req.user?.role === 'SUPER_ADMIN' || req.user?.role === 'STAFF_ADMIN';
 
     const exchangeRequest = await ExchangeRequestService.getById(id);
@@ -92,7 +93,7 @@ export const getPendingExchangeRequests = async (req: AuthRequest, res: Response
 
 export const approveExchangeRequest = async (req: AuthRequest, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
     const { notes } = req.body;
 
     const exchangeRequest = await ExchangeRequestService.approve(id, notes);
@@ -123,7 +124,7 @@ export const approveExchangeRequest = async (req: AuthRequest, res: Response) =>
 
 export const rejectExchangeRequest = async (req: AuthRequest, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
     const { reason, notes } = req.body;
 
     if (!reason) {
@@ -158,12 +159,65 @@ export const rejectExchangeRequest = async (req: AuthRequest, res: Response) => 
 
 export const cancelExchangeRequest = async (req: AuthRequest, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
     const { reason } = req.body;
 
     const exchangeRequest = await ExchangeRequestService.cancel(id, reason);
 
     res.json({ success: true, exchangeRequest });
+  } catch (error: any) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+export const uploadProof = async (req: AuthRequest, res: Response) => {
+  try {
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const file = req.file;
+    if (!file) return res.status(400).json({ success: false, message: 'Proof file required' });
+
+    const savedPath = await import('../utils/uploads').then(m => m.saveUploadedFile({
+      originalName: file.originalname,
+      tempPath: file.path,
+      subdirectory: 'proofs',
+      prefix: id,
+    }));
+
+    const proof = await ExchangeRequestService.getById(id as string);
+    if (!proof) return res.status(404).json({ success: false, message: 'Exchange request not found' });
+
+    const created = await prisma.proofUpload.create({
+      data: {
+        userId: req.user!.userId,
+        orderId: id as string,
+        fileUrl: savedPath,
+        fileType: file.mimetype,
+        referenceNo: req.body.referenceNo || null,
+        notes: req.body.notes || null,
+      }
+    });
+
+    await ExchangeRequestService.markProofUploaded(id as string);
+
+    await AuditLogService.log({
+      userId: req.user!.userId,
+      userEmail: (req.user as any).email || '',
+      action: 'UPLOAD_EXCHANGE_PROOF',
+      resource: 'ExchangeRequest',
+      resourceId: id,
+      result: 'SUCCESS',
+    });
+
+    await NotificationService.send({
+      userId: req.user!.userId,
+      title: 'Proof Uploaded',
+      message: 'Your payment proof has been uploaded and is pending review.',
+      type: 'INFO',
+      referenceType: 'EXCHANGE',
+      referenceId: id,
+    });
+
+    res.json({ success: true, proof: created });
   } catch (error: any) {
     res.status(400).json({ success: false, message: error.message });
   }

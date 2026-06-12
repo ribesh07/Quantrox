@@ -32,6 +32,8 @@ model User {
   proofUploads          ProofUpload[]
   exchangeRequests      ExchangeRequest[]
   gamePointOrders       GamePointOrder[]
+  refreshTokens         RefreshToken[]
+  verificationTokens    VerificationToken[]
 }
 
 model Wallet {
@@ -290,9 +292,33 @@ model AuditLog {
   result         String   // SUCCESS, FAILED
   failureReason  String?
   createdAt      DateTime @default(now())
-
+  
   @@index([userId])
 }
+
+model RefreshToken {
+  id         String   @id @default(cuid())
+  userId     String
+  token      String   @unique
+  expiresAt  DateTime
+  revoked    Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  user       User     @relation(fields: [userId], references: [id])
+}
+
+model VerificationToken {
+  id         String   @id @default(cuid())
+  userId     String
+  token      String   @unique
+  type       String   // EMAIL_VERIFICATION | PASSWORD_RESET
+  expiresAt  DateTime
+  used       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  user       User     @relation(fields: [userId], references: [id])
+}
+
 
 model ExchangeRequest {
   id              String   @id @default(cuid())

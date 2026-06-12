@@ -1,6 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { env } from '../config/env';
+import { uploadFileToStorage } from './storage';
 
 type UploadSubdirectory = 'proofs' | 'qrs';
 
@@ -31,13 +32,12 @@ export const saveUploadedFile = async ({
   subdirectory,
   tempPath,
 }: SaveUploadedFileInput): Promise<string> => {
-  const uploadDirectory = await ensureUploadDirectory(subdirectory);
   const safeFilename = sanitizeFilename(originalName || 'upload.bin');
   const filenamePrefix = prefix ? `${prefix}-` : '';
   const filename = `${filenamePrefix}${Date.now()}-${safeFilename}`;
-  const targetPath = path.join(uploadDirectory, filename);
+  const key = `${subdirectory}/${filename}`;
 
-  await fs.rename(tempPath, targetPath);
-
-  return `/uploads/${subdirectory}/${filename}`;
+  // Use S3 when configured, otherwise move to local upload dir
+  const result = await uploadFileToStorage({ localPath: tempPath, key, contentType: 'application/octet-stream' });
+  return result;
 };

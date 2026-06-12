@@ -14,8 +14,8 @@ export const getPaymentAccounts = async (req: AuthRequest, res: Response) => {
 
 export const getPaymentAccountById = async (req: AuthRequest, res: Response) => {
   try {
-    const { id } = req.params;
-    const account = await PaymentAccountService.getById(id);
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const account = await PaymentAccountService.getById(id as string);
     if (!account) {
       return res.status(404).json({ success: false, message: "Payment account not found" });
     }
@@ -46,9 +46,9 @@ export const createPaymentAccount = async (req: AuthRequest, res: Response) => {
 
 export const updatePaymentAccount = async (req: AuthRequest, res: Response) => {
   try {
-    const { id } = req.params;
-    const oldAccount = await PaymentAccountService.getById(id);
-    const account = await PaymentAccountService.update(id, req.body);
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const oldAccount = await PaymentAccountService.getById(id as string);
+    const account = await PaymentAccountService.update(id as string, req.body);
 
     await AuditLogService.log({
       userId: req.user!.userId,
@@ -68,8 +68,8 @@ export const updatePaymentAccount = async (req: AuthRequest, res: Response) => {
 
 export const activatePaymentAccount = async (req: AuthRequest, res: Response) => {
   try {
-    const { id } = req.params;
-    const account = await PaymentAccountService.activate(id);
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const account = await PaymentAccountService.activate(id as string);
 
     await AuditLogService.log({
       userId: req.user!.userId,
@@ -88,8 +88,8 @@ export const activatePaymentAccount = async (req: AuthRequest, res: Response) =>
 
 export const deactivatePaymentAccount = async (req: AuthRequest, res: Response) => {
   try {
-    const { id } = req.params;
-    const account = await PaymentAccountService.deactivate(id);
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const account = await PaymentAccountService.deactivate(id as string);
 
     await AuditLogService.log({
       userId: req.user!.userId,
@@ -108,8 +108,8 @@ export const deactivatePaymentAccount = async (req: AuthRequest, res: Response) 
 
 export const deletePaymentAccount = async (req: AuthRequest, res: Response) => {
   try {
-    const { id } = req.params;
-    await PaymentAccountService.delete(id);
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    await PaymentAccountService.delete(id as string);
 
     await AuditLogService.log({
       userId: req.user!.userId,
