@@ -2,12 +2,12 @@ version: '3.8'
 services:
   backend:
     image: ${DOCKER_REGISTRY:-your-registry}/quantrox/backend:latest
-    restart: always
+    restart: on-failure
     environment:
       - DATABASE_URL=${DATABASE_URL}
       - JWT_SECRET=${JWT_SECRET}
       - PORT=3001
-      - PRISMA_AUTO_BASELINE=true
+      - PRISMA_AUTO_BASELINE=false
       - SMTP_HOST=${SMTP_HOST}
       - SMTP_PORT=${SMTP_PORT}
       - SMTP_USER=${SMTP_USER}

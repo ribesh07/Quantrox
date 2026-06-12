@@ -1,4 +1,4 @@
-const url = process.env.API_URL || 'http://127.0.0.1:3001';
+const url = process.env.API_URL || process.env.BACKEND_URL || 'http://localhost:3001';
 
 async function checkHealth() {
   const res = await fetch(`${url}/health`, { cache: 'no-store' });
