@@ -1,66 +1,68 @@
 # dependencies
 /node_modules
-/.pnp
-.pnp.js
-
-<<<<<<< HEAD
-# next.js
-/.next/
-/.next/*
-/out/
-
-# production
-/.vercel
-/.next/cache
-/build
-
-# local env files
-.env*.local
-.env
-
-=======
-# testing
-/coverage
-
-# next.js
-/.next/
-/out/
-
-# production
-/build
-
->>>>>>> efb5cacd (Refactor code structure for improved readability and maintainability)
-# misc
-.DS_Store
-*.pem
-
-# debug
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
+.pnp
+.pnp.js
 
-<<<<<<< HEAD
-# typescript
-*.tsbuildinfo
-next-env.d.ts
+# Prisma
+prisma/.env
+prisma/.env.*.local
 
-# frontend specific
-.next
-.next/*
-.next/cache
-.next/standalone
+# environment
+.env
+.env.*.local
 .env.local
 .env.development.local
+.env.test.local
 .env.production.local
-=======
-# local env files
-.env*.local
-.env
 
-# vercel
-.vercel
-
-# typescript
+# build output
+dist/
+build/
 *.tsbuildinfo
-next-env.d.ts
->>>>>>> efb5cacd (Refactor code structure for improved readability and maintainability)
+
+# compiled JavaScript
+*.js
+!src/**/*.js
+!scripts/**/*.js
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# OS
+Thumbs.db
+.DS_Store
+
+# uploads
+uploads/
+!uploads/.gitkeep
+
+# cache
+.turbo/
+.eslintcache
+
+# logs
+logs/
+*.log
+
+# runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# testing
+coverage/
+.nyc_output/
+
+# temporary files
+tmp/
+temp/
