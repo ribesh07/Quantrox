@@ -34,7 +34,7 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TwoFactorService = void 0;
-const shared_1 = require("../shared");
+const prisma_1 = require("../shared/prisma");
 const speakeasy = __importStar(require("speakeasy"));
 const QRCode = __importStar(require("qrcode"));
 exports.TwoFactorService = {
@@ -81,7 +81,7 @@ exports.TwoFactorService = {
         // Generate backup codes
         const backupCodes = this.generateBackupCodes(8);
         // Save to database
-        const user = await shared_1.prisma.user.update({
+        const user = await prisma_1.prisma.user.update({
             where: { id: userId },
             data: {
                 twoFactorEnabled: true,
@@ -95,7 +95,7 @@ exports.TwoFactorService = {
         };
     },
     async disable(userId) {
-        await shared_1.prisma.user.update({
+        await prisma_1.prisma.user.update({
             where: { id: userId },
             data: {
                 twoFactorEnabled: false,
@@ -106,7 +106,7 @@ exports.TwoFactorService = {
         return { success: true };
     },
     async verifyLogin(userId, token) {
-        const user = await shared_1.prisma.user.findUnique({
+        const user = await prisma_1.prisma.user.findUnique({
             where: { id: userId },
         });
         if (!user || !user.twoFactorEnabled || !user.twoFactorSecret) {
@@ -119,7 +119,7 @@ exports.TwoFactorService = {
             if (codeIndex !== -1) {
                 // Remove used backup code
                 backupCodes.splice(codeIndex, 1);
-                await shared_1.prisma.user.update({
+                await prisma_1.prisma.user.update({
                     where: { id: userId },
                     data: {
                         twoFactorBackupCodes: JSON.stringify(backupCodes),
@@ -147,7 +147,7 @@ exports.TwoFactorService = {
     },
     async regenerateBackupCodes(userId) {
         const backupCodes = this.generateBackupCodes(8);
-        await shared_1.prisma.user.update({
+        await prisma_1.prisma.user.update({
             where: { id: userId },
             data: {
                 twoFactorBackupCodes: JSON.stringify(backupCodes),
@@ -156,7 +156,7 @@ exports.TwoFactorService = {
         return backupCodes;
     },
     async getBackupCodes(userId) {
-        const user = await shared_1.prisma.user.findUnique({
+        const user = await prisma_1.prisma.user.findUnique({
             where: { id: userId },
             select: { twoFactorBackupCodes: true },
         });
@@ -166,7 +166,7 @@ exports.TwoFactorService = {
         return JSON.parse(user.twoFactorBackupCodes);
     },
     async getStatus(userId) {
-        const user = await shared_1.prisma.user.findUnique({
+        const user = await prisma_1.prisma.user.findUnique({
             where: { id: userId },
             select: {
                 twoFactorEnabled: true,

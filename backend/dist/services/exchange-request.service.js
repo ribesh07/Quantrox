@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ExchangeRequestService = void 0;
-const shared_1 = require("../shared");
+const prisma_1 = require("../shared/prisma");
 const exchange_rate_service_1 = require("./exchange-rate.service");
 const fee_setting_service_1 = require("./fee-setting.service");
 exports.ExchangeRequestService = {
@@ -10,7 +10,7 @@ exports.ExchangeRequestService = {
         const fee = await fee_setting_service_1.FeeSettingService.calculateFee(data.amount, 'EXCHANGE_FEE', data.paymentMethodId);
         const total = data.amount + fee;
         const usdtReceived = data.amount * rate;
-        return shared_1.prisma.exchangeRequest.create({
+        return prisma_1.prisma.exchangeRequest.create({
             data: {
                 userId: data.userId,
                 amount: data.amount,
@@ -25,7 +25,7 @@ exports.ExchangeRequestService = {
         });
     },
     async getById(id) {
-        return shared_1.prisma.exchangeRequest.findUnique({
+        return prisma_1.prisma.exchangeRequest.findUnique({
             where: { id },
             include: {
                 user: true,
@@ -33,14 +33,14 @@ exports.ExchangeRequestService = {
         });
     },
     async getByUserId(userId, limit = 50) {
-        return shared_1.prisma.exchangeRequest.findMany({
+        return prisma_1.prisma.exchangeRequest.findMany({
             where: { userId },
             orderBy: { createdAt: 'desc' },
             take: limit,
         });
     },
     async getAllByStatus(status, limit = 50) {
-        return shared_1.prisma.exchangeRequest.findMany({
+        return prisma_1.prisma.exchangeRequest.findMany({
             where: { status },
             orderBy: { createdAt: 'desc' },
             take: limit,
@@ -67,7 +67,7 @@ exports.ExchangeRequestService = {
             }
         }
         const [requests, count] = await Promise.all([
-            shared_1.prisma.exchangeRequest.findMany({
+            prisma_1.prisma.exchangeRequest.findMany({
                 where,
                 orderBy: { createdAt: 'desc' },
                 take: filters?.limit || 50,
@@ -76,18 +76,18 @@ exports.ExchangeRequestService = {
                     user: true,
                 },
             }),
-            shared_1.prisma.exchangeRequest.count({ where }),
+            prisma_1.prisma.exchangeRequest.count({ where }),
         ]);
         return { requests, count };
     },
     async updateStatus(id, status) {
-        return shared_1.prisma.exchangeRequest.update({
+        return prisma_1.prisma.exchangeRequest.update({
             where: { id },
             data: { status },
         });
     },
     async markProofUploaded(id) {
-        return shared_1.prisma.exchangeRequest.update({
+        return prisma_1.prisma.exchangeRequest.update({
             where: { id },
             data: {
                 proofUploadedAt: new Date(),
@@ -96,7 +96,7 @@ exports.ExchangeRequestService = {
         });
     },
     async approve(id, notes) {
-        return shared_1.prisma.exchangeRequest.update({
+        return prisma_1.prisma.exchangeRequest.update({
             where: { id },
             data: {
                 status: 'TRANSFERRED',
@@ -106,7 +106,7 @@ exports.ExchangeRequestService = {
         });
     },
     async reject(id, reason, notes) {
-        return shared_1.prisma.exchangeRequest.update({
+        return prisma_1.prisma.exchangeRequest.update({
             where: { id },
             data: {
                 status: 'REJECTED',
@@ -117,7 +117,7 @@ exports.ExchangeRequestService = {
         });
     },
     async cancel(id, reason) {
-        return shared_1.prisma.exchangeRequest.update({
+        return prisma_1.prisma.exchangeRequest.update({
             where: { id },
             data: {
                 status: 'CANCELLED',

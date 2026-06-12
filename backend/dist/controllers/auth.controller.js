@@ -6,22 +6,23 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.verifyEmail = exports.resetPassword = exports.forgotPassword = exports.logout = exports.refresh = exports.login = exports.register = void 0;
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
-const shared_1 = require("../shared");
+const prisma_1 = require("../shared/prisma");
+const schemas_1 = require("../shared/schemas");
 const env_1 = require("../config/env");
 const token_service_1 = require("../services/token.service");
 const email_service_1 = require("../services/email.service");
 const register = async (req, res) => {
     try {
-        const validatedData = shared_1.registerSchema.parse(req.body);
+        const validatedData = schemas_1.registerSchema.parse(req.body);
         const { username, email, password } = validatedData;
-        const existingUser = await shared_1.prisma.user.findFirst({
+        const existingUser = await prisma_1.prisma.user.findFirst({
             where: { OR: [{ email }, { username }] },
         });
         if (existingUser) {
             return res.status(400).json({ message: "User with this email or username already exists" });
         }
         const hashedPassword = await bcryptjs_1.default.hash(password, 10);
-        const user = await shared_1.prisma.user.create({
+        const user = await prisma_1.prisma.user.create({
             data: {
                 username,
                 email,
@@ -45,12 +46,17 @@ const register = async (req, res) => {
 exports.register = register;
 const login = async (req, res) => {
     try {
-        const { email, password } = shared_1.loginSchema.parse(req.body);
-        const user = await shared_1.prisma.user.findUnique({ where: { email } });
+        const { email, password } = schemas_1.loginSchema.parse(req.body);
+        const user = await prisma_1.prisma.user.findUnique({ where: { email } });
+        console.log("user details :", user);
         if (!user || !(await bcryptjs_1.default.compare(password, user.password))) {
             return res.status(401).json({ success: false, message: "Invalid email or password" });
         }
-        const token = jsonwebtoken_1.default.sign({ userId: user.id, role: user.role }, env_1.env.jwtSecret, { expiresIn: '15m' });
+        const jwtSecret = env_1.env.jwtSecret || process.env.JWT_SECRET;
+        if (!jwtSecret) {
+            throw new Error("JWT_SECRET is not configured");
+        }
+        const token = jsonwebtoken_1.default.sign({ userId: user.id, role: user.role }, jwtSecret, { expiresIn: '1d' });
         // create refresh token and return it
         const rt = await token_service_1.TokenService.createRefreshToken(user.id);
         res.json({
@@ -73,7 +79,7 @@ const refresh = async (req, res) => {
         const rt = await token_service_1.TokenService.verifyRefreshToken(refreshToken);
         if (!rt)
             return res.status(401).json({ success: false, message: 'Invalid refresh token' });
-        const user = await shared_1.prisma.user.findUnique({ where: { id: rt.userId } });
+        const user = await prisma_1.prisma.user.findUnique({ where: { id: rt.userId } });
         if (!user)
             return res.status(401).json({ success: false, message: 'Invalid user' });
         const token = jsonwebtoken_1.default.sign({ userId: user.id, role: user.role }, env_1.env.jwtSecret, { expiresIn: '15m' });
@@ -103,7 +109,7 @@ exports.logout = logout;
 const forgotPassword = async (req, res) => {
     try {
         const { email } = req.body;
-        const user = await shared_1.prisma.user.findUnique({ where: { email } });
+        const user = await prisma_1.prisma.user.findUnique({ where: { email } });
         if (!user)
             return res.status(400).json({ success: false, message: 'User not found' });
         const vt = await token_service_1.TokenService.createVerificationToken(user.id, 'PASSWORD_RESET', 60 * 60);
@@ -123,7 +129,7 @@ const resetPassword = async (req, res) => {
         if (!vt)
             return res.status(400).json({ success: false, message: 'Invalid or expired token' });
         const hashed = await bcryptjs_1.default.hash(password, 10);
-        await shared_1.prisma.user.update({ where: { id: vt.userId }, data: { password: hashed } });
+        await prisma_1.prisma.user.update({ where: { id: vt.userId }, data: { password: hashed } });
         await token_service_1.TokenService.markVerificationTokenUsed(vt.id);
         res.json({ success: true });
     }
@@ -138,7 +144,7 @@ const verifyEmail = async (req, res) => {
         const vt = await token_service_1.TokenService.verifyVerificationToken(token, 'EMAIL_VERIFICATION');
         if (!vt)
             return res.status(400).json({ success: false, message: 'Invalid or expired token' });
-        await shared_1.prisma.user.update({ where: { id: vt.userId }, data: { status: 'ACTIVE' } });
+        await prisma_1.prisma.user.update({ where: { id: vt.userId }, data: { status: 'ACTIVE' } });
         await token_service_1.TokenService.markVerificationTokenUsed(vt.id);
         res.json({ success: true });
     }

@@ -1,14 +1,14 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.GamePointOrderService = void 0;
-const shared_1 = require("../shared");
+const prisma_1 = require("../shared/prisma");
 const fee_setting_service_1 = require("./fee-setting.service");
 exports.GamePointOrderService = {
     async create(data) {
         const totalPrice = data.points * data.pricePerPoint;
         const fee = await fee_setting_service_1.FeeSettingService.calculateFee(totalPrice, 'EXCHANGE_FEE', data.paymentMethodId);
         const finalPrice = totalPrice + fee;
-        return shared_1.prisma.gamePointOrder.create({
+        return prisma_1.prisma.gamePointOrder.create({
             data: {
                 userId: data.userId,
                 gameId: data.gameId,
@@ -24,7 +24,7 @@ exports.GamePointOrderService = {
         });
     },
     async getById(id) {
-        return shared_1.prisma.gamePointOrder.findUnique({
+        return prisma_1.prisma.gamePointOrder.findUnique({
             where: { id },
             include: {
                 user: true,
@@ -32,14 +32,14 @@ exports.GamePointOrderService = {
         });
     },
     async getByUserId(userId, limit = 50) {
-        return shared_1.prisma.gamePointOrder.findMany({
+        return prisma_1.prisma.gamePointOrder.findMany({
             where: { userId },
             orderBy: { createdAt: 'desc' },
             take: limit,
         });
     },
     async getByStatus(status, limit = 50) {
-        return shared_1.prisma.gamePointOrder.findMany({
+        return prisma_1.prisma.gamePointOrder.findMany({
             where: { status },
             orderBy: { createdAt: 'desc' },
             take: limit,
@@ -69,7 +69,7 @@ exports.GamePointOrderService = {
             }
         }
         const [orders, count] = await Promise.all([
-            shared_1.prisma.gamePointOrder.findMany({
+            prisma_1.prisma.gamePointOrder.findMany({
                 where,
                 orderBy: { createdAt: 'desc' },
                 take: filters?.limit || 50,
@@ -78,18 +78,18 @@ exports.GamePointOrderService = {
                     user: true,
                 },
             }),
-            shared_1.prisma.gamePointOrder.count({ where }),
+            prisma_1.prisma.gamePointOrder.count({ where }),
         ]);
         return { orders, count };
     },
     async updateStatus(id, status) {
-        return shared_1.prisma.gamePointOrder.update({
+        return prisma_1.prisma.gamePointOrder.update({
             where: { id },
             data: { status },
         });
     },
     async markPaymentReceived(id) {
-        return shared_1.prisma.gamePointOrder.update({
+        return prisma_1.prisma.gamePointOrder.update({
             where: { id },
             data: {
                 proofUploadedAt: new Date(),
@@ -98,7 +98,7 @@ exports.GamePointOrderService = {
         });
     },
     async markFulfilled(id, notes) {
-        return shared_1.prisma.gamePointOrder.update({
+        return prisma_1.prisma.gamePointOrder.update({
             where: { id },
             data: {
                 status: 'FULFILLED',
@@ -108,7 +108,7 @@ exports.GamePointOrderService = {
         });
     },
     async markFailed(id, reason) {
-        return shared_1.prisma.gamePointOrder.update({
+        return prisma_1.prisma.gamePointOrder.update({
             where: { id },
             data: {
                 status: 'FAILED',
@@ -117,7 +117,7 @@ exports.GamePointOrderService = {
         });
     },
     async cancel(id, reason) {
-        return shared_1.prisma.gamePointOrder.update({
+        return prisma_1.prisma.gamePointOrder.update({
             where: { id },
             data: {
                 status: 'CANCELLED',

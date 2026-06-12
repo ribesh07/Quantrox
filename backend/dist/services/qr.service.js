@@ -1,21 +1,21 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.QRCodeService = void 0;
-const shared_1 = require("../shared");
+const prisma_1 = require("../shared/prisma");
 exports.QRCodeService = {
     async getAll() {
-        return shared_1.prisma.qRCode.findMany({
+        return prisma_1.prisma.qRCode.findMany({
             orderBy: { createdAt: 'desc' },
         });
     },
     async getActive() {
-        return shared_1.prisma.qRCode.findMany({
+        return prisma_1.prisma.qRCode.findMany({
             where: { active: true },
             orderBy: { createdAt: 'desc' },
         });
     },
     async create(imageUrl) {
-        return shared_1.prisma.qRCode.create({
+        return prisma_1.prisma.qRCode.create({
             data: {
                 image: imageUrl,
                 active: true,
@@ -23,13 +23,13 @@ exports.QRCodeService = {
         });
     },
     async update(id, active) {
-        return shared_1.prisma.qRCode.update({
+        return prisma_1.prisma.qRCode.update({
             where: { id },
             data: { active },
         });
     },
     async delete(id) {
-        return shared_1.prisma.qRCode.delete({
+        return prisma_1.prisma.qRCode.delete({
             where: { id },
         });
     }

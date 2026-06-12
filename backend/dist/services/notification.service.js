@@ -1,10 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.NotificationService = void 0;
-const shared_1 = require("../shared");
+const prisma_1 = require("../shared/prisma");
 exports.NotificationService = {
     async send(data) {
-        const created = await shared_1.prisma.notification.create({
+        const created = await prisma_1.prisma.notification.create({
             data: {
                 userId: data.userId,
                 title: data.title,
@@ -28,7 +28,7 @@ exports.NotificationService = {
         return created;
     },
     async getUnread(userId, limit = 20) {
-        return shared_1.prisma.notification.findMany({
+        return prisma_1.prisma.notification.findMany({
             where: {
                 userId,
                 read: false,
@@ -39,18 +39,18 @@ exports.NotificationService = {
     },
     async getAll(userId, limit = 50, offset = 0) {
         const [notifications, count] = await Promise.all([
-            shared_1.prisma.notification.findMany({
+            prisma_1.prisma.notification.findMany({
                 where: { userId },
                 orderBy: { createdAt: 'desc' },
                 take: limit,
                 skip: offset,
             }),
-            shared_1.prisma.notification.count({ where: { userId } }),
+            prisma_1.prisma.notification.count({ where: { userId } }),
         ]);
         return { notifications, count };
     },
     async markAsRead(notificationId) {
-        return shared_1.prisma.notification.update({
+        return prisma_1.prisma.notification.update({
             where: { id: notificationId },
             data: {
                 read: true,
@@ -59,7 +59,7 @@ exports.NotificationService = {
         });
     },
     async markAllAsRead(userId) {
-        return shared_1.prisma.notification.updateMany({
+        return prisma_1.prisma.notification.updateMany({
             where: {
                 userId,
                 read: false,
@@ -71,22 +71,22 @@ exports.NotificationService = {
         });
     },
     async getById(id) {
-        return shared_1.prisma.notification.findUnique({
+        return prisma_1.prisma.notification.findUnique({
             where: { id },
         });
     },
     async delete(notificationId) {
-        return shared_1.prisma.notification.delete({
+        return prisma_1.prisma.notification.delete({
             where: { id: notificationId },
         });
     },
     async deleteAllForUser(userId) {
-        return shared_1.prisma.notification.deleteMany({
+        return prisma_1.prisma.notification.deleteMany({
             where: { userId },
         });
     },
     async getUnreadCount(userId) {
-        return shared_1.prisma.notification.count({
+        return prisma_1.prisma.notification.count({
             where: {
                 userId,
                 read: false,
@@ -94,7 +94,7 @@ exports.NotificationService = {
         });
     },
     async sendBulk(notifications) {
-        return shared_1.prisma.notification.createMany({
+        return prisma_1.prisma.notification.createMany({
             data: notifications.map(n => ({
                 userId: n.userId,
                 title: n.title,

@@ -1,28 +1,28 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.GameService = void 0;
-const shared_1 = require("../shared");
+const prisma_1 = require("../shared/prisma");
 exports.GameService = {
     async getAll(activeOnly = false) {
-        return shared_1.prisma.game.findMany({
+        return prisma_1.prisma.game.findMany({
             where: activeOnly ? { active: true } : {},
             orderBy: { name: 'asc' },
         });
     },
     async getById(id) {
-        return shared_1.prisma.game.findUnique({
+        return prisma_1.prisma.game.findUnique({
             where: { id },
         });
     },
     async create(data, adminId) {
-        const game = await shared_1.prisma.game.create({
+        const game = await prisma_1.prisma.game.create({
             data: {
                 ...data,
                 buyRate: parseFloat(data.buyRate || 0),
                 sellRate: parseFloat(data.sellRate || 0),
             },
         });
-        await shared_1.prisma.adminLog.create({
+        await prisma_1.prisma.adminLog.create({
             data: {
                 adminId,
                 action: "CREATE_GAME",
@@ -32,7 +32,7 @@ exports.GameService = {
         return game;
     },
     async update(id, data, adminId) {
-        const game = await shared_1.prisma.game.update({
+        const game = await prisma_1.prisma.game.update({
             where: { id },
             data: {
                 ...data,
@@ -40,7 +40,7 @@ exports.GameService = {
                 ...(data.sellRate !== undefined && { sellRate: parseFloat(data.sellRate) }),
             },
         });
-        await shared_1.prisma.adminLog.create({
+        await prisma_1.prisma.adminLog.create({
             data: {
                 adminId,
                 action: "UPDATE_GAME",
@@ -50,10 +50,10 @@ exports.GameService = {
         return game;
     },
     async delete(id, adminId) {
-        const game = await shared_1.prisma.game.delete({
+        const game = await prisma_1.prisma.game.delete({
             where: { id },
         });
-        await shared_1.prisma.adminLog.create({
+        await prisma_1.prisma.adminLog.create({
             data: {
                 adminId,
                 action: "DELETE_GAME",

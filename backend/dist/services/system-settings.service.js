@@ -1,12 +1,12 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SystemSettingsService = void 0;
-const shared_1 = require("../shared");
+const prisma_1 = require("../shared/prisma");
 exports.SystemSettingsService = {
     async getSettings() {
-        let settings = await shared_1.prisma.systemSettings.findFirst();
+        let settings = await prisma_1.prisma.systemSettings.findFirst();
         if (!settings) {
-            settings = await shared_1.prisma.systemSettings.create({
+            settings = await prisma_1.prisma.systemSettings.create({
                 data: {
                     minExchangeAmount: 10,
                     maxExchangeAmount: 50000,
@@ -23,7 +23,7 @@ exports.SystemSettingsService = {
     },
     async updateSettings(data) {
         const settings = await this.getSettings();
-        return shared_1.prisma.systemSettings.update({
+        return prisma_1.prisma.systemSettings.update({
             where: { id: settings.id },
             data: {
                 ...(data.minExchangeAmount !== undefined && { minExchangeAmount: parseFloat(data.minExchangeAmount) }),

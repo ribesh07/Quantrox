@@ -1,10 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.WalletService = void 0;
-const shared_1 = require("../shared");
+const prisma_1 = require("../shared/prisma");
 exports.WalletService = {
     async getUserWallets(userId) {
-        return shared_1.prisma.wallet.findMany({
+        return prisma_1.prisma.wallet.findMany({
             where: { userId },
             include: {
                 paymentMethod: true,
@@ -12,7 +12,7 @@ exports.WalletService = {
         });
     },
     async getBalanceByMethod(userId, paymentMethodId) {
-        return shared_1.prisma.wallet.findUnique({
+        return prisma_1.prisma.wallet.findUnique({
             where: {
                 userId_paymentMethodId: {
                     userId,
@@ -22,7 +22,7 @@ exports.WalletService = {
         });
     },
     async getOrCreateWallet(userId, paymentMethodId) {
-        return shared_1.prisma.wallet.upsert({
+        return prisma_1.prisma.wallet.upsert({
             where: {
                 userId_paymentMethodId: {
                     userId,
@@ -47,7 +47,7 @@ exports.WalletService = {
     },
     async deposit(userId, paymentMethodId, amount, notes) {
         const wallet = await this.getOrCreateWallet(userId, paymentMethodId);
-        return shared_1.prisma.walletTransaction.create({
+        return prisma_1.prisma.walletTransaction.create({
             data: {
                 walletId: wallet.id,
                 type: 'DEPOSIT',
@@ -63,7 +63,7 @@ exports.WalletService = {
         if (wallet.balance < amount) {
             throw new Error('Insufficient balance');
         }
-        return shared_1.prisma.walletTransaction.create({
+        return prisma_1.prisma.walletTransaction.create({
             data: {
                 walletId: wallet.id,
                 type: 'WITHDRAWAL',
@@ -80,7 +80,7 @@ exports.WalletService = {
         if (fromWallet.balance < amount) {
             throw new Error('Insufficient balance');
         }
-        return shared_1.prisma.$transaction(async (tx) => {
+        return prisma_1.prisma.$transaction(async (tx) => {
             const fromTx = await tx.walletTransaction.create({
                 data: {
                     walletId: fromWallet.id,
@@ -106,7 +106,7 @@ exports.WalletService = {
     },
     async applyFee(userId, paymentMethodId, feeAmount, notes) {
         const wallet = await this.getOrCreateWallet(userId, paymentMethodId);
-        return shared_1.prisma.walletTransaction.create({
+        return prisma_1.prisma.walletTransaction.create({
             data: {
                 walletId: wallet.id,
                 type: 'FEE',
@@ -119,7 +119,7 @@ exports.WalletService = {
     },
     async freezeBalance(userId, paymentMethodId, amount) {
         const wallet = await this.getOrCreateWallet(userId, paymentMethodId);
-        return shared_1.prisma.wallet.update({
+        return prisma_1.prisma.wallet.update({
             where: { id: wallet.id },
             data: {
                 frozenBalance: wallet.frozenBalance + amount,
@@ -129,7 +129,7 @@ exports.WalletService = {
     },
     async unfreezeBalance(userId, paymentMethodId, amount) {
         const wallet = await this.getOrCreateWallet(userId, paymentMethodId);
-        return shared_1.prisma.wallet.update({
+        return prisma_1.prisma.wallet.update({
             where: { id: wallet.id },
             data: {
                 frozenBalance: Math.max(0, wallet.frozenBalance - amount),
@@ -138,25 +138,25 @@ exports.WalletService = {
         });
     },
     async updateStatus(walletId, status) {
-        return shared_1.prisma.wallet.update({
+        return prisma_1.prisma.wallet.update({
             where: { id: walletId },
             data: { status, lastActivityAt: new Date() },
         });
     },
     async getWalletTransactions(walletId, limit = 50, offset = 0) {
         const [transactions, count] = await Promise.all([
-            shared_1.prisma.walletTransaction.findMany({
+            prisma_1.prisma.walletTransaction.findMany({
                 where: { walletId },
                 orderBy: { createdAt: 'desc' },
                 take: limit,
                 skip: offset,
             }),
-            shared_1.prisma.walletTransaction.count({ where: { walletId } }),
+            prisma_1.prisma.walletTransaction.count({ where: { walletId } }),
         ]);
         return { transactions, count };
     },
     async getTotalBalance(userId) {
-        const wallets = await shared_1.prisma.wallet.findMany({
+        const wallets = await prisma_1.prisma.wallet.findMany({
             where: { userId },
         });
         return wallets.reduce((sum, wallet) => sum + wallet.balance, 0);

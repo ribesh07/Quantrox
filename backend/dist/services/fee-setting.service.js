@@ -1,21 +1,21 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.FeeSettingService = void 0;
-const shared_1 = require("../shared");
+const prisma_1 = require("../shared/prisma");
 exports.FeeSettingService = {
     async getAll() {
-        return shared_1.prisma.feeSetting.findMany({
+        return prisma_1.prisma.feeSetting.findMany({
             orderBy: [{ feeType: 'asc' }, { createdAt: 'desc' }],
         });
     },
     async getActive() {
-        return shared_1.prisma.feeSetting.findMany({
+        return prisma_1.prisma.feeSetting.findMany({
             where: { isActive: true },
             orderBy: [{ feeType: 'asc' }, { createdAt: 'desc' }],
         });
     },
     async getById(id) {
-        return shared_1.prisma.feeSetting.findUnique({
+        return prisma_1.prisma.feeSetting.findUnique({
             where: { id },
         });
     },
@@ -30,7 +30,7 @@ exports.FeeSettingService = {
         else {
             where.paymentMethodId = null;
         }
-        return shared_1.prisma.feeSetting.findFirst({
+        return prisma_1.prisma.feeSetting.findFirst({
             where,
             orderBy: { createdAt: 'desc' },
         });
@@ -50,7 +50,7 @@ exports.FeeSettingService = {
         return totalFee;
     },
     async create(data) {
-        return shared_1.prisma.feeSetting.create({
+        return prisma_1.prisma.feeSetting.create({
             data: {
                 feeType: data.feeType,
                 paymentMethodId: data.paymentMethodId || null,
@@ -64,7 +64,7 @@ exports.FeeSettingService = {
         });
     },
     async update(id, data) {
-        return shared_1.prisma.feeSetting.update({
+        return prisma_1.prisma.feeSetting.update({
             where: { id },
             data: {
                 ...(data.percentage !== undefined && { percentage: parseFloat(data.percentage) }),
@@ -77,7 +77,7 @@ exports.FeeSettingService = {
         });
     },
     async delete(id) {
-        return shared_1.prisma.feeSetting.delete({
+        return prisma_1.prisma.feeSetting.delete({
             where: { id },
         });
     },

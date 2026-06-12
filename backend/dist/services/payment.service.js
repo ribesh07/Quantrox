@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PaymentService = void 0;
-const shared_1 = require("../shared");
+const prisma_1 = require("../shared/prisma");
 exports.PaymentService = {
     async getAllActive(category) {
         const where = { active: true };
@@ -11,23 +11,23 @@ exports.PaymentService = {
                 { category: "BOTH" }
             ];
         }
-        return shared_1.prisma.paymentMethod.findMany({
+        return prisma_1.prisma.paymentMethod.findMany({
             where,
             orderBy: { name: 'asc' }
         });
     },
     async getAllAdmin() {
-        return shared_1.prisma.paymentMethod.findMany({
+        return prisma_1.prisma.paymentMethod.findMany({
             orderBy: { name: 'asc' }
         });
     },
     async getById(id) {
-        return shared_1.prisma.paymentMethod.findUnique({
+        return prisma_1.prisma.paymentMethod.findUnique({
             where: { id }
         });
     },
     async create(data, adminId) {
-        const paymentMethod = await shared_1.prisma.paymentMethod.create({
+        const paymentMethod = await prisma_1.prisma.paymentMethod.create({
             data: {
                 ...data,
                 feePercentage: parseFloat(data.feePercentage),
@@ -36,7 +36,7 @@ exports.PaymentService = {
                 maxAmount: parseFloat(data.maxAmount || 1000000),
             },
         });
-        await shared_1.prisma.adminLog.create({
+        await prisma_1.prisma.adminLog.create({
             data: {
                 adminId,
                 action: "CREATE_PAYMENT_METHOD",
@@ -46,7 +46,7 @@ exports.PaymentService = {
         return paymentMethod;
     },
     async update(id, data, adminId) {
-        const paymentMethod = await shared_1.prisma.paymentMethod.update({
+        const paymentMethod = await prisma_1.prisma.paymentMethod.update({
             where: { id },
             data: {
                 ...data,
@@ -56,7 +56,7 @@ exports.PaymentService = {
                 ...(data.maxAmount !== undefined && { maxAmount: parseFloat(data.maxAmount) }),
             },
         });
-        await shared_1.prisma.adminLog.create({
+        await prisma_1.prisma.adminLog.create({
             data: {
                 adminId,
                 action: "UPDATE_PAYMENT_METHOD",
@@ -66,10 +66,10 @@ exports.PaymentService = {
         return paymentMethod;
     },
     async delete(id, adminId) {
-        const paymentMethod = await shared_1.prisma.paymentMethod.delete({
+        const paymentMethod = await prisma_1.prisma.paymentMethod.delete({
             where: { id },
         });
-        await shared_1.prisma.adminLog.create({
+        await prisma_1.prisma.adminLog.create({
             data: {
                 adminId,
                 action: "DELETE_PAYMENT_METHOD",

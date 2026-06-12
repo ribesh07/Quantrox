@@ -2,12 +2,13 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.reviewOrder = exports.getPendingOrders = exports.getAllOrders = exports.uploadProof = exports.getOrderById = exports.getUserStats = exports.getUserOrders = exports.createOrder = void 0;
 const order_service_1 = require("../services/order.service");
-const shared_1 = require("../shared");
+const prisma_1 = require("../shared/prisma");
+const schemas_1 = require("../shared/schemas");
 const client_1 = require("@prisma/client");
 const uploads_1 = require("../utils/uploads");
 const createOrder = async (req, res) => {
     try {
-        const validatedData = shared_1.createOrderSchema.parse(req.body);
+        const validatedData = schemas_1.createOrderSchema.parse(req.body);
         const order = await order_service_1.OrderService.create({
             ...validatedData,
             userId: req.user.userId,
@@ -66,7 +67,7 @@ const uploadProof = async (req, res) => {
             prefix: id,
             subdirectory: 'proofs',
         });
-        const order = await shared_1.prisma.order.update({
+        const order = await prisma_1.prisma.order.update({
             where: { id },
             data: {
                 screenshot: imageUrl,

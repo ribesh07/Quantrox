@@ -1,10 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuditLogService = void 0;
-const shared_1 = require("../shared");
+const prisma_1 = require("../shared/prisma");
 exports.AuditLogService = {
     async log(data) {
-        return shared_1.prisma.auditLog.create({
+        return prisma_1.prisma.auditLog.create({
             data: {
                 userId: data.userId,
                 userEmail: data.userEmail || '',
@@ -43,32 +43,32 @@ exports.AuditLogService = {
             }
         }
         const [logs, count] = await Promise.all([
-            shared_1.prisma.auditLog.findMany({
+            prisma_1.prisma.auditLog.findMany({
                 where,
                 orderBy: { createdAt: 'desc' },
                 take: filters?.limit || 50,
                 skip: filters?.offset || 0,
             }),
-            shared_1.prisma.auditLog.count({ where }),
+            prisma_1.prisma.auditLog.count({ where }),
         ]);
         return { logs, count };
     },
     async getByUser(userId, limit = 50) {
-        return shared_1.prisma.auditLog.findMany({
+        return prisma_1.prisma.auditLog.findMany({
             where: { userId },
             orderBy: { createdAt: 'desc' },
             take: limit,
         });
     },
     async getByResource(resourceId, limit = 50) {
-        return shared_1.prisma.auditLog.findMany({
+        return prisma_1.prisma.auditLog.findMany({
             where: { resourceId },
             orderBy: { createdAt: 'desc' },
             take: limit,
         });
     },
     async getByAction(action, limit = 50) {
-        return shared_1.prisma.auditLog.findMany({
+        return prisma_1.prisma.auditLog.findMany({
             where: { action },
             orderBy: { createdAt: 'desc' },
             take: limit,

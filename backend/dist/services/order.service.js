@@ -1,12 +1,12 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.OrderService = void 0;
-const shared_1 = require("../shared");
+const prisma_1 = require("../shared/prisma");
 const client_1 = require("@prisma/client");
 exports.OrderService = {
     async create(data) {
         const { userId, type, paymentMethodId, amount, gameId, gameUsername, walletAddress } = data;
-        const paymentMethod = await shared_1.prisma.paymentMethod.findUnique({
+        const paymentMethod = await prisma_1.prisma.paymentMethod.findUnique({
             where: { id: paymentMethodId }
         });
         if (!paymentMethod) {
@@ -24,7 +24,7 @@ exports.OrderService = {
             fee = (amount * paymentMethod.rate * paymentMethod.feePercentage) / 100;
             receivedAmount = (amount * paymentMethod.rate) - fee;
             total = amount;
-            const wallet = await shared_1.prisma.wallet.findUnique({
+            const wallet = await prisma_1.prisma.wallet.findUnique({
                 where: {
                     userId_paymentMethodId: {
                         userId,
@@ -36,7 +36,7 @@ exports.OrderService = {
                 throw new Error("Insufficient balance in source wallet");
             }
         }
-        const order = await shared_1.prisma.order.create({
+        const order = await prisma_1.prisma.order.create({
             data: {
                 userId,
                 type,
@@ -53,7 +53,7 @@ exports.OrderService = {
             },
         });
         if (type === client_1.OrderType.EXCHANGE) {
-            await shared_1.prisma.wallet.update({
+            await prisma_1.prisma.wallet.update({
                 where: {
                     userId_paymentMethodId: {
                         userId,
@@ -68,7 +68,7 @@ exports.OrderService = {
         return order;
     },
     async getUserOrders(userId) {
-        return shared_1.prisma.order.findMany({
+        return prisma_1.prisma.order.findMany({
             where: { userId },
             include: {
                 game: true,
@@ -78,7 +78,7 @@ exports.OrderService = {
         });
     },
     async getAll() {
-        return shared_1.prisma.order.findMany({
+        return prisma_1.prisma.order.findMany({
             include: {
                 user: { select: { username: true, email: true } },
                 game: true,
@@ -88,14 +88,14 @@ exports.OrderService = {
         });
     },
     async getUserStats(userId) {
-        return shared_1.prisma.order.groupBy({
+        return prisma_1.prisma.order.groupBy({
             by: ["status"],
             where: { userId },
             _count: true,
         });
     },
     async getRecentOrders(limit = 6) {
-        return shared_1.prisma.order.findMany({
+        return prisma_1.prisma.order.findMany({
             take: limit,
             orderBy: { createdAt: "desc" },
             include: {
@@ -106,7 +106,7 @@ exports.OrderService = {
         });
     },
     async getOrderById(id, userId, isAdmin = false) {
-        const order = await shared_1.prisma.order.findUnique({
+        const order = await prisma_1.prisma.order.findUnique({
             where: { id },
             include: {
                 game: true,
@@ -122,14 +122,14 @@ exports.OrderService = {
         return order;
     },
     async updateStatus(id, status, adminId, adminNote) {
-        const oldOrder = await shared_1.prisma.order.findUnique({
+        const oldOrder = await prisma_1.prisma.order.findUnique({
             where: { id },
             include: { paymentMethod: true }
         });
         if (!oldOrder) {
             throw new Error("Order not found");
         }
-        const order = await shared_1.prisma.order.update({
+        const order = await prisma_1.prisma.order.update({
             where: { id },
             data: {
                 status,
@@ -138,7 +138,7 @@ exports.OrderService = {
         });
         if (status === client_1.OrderStatus.COMPLETED || status === client_1.OrderStatus.APPROVED) {
             if (oldOrder.type === client_1.OrderType.DEPOSIT) {
-                await shared_1.prisma.wallet.upsert({
+                await prisma_1.prisma.wallet.upsert({
                     where: {
                         userId_paymentMethodId: {
                             userId: order.userId,
@@ -155,7 +155,7 @@ exports.OrderService = {
                     }
                 });
             }
-            await shared_1.prisma.transaction.create({
+            await prisma_1.prisma.transaction.create({
                 data: {
                     orderId: order.id,
                     userId: order.userId,
@@ -164,7 +164,7 @@ exports.OrderService = {
                     status: "SUCCESS",
                 },
             });
-            await shared_1.prisma.notification.create({
+            await prisma_1.prisma.notification.create({
                 data: {
                     userId: order.userId,
                     title: `${order.type} Approved`,
@@ -174,7 +174,7 @@ exports.OrderService = {
         }
         else if (status === client_1.OrderStatus.REJECTED) {
             if (oldOrder.type === client_1.OrderType.EXCHANGE) {
-                await shared_1.prisma.wallet.update({
+                await prisma_1.prisma.wallet.update({
                     where: {
                         userId_paymentMethodId: {
                             userId: order.userId,
@@ -186,7 +186,7 @@ exports.OrderService = {
                     }
                 });
             }
-            await shared_1.prisma.notification.create({
+            await prisma_1.prisma.notification.create({
                 data: {
                     userId: order.userId,
                     title: `${order.type} Rejected`,
@@ -194,7 +194,7 @@ exports.OrderService = {
                 },
             });
         }
-        await shared_1.prisma.adminLog.create({
+        await prisma_1.prisma.adminLog.create({
             data: {
                 adminId,
                 action: `REVIEW_ORDER_${status}`,
@@ -205,7 +205,7 @@ exports.OrderService = {
     },
     async getByStatus(status, limit = 50, offset = 0) {
         const [orders, count] = await Promise.all([
-            shared_1.prisma.order.findMany({
+            prisma_1.prisma.order.findMany({
                 where: { status },
                 orderBy: { createdAt: 'desc' },
                 take: limit,
@@ -216,12 +216,12 @@ exports.OrderService = {
                     paymentMethod: true,
                 },
             }),
-            shared_1.prisma.order.count({ where: { status } }),
+            prisma_1.prisma.order.count({ where: { status } }),
         ]);
         return { orders, count };
     },
     async getPendingReviewOrders(limit = 50) {
-        return shared_1.prisma.order.findMany({
+        return prisma_1.prisma.order.findMany({
             where: {
                 status: client_1.OrderStatus.PENDING_REVIEW,
             },
@@ -235,7 +235,7 @@ exports.OrderService = {
         });
     },
     async getOrdersByDateRange(fromDate, toDate, limit = 100) {
-        return shared_1.prisma.order.findMany({
+        return prisma_1.prisma.order.findMany({
             where: {
                 createdAt: {
                     gte: fromDate,
@@ -252,7 +252,7 @@ exports.OrderService = {
         });
     },
     async getTotalAmountByStatus(status) {
-        const result = await shared_1.prisma.order.aggregate({
+        const result = await prisma_1.prisma.order.aggregate({
             where: { status },
             _sum: {
                 amount: true,
@@ -263,7 +263,7 @@ exports.OrderService = {
         return result._sum;
     },
     async getOrdersByType(type, limit = 50) {
-        return shared_1.prisma.order.findMany({
+        return prisma_1.prisma.order.findMany({
             where: { type },
             orderBy: { createdAt: 'desc' },
             take: limit,
@@ -275,11 +275,11 @@ exports.OrderService = {
         });
     },
     async bulkUpdateStatus(orderIds, newStatus, adminId) {
-        const orders = await shared_1.prisma.order.updateMany({
+        const orders = await prisma_1.prisma.order.updateMany({
             where: { id: { in: orderIds } },
             data: { status: newStatus },
         });
-        await shared_1.prisma.adminLog.create({
+        await prisma_1.prisma.adminLog.create({
             data: {
                 adminId,
                 action: 'BULK_UPDATE_ORDERS',

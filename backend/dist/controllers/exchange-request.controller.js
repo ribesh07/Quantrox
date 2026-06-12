@@ -35,7 +35,7 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.uploadProof = exports.cancelExchangeRequest = exports.rejectExchangeRequest = exports.approveExchangeRequest = exports.getPendingExchangeRequests = exports.getAllExchangeRequests = exports.getExchangeRequestById = exports.getMyExchangeRequests = exports.createExchangeRequest = void 0;
 const exchange_request_service_1 = require("../services/exchange-request.service");
-const shared_1 = require("../shared");
+const prisma_1 = require("../shared/prisma");
 const audit_log_service_1 = require("../services/audit-log.service");
 const notification_service_1 = require("../services/notification.service");
 const createExchangeRequest = async (req, res) => {
@@ -206,7 +206,7 @@ const uploadProof = async (req, res) => {
         const proof = await exchange_request_service_1.ExchangeRequestService.getById(id);
         if (!proof)
             return res.status(404).json({ success: false, message: 'Exchange request not found' });
-        const created = await shared_1.prisma.proofUpload.create({
+        const created = await prisma_1.prisma.proofUpload.create({
             data: {
                 userId: req.user.userId,
                 orderId: id,

@@ -1,31 +1,31 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PaymentAccountService = void 0;
-const shared_1 = require("../shared");
+const prisma_1 = require("../shared/prisma");
 exports.PaymentAccountService = {
     async getAll() {
-        return shared_1.prisma.paymentAccount.findMany({
+        return prisma_1.prisma.paymentAccount.findMany({
             orderBy: { createdAt: 'desc' },
         });
     },
     async getActive() {
-        return shared_1.prisma.paymentAccount.findMany({
+        return prisma_1.prisma.paymentAccount.findMany({
             where: { isActive: true },
             orderBy: { createdAt: 'desc' },
         });
     },
     async getById(id) {
-        return shared_1.prisma.paymentAccount.findUnique({
+        return prisma_1.prisma.paymentAccount.findUnique({
             where: { id },
         });
     },
     async getByPaymentMethodId(paymentMethodId) {
-        return shared_1.prisma.paymentAccount.findUnique({
+        return prisma_1.prisma.paymentAccount.findUnique({
             where: { paymentMethodId },
         });
     },
     async create(data) {
-        return shared_1.prisma.paymentAccount.create({
+        return prisma_1.prisma.paymentAccount.create({
             data: {
                 paymentMethodId: data.paymentMethodId,
                 accountName: data.accountName,
@@ -39,7 +39,7 @@ exports.PaymentAccountService = {
         });
     },
     async update(id, data) {
-        return shared_1.prisma.paymentAccount.update({
+        return prisma_1.prisma.paymentAccount.update({
             where: { id },
             data: {
                 ...(data.accountName !== undefined && { accountName: data.accountName }),
@@ -53,18 +53,18 @@ exports.PaymentAccountService = {
         });
     },
     async delete(id) {
-        return shared_1.prisma.paymentAccount.delete({
+        return prisma_1.prisma.paymentAccount.delete({
             where: { id },
         });
     },
     async deactivate(id) {
-        return shared_1.prisma.paymentAccount.update({
+        return prisma_1.prisma.paymentAccount.update({
             where: { id },
             data: { isActive: false },
         });
     },
     async activate(id) {
-        return shared_1.prisma.paymentAccount.update({
+        return prisma_1.prisma.paymentAccount.update({
             where: { id },
             data: { isActive: true },
         });

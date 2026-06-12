@@ -1,26 +1,26 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ExchangeRateService = void 0;
-const shared_1 = require("../shared");
+const prisma_1 = require("../shared/prisma");
 exports.ExchangeRateService = {
     async getAll() {
-        return shared_1.prisma.exchangeRate.findMany({
+        return prisma_1.prisma.exchangeRate.findMany({
             where: { isActive: true },
             orderBy: { createdAt: 'desc' },
         });
     },
     async getAllAdmin() {
-        return shared_1.prisma.exchangeRate.findMany({
+        return prisma_1.prisma.exchangeRate.findMany({
             orderBy: { createdAt: 'desc' },
         });
     },
     async getById(id) {
-        return shared_1.prisma.exchangeRate.findUnique({
+        return prisma_1.prisma.exchangeRate.findUnique({
             where: { id },
         });
     },
     async getByPaymentMethodId(paymentMethodId) {
-        return shared_1.prisma.exchangeRate.findFirst({
+        return prisma_1.prisma.exchangeRate.findFirst({
             where: {
                 paymentMethodId,
                 isActive: true,
@@ -34,7 +34,7 @@ exports.ExchangeRateService = {
         });
     },
     async create(data) {
-        return shared_1.prisma.exchangeRate.create({
+        return prisma_1.prisma.exchangeRate.create({
             data: {
                 paymentMethodId: data.paymentMethodId,
                 baseCurrency: data.baseCurrency || 'USD',
@@ -47,7 +47,7 @@ exports.ExchangeRateService = {
         });
     },
     async update(id, data) {
-        return shared_1.prisma.exchangeRate.update({
+        return prisma_1.prisma.exchangeRate.update({
             where: { id },
             data: {
                 ...(data.rate !== undefined && { rate: parseFloat(data.rate) }),
@@ -60,13 +60,13 @@ exports.ExchangeRateService = {
         });
     },
     async deactivate(id) {
-        return shared_1.prisma.exchangeRate.update({
+        return prisma_1.prisma.exchangeRate.update({
             where: { id },
             data: { isActive: false },
         });
     },
     async delete(id) {
-        return shared_1.prisma.exchangeRate.delete({
+        return prisma_1.prisma.exchangeRate.delete({
             where: { id },
         });
     },
