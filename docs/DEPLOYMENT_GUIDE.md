@@ -47,7 +47,7 @@ Observability
 
 Security
 - Rotate secrets regularly
-- Use IAM roles for services accessing S3/DB
+- Use least-privileged access for services and secrets
 
 Scaling
 - Horizontal scale backend; stateless services

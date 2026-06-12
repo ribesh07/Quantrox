@@ -258,7 +258,7 @@
 
 ### 10.1 Performance Optimization
 - Database query optimization
-- Caching strategy (Redis)
+- Caching strategy
 - CDN for static assets
 - API response compression
 
@@ -311,9 +311,7 @@
 - NestJS (TypeScript framework)
 - Prisma ORM
 - PostgreSQL
-- Redis (caching & sessions)
 - SendGrid (email service)
-- AWS S3 (file storage)
 - WebSockets (Socket.io for real-time)
 
 ### Frontend
@@ -328,7 +326,7 @@
 ### Deployment
 - Docker & Docker Compose
 - Nginx
-- Ubuntu VPS or AWS
+- Ubuntu VPS or Linux host
 
 ---
 

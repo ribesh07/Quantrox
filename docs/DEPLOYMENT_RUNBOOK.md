@@ -68,9 +68,8 @@ docker compose -f docker-compose.prod.yml ps
 - [ ] Backend builds successfully
 - [ ] Frontend builds successfully
 - [ ] Docker images pushed to registry
-- [ ] `POSTGRES_DB` and Redis are healthy
+- [ ] `POSTGRES_DB` is healthy
 - [ ] Smoke test passes
 - [ ] Email/SMS notifications deliver correctly
-- [ ] S3 uploads are accessible if enabled
 - [ ] CORS origins include production frontend URL
 - [ ] Secrets are rotated and stored securely

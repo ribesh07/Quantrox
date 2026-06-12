@@ -1,7 +1,7 @@
 # Security Architecture
 
 Auth
-- JWT access tokens short-lived (e.g., 15 minutes), refresh tokens stored in HTTP-only secure cookies or Redis with rotation.
+- JWT access tokens short-lived (e.g., 15 minutes), refresh tokens stored in HTTP-only secure cookies with rotation.
 - Passwords hashed with `bcrypt` (cost factor >= 12).
 - Optional Google OAuth2 integration; store provider ID in `User`.
 - Optional 2FA via TOTP (speakeasy) and backup codes.
@@ -13,7 +13,7 @@ Input validation
 - Validate all request payloads with Zod; sanitize HTML/inputs returned to clients.
 
 Data protection
-- Secrets (JWT secret, DB credentials, email API keys) in secret manager (AWS Secrets Manager, Azure Key Vault).
+- Secrets (JWT secret, DB credentials, email API keys) stored securely in a secret management service or environment variables.
 - Encrypt sensitive fields at rest if required (e.g., backup codes, optional PII).
 
 Rate limiting & abuse
