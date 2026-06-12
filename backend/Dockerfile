@@ -15,8 +15,8 @@ WORKDIR /app/backend
 # Install backend dependencies
 RUN npm install
 
-# Build backend
-RUN npm run build
+# Ensure TypeScript compiler is executable and then build backend
+RUN chmod +x ./node_modules/.bin/tsc && npm run build
 
 # Stage 2: Runner
 FROM node:20-slim AS runner
