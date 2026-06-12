@@ -6,8 +6,7 @@ RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Copy root config and frontend sources
-COPY package.json package-lock.json ./
+# Copy frontend config and sources
 COPY frontend/package.json frontend/package-lock.json ./frontend/
 COPY frontend/ ./frontend/
 
