@@ -7,8 +7,7 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "smoke": "node scripts/smoke-test.js",
-    "seed": "prisma db seed",
-    "verify:prisma:baseline": "node scripts/verify-prisma-baseline.js"
+    "seed": "prisma db seed"
   },
   "dependencies": {
     "@prisma/client": "^6.19.1",

@@ -7,7 +7,6 @@ services:
       - DATABASE_URL=${DATABASE_URL}
       - JWT_SECRET=${JWT_SECRET}
       - PORT=3001
-      - PRISMA_AUTO_BASELINE=false
       - SMTP_HOST=${SMTP_HOST}
       - SMTP_PORT=${SMTP_PORT}
       - SMTP_USER=${SMTP_USER}
@@ -27,7 +26,7 @@ services:
     depends_on:
       - backend
     environment:
-      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://backend:3001/api}
       - INTERNAL_API_URL=http://backend:3001/api
     ports:
       - '3056:3056'
