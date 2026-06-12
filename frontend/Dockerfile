@@ -10,11 +10,13 @@ WORKDIR /app
 COPY frontend/package.json frontend/package-lock.json ./frontend/
 COPY frontend/ ./frontend/
 
+WORKDIR /app/frontend
+
 # Install frontend dependencies
-RUN npm install --prefix frontend
+RUN npm install
 
 # Build frontend
-RUN npm run build:frontend
+RUN npm run build
 
 # Stage 2: Runner
 FROM node:20-slim AS runner

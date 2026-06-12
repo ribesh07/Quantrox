@@ -10,11 +10,13 @@ WORKDIR /app
 COPY backend/package.json backend/package-lock.json ./backend/
 COPY backend/ ./backend/
 
+WORKDIR /app/backend
+
 # Install backend dependencies
-RUN npm install --prefix backend
+RUN npm install
 
 # Build backend
-RUN npm run build:backend
+RUN npm run build
 
 # Stage 2: Runner
 FROM node:20-slim AS runner
