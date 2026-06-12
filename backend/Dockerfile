@@ -32,7 +32,12 @@ WORKDIR /app
 COPY --from=builder /app/backend/package.json ./backend/package.json
 COPY --from=builder /app/backend/dist ./backend/dist
 COPY --from=builder /app/backend/node_modules ./backend/node_modules
+# Copy Prisma schema/migrations so the runner can apply migrations at startup
+COPY --from=builder /app/backend/prisma ./backend/prisma
+# Copy entrypoint script to run migrations and start the app
+COPY backend/docker-entrypoint.sh ./backend/docker-entrypoint.sh
+RUN chmod +x ./backend/docker-entrypoint.sh
 
 EXPOSE 3001
 
-CMD ["node", "backend/dist/index.js"]
+CMD ["/bin/sh", "-c", "./backend/docker-entrypoint.sh"]
