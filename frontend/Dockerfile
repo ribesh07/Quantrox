@@ -1,8 +1,5 @@
 # Stage 1: Build
-FROM node:20-slim AS builder
-
-# Install openssl for Prisma
-RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+FROM node:22-slim AS builder
 
 WORKDIR /app
 
@@ -13,7 +10,7 @@ COPY frontend/ ./frontend/
 WORKDIR /app/frontend
 
 # Install frontend dependencies
-RUN npm install
+RUN npm ci
 
 # Build frontend
 RUN npm run build

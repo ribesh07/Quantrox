@@ -1,5 +1,5 @@
 # Stage 1: Build
-FROM node:20-slim AS builder
+FROM node:22-slim AS builder
 
 # Install openssl for Prisma
 RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
@@ -13,31 +13,31 @@ COPY backend/ ./backend/
 WORKDIR /app/backend
 
 # Install backend dependencies, including dev dependencies needed for build tooling
-RUN npm install --include=dev
+RUN npm ci --include=dev
 
 # Generate Prisma client for the Linux deployment runtime
-RUN node ./node_modules/prisma/build/index.js generate
+RUN node ./node_modules/prisma/build/index.js generate --schema=./prisma/schema.prisma
 
 # Ensure TypeScript compiler is executable and then build backend
 RUN node ./node_modules/typescript/bin/tsc
 
 # Stage 2: Runner
-FROM node:20-slim AS runner
+FROM node:22-slim AS runner
 
 RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /app
+WORKDIR /app/backend
 
 # Copy backend built assets and dependencies
-COPY --from=builder /app/backend/package.json ./backend/package.json
-COPY --from=builder /app/backend/dist ./backend/dist
-COPY --from=builder /app/backend/node_modules ./backend/node_modules
+COPY --from=builder /app/backend/package.json ./package.json
+COPY --from=builder /app/backend/dist ./dist
+COPY --from=builder /app/backend/node_modules ./node_modules
 # Copy Prisma schema/migrations so the runner can apply migrations at startup
-COPY --from=builder /app/backend/prisma ./backend/prisma
+COPY --from=builder /app/backend/prisma ./prisma
 # Copy entrypoint script to run migrations and start the app
-COPY backend/docker-entrypoint.sh ./backend/docker-entrypoint.sh
-RUN chmod +x ./backend/docker-entrypoint.sh
+COPY --from=builder /app/backend/docker-entrypoint.sh ./docker-entrypoint.sh
+RUN chmod +x ./docker-entrypoint.sh
 
 EXPOSE 3001
 
-CMD ["/bin/sh", "-c", "./backend/docker-entrypoint.sh"]
+CMD ["./docker-entrypoint.sh"]
