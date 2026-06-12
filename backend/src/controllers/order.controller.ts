@@ -88,6 +88,15 @@ export const getAllOrders = async (req: AuthRequest, res: Response) => {
   }
 };
 
+export const getPendingOrders = async (req: AuthRequest, res: Response) => {
+  try {
+    const orders = await OrderService.getPendingReviewOrders();
+    res.json({ success: true, orders });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 export const reviewOrder = async (req: AuthRequest, res: Response) => {
   try {
     const id = req.params.id as string;
