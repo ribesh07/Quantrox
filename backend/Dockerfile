@@ -10,11 +10,11 @@ RUN npm ci
 
 COPY backend/ ./
 
-# ✅ FIX: no npx (Coolify-safe)
+# Prisma generate (safe, no npx dependency issues)
 RUN node node_modules/prisma/build/index.js generate --schema=./prisma/schema.prisma
 
-RUN npm run build
-
+# Build TypeScript
+RUN node node_modules/typescript/bin/tsc
 
 # Stage 2: Runner
 FROM node:22-slim AS runner
