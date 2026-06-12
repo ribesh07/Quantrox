@@ -12,8 +12,6 @@ Set these secrets in GitHub Actions or your deployment environment:
 - `DATABASE_URL` — PostgreSQL connection string
 - `JWT_SECRET` — strong JWT signing secret
 - `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` — SMTP settings for email delivery
-- `AWS_S3_BUCKET`, `AWS_S3_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` — S3 upload storage, optional if local uploads are acceptable
-- `REDIS_URL` — Redis connection string for Socket.IO scaling and optional session/refresh token storage
 - `FRONTEND_URL` — production frontend base URL
 
 ## GitHub Actions CI/CD
@@ -24,7 +22,7 @@ The CI workflow is defined in `.github/workflows/ci-cd.yml` and performs the fol
 3. Cache `node_modules`
 4. Login to Docker registry using `DOCKER_REGISTRY`, `DOCKER_USERNAME`, `DOCKER_PASSWORD`
 5. Build the frontend and backend
-6. Start Postgres and Redis service containers
+6. Start Postgres service container
 7. Run backend smoke tests against the built backend
 8. Build and push Docker images for frontend and backend
 

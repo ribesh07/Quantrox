@@ -4,7 +4,7 @@ Overview
 - Frontend: Next.js + TypeScript + Tailwind + ShadCN UI — serves user and admin UIs, uses React Query for data fetching and optimistic updates.
 - Backend: Node.js + Express (project uses modular controllers/services) with TypeScript and Prisma ORM. Exposes REST API under `/api/*`.
 - Database: PostgreSQL (Prisma schema in `backend/prisma/schema.prisma`).
-- Storage: Uploads are stored locally in `uploads/` for development; production recommendation: AWS S3 or Cloudinary.
+- Storage: Uploads are stored locally in `uploads/` directory (ensure persistent volume in production).
 - Realtime: WebSocket/Socket.IO for in-app notifications and admin events.
 - Authentication: JWT access tokens + refresh tokens; optional Google OAuth; optional TOTP 2FA using `speakeasy`.
 - Payment flow: Manual QR/account management by admin. Users follow instructions and upload proof; admins verify and credit wallets.
@@ -20,7 +20,7 @@ Key services
 
 Scaling & reliability
 - Stateless app servers behind Nginx (load balancer) with sticky sessions optional for websockets.
-- Horizontal scale backend; use Redis for session/refresh token store and for pub/sub for notifications.
+- Horizontal scale backend; uses in-memory Socket.IO (all instances process events locally).
 - Database: managed PostgreSQL with read-replicas for analytics; use connection pooling.
 - Background workers: process heavy tasks (email sending, notification retries, reconciliation).
 
