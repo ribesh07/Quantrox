@@ -60,8 +60,8 @@ app.use((error, req, res, next) => {
 const startServer = async () => {
     await (0, uploads_1.ensureUploadDirectory)('proofs');
     await (0, uploads_1.ensureUploadDirectory)('qrs');
-    const server = app.listen(env_1.env.port, () => {
-        console.log(`Backend server running on http://localhost:${env_1.env.port}`);
+    const server = app.listen(env_1.env.port, '0.0.0.0', () => {
+        console.log(`Backend server running on http://0.0.0.0:${env_1.env.port}`);
     });
     // WebSocket (Socket.IO) for real-time notifications
     try {
@@ -69,17 +69,6 @@ const startServer = async () => {
         // eslint-disable-next-line @typescript-eslint/no-var-requires
         const { Server } = require('socket.io');
         const io = new Server(server, { cors: { origin: env_1.env.corsOrigins.length ? env_1.env.corsOrigins : '*' } });
-        // If REDIS_URL is provided, use the Redis adapter to scale across nodes
-        if (process.env.REDIS_URL) {
-            // eslint-disable-next-line @typescript-eslint/no-var-requires
-            const { createAdapter } = require('@socket.io/redis-adapter');
-            // eslint-disable-next-line @typescript-eslint/no-var-requires
-            const Redis = require('ioredis');
-            const pubClient = new Redis(process.env.REDIS_URL);
-            const subClient = pubClient.duplicate();
-            io.adapter(createAdapter(pubClient, subClient));
-            console.log('Socket.IO configured with Redis adapter');
-        }
         // attach to global for other modules to use
         global.io = io;
         io.on('connection', (socket) => {
