@@ -6,16 +6,12 @@ RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Copy root config and shared package first
-COPY package.json package-lock.json ./
-COPY shared/ ./shared/
+# Copy backend config and sources
+COPY backend/package.json backend/package-lock.json ./backend/
 COPY backend/ ./backend/
 
-# Install dependencies for the whole monorepo
-RUN npm install
-
-# Build shared package (includes prisma generate)
-RUN npm run build:shared
+# Install backend dependencies
+RUN npm install --prefix backend
 
 # Build backend
 RUN npm run build:backend
@@ -27,20 +23,10 @@ RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Copy production dependencies
-COPY --from=builder /app/package.json /app/package-lock.json ./
-COPY --from=builder /app/shared/package.json ./shared/
-COPY --from=builder /app/backend/package.json ./backend/
-
-# Install only production dependencies
-RUN npm install --omit=dev
-
-# Copy built assets
-COPY --from=builder /app/shared/dist ./shared/dist
-COPY --from=builder /app/shared/prisma ./shared/prisma
+# Copy backend built assets and dependencies
+COPY --from=builder /app/backend/package.json ./backend/package.json
 COPY --from=builder /app/backend/dist ./backend/dist
-COPY --from=builder /app/node_modules/@prisma/client ./node_modules/@prisma/client
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/backend/node_modules ./backend/node_modules
 
 EXPOSE 3001
 

@@ -6,16 +6,13 @@ RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Copy root config and workspaces
+# Copy root config and frontend sources
 COPY package.json package-lock.json ./
-COPY shared/ ./shared/
+COPY frontend/package.json frontend/package-lock.json ./frontend/
 COPY frontend/ ./frontend/
 
-# Install dependencies
-RUN npm install
-
-# Build shared package
-RUN npm run build:shared
+# Install frontend dependencies
+RUN npm install --prefix frontend
 
 # Build frontend
 RUN npm run build:frontend
