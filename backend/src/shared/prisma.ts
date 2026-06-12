@@ -9,3 +9,14 @@ export const prisma =
   });
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+
+export async function initPrisma() {
+  try {
+    console.log('[prisma] Connecting to database...');
+    await prisma.$connect();
+    console.log('[prisma] Connected');
+  } catch (err) {
+    console.error('[prisma] Connection error:', err);
+    throw err;
+  }
+}
