@@ -13,10 +13,20 @@ services:
       - SMTP_PASS=${SMTP_PASS}
     ports:
       - '3001:3001'
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
   frontend:
     image: ${DOCKER_REGISTRY:-your-registry}/quantrox/frontend:latest
     restart: always
+    depends_on:
+      - backend
     environment:
       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+      - INTERNAL_API_URL=http://backend:3001/api
     ports:
-      - '3000:3000'
+      - '3056:3056'
