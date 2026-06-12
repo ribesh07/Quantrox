@@ -1,4 +1,4 @@
-import { prisma } from "../shared";
+import { prisma } from "../shared/prisma";
 
 export const AuditLogService = {
   async log(data: {
@@ -104,3 +104,4 @@ export const AuditLogService = {
     });
   },
 };
+

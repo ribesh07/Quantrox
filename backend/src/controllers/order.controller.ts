@@ -1,7 +1,8 @@
 import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { OrderService } from '../services/order.service';
-import { createOrderSchema, prisma } from '../shared';
+import { prisma } from '../shared/prisma';
+import { createOrderSchema } from '../shared/schemas';
 import { OrderStatus } from '@prisma/client';
 import { saveUploadedFile } from '../utils/uploads';
 
@@ -107,3 +108,6 @@ export const reviewOrder = async (req: AuthRequest, res: Response) => {
     res.status(400).json({ success: false, message: error.message });
   }
 };
+
+
+

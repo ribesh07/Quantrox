@@ -1,4 +1,4 @@
-import { prisma } from "../shared";
+import { prisma } from "../shared/prisma";
 import { ExchangeStatus } from "@prisma/client";
 import { ExchangeRateService } from "./exchange-rate.service";
 import { FeeSettingService } from "./fee-setting.service";
@@ -153,3 +153,4 @@ export const ExchangeRequestService = {
     });
   },
 };
+

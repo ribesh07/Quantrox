@@ -1,4 +1,4 @@
-import { prisma } from "../shared";
+import { prisma } from "../shared/prisma";
 
 export const QRCodeService = {
   async getAll() {
@@ -36,3 +36,4 @@ export const QRCodeService = {
     });
   }
 };
+

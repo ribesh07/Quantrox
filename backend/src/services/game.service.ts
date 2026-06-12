@@ -1,4 +1,4 @@
-import { prisma } from "../shared";
+import { prisma } from "../shared/prisma";
 
 export const GameService = {
   async getAll(activeOnly: boolean = false) {
@@ -71,3 +71,4 @@ export const GameService = {
     return game;
   }
 };
+

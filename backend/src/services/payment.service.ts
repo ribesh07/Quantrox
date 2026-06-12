@@ -1,4 +1,4 @@
-import { prisma } from "../shared";
+import { prisma } from "../shared/prisma";
 import { PaymentMethodCategory } from "@prisma/client";
 
 export const PaymentService = {
@@ -89,3 +89,4 @@ export const PaymentService = {
     return paymentMethod;
   }
 };
+

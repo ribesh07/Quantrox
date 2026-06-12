@@ -1,4 +1,4 @@
-import { prisma } from "../shared";
+import { prisma } from "../shared/prisma";
 
 export const PaymentAccountService = {
   async getAll() {
@@ -76,3 +76,4 @@ export const PaymentAccountService = {
     });
   },
 };
+

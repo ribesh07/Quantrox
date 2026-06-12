@@ -1,7 +1,7 @@
 import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { ExchangeRequestService } from '../services/exchange-request.service';
-import { prisma } from '../shared';
+import { prisma } from '../shared/prisma';
 import { AuditLogService } from '../services/audit-log.service';
 import { NotificationService } from '../services/notification.service';
 
@@ -222,3 +222,4 @@ export const uploadProof = async (req: AuthRequest, res: Response) => {
     res.status(400).json({ success: false, message: error.message });
   }
 };
+

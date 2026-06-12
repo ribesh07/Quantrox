@@ -1,7 +1,8 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { prisma, registerSchema, loginSchema } from '../shared';
+import { prisma } from '../shared/prisma';
+import { registerSchema, loginSchema } from '../shared/schemas';
 import { env } from '../config/env';
 import { TokenService } from '../services/token.service';
 import { EmailService } from '../services/email.service';
@@ -153,3 +154,6 @@ export const login = async (req: Request, res: Response) => {
       res.status(400).json({ success: false, message: error.message });
     }
   };
+
+
+

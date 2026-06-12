@@ -1,4 +1,4 @@
-import { prisma } from "../shared";
+import { prisma } from "../shared/prisma";
 import { NotificationType } from "@prisma/client";
 
 export const NotificationService = {
@@ -131,3 +131,4 @@ export const NotificationService = {
     });
   },
 };
+

@@ -1,4 +1,4 @@
-import { prisma } from "../shared";
+import { prisma } from "../shared/prisma";
 
 export const SystemSettingsService = {
   async getSettings() {
@@ -48,3 +48,4 @@ export const SystemSettingsService = {
     return settings.maintenanceMessage;
   },
 };
+

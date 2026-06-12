@@ -1,4 +1,4 @@
-import { prisma } from "../shared";
+import { prisma } from "../shared/prisma";
 import { FeeType } from "@prisma/client";
 
 export const FeeSettingService = {
@@ -91,3 +91,4 @@ export const FeeSettingService = {
     });
   },
 };
+

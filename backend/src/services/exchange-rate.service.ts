@@ -1,4 +1,4 @@
-import { prisma } from "../shared";
+import { prisma } from "../shared/prisma";
 
 export const ExchangeRateService = {
   async getAll() {
@@ -81,3 +81,4 @@ export const ExchangeRateService = {
     return rate?.rate || 1;
   },
 };
+

@@ -1,4 +1,4 @@
-import { prisma } from "../shared";
+import { prisma } from "../shared/prisma";
 import { TransactionType, WalletStatus } from "@prisma/client";
 
 export const WalletService = {
@@ -184,3 +184,4 @@ export const WalletService = {
     return wallets.reduce((sum, wallet) => sum + wallet.balance, 0);
   },
 };
+

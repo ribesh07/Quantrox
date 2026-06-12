@@ -1,4 +1,4 @@
-import { prisma } from "../shared";
+import { prisma } from "../shared/prisma";
 import { OrderType, OrderStatus } from "@prisma/client";
 
 export const OrderService = {
@@ -328,3 +328,4 @@ export const OrderService = {
     return orders;
   }
 };
+

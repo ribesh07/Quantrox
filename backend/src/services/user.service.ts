@@ -1,4 +1,4 @@
-import { prisma } from "../shared";
+import { prisma } from "../shared/prisma";
 import { Role } from "@prisma/client";
 
 export const UserService = {
@@ -88,3 +88,4 @@ export const UserService = {
     };
   }
 };
+

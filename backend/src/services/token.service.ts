@@ -1,4 +1,4 @@
-import { prisma } from "../shared";
+import { prisma } from "../shared/prisma";
 import { v4 as uuidv4 } from 'uuid';
 
 export const TokenService = {
@@ -37,3 +37,4 @@ export const TokenService = {
     return prisma.verificationToken.update({ where: { id }, data: { used: true } });
   }
 };
+

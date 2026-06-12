@@ -1,4 +1,4 @@
-import { prisma } from "../shared";
+import { prisma } from "../shared/prisma";
 import { GamePointOrderStatus } from "@prisma/client";
 import { FeeSettingService } from "./fee-setting.service";
 
@@ -156,3 +156,4 @@ export const GamePointOrderService = {
     });
   },
 };
+
