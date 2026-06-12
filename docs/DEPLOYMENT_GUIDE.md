@@ -33,6 +33,11 @@ CI/CD
 - Lint, typecheck, run unit tests
 - Build Docker images and push to registry
 - Deploy to staging, run smoke tests, then promote to production
+- Use GitHub Actions secrets: `DOCKER_REGISTRY`, `DOCKER_USERNAME`, `DOCKER_PASSWORD`
+- CI workflow includes Postgres and Redis services and backend smoke tests
+
+Deployment runbook
+- See `docs/DEPLOYMENT_RUNBOOK.md` for an executable runbook, environment guidance, and smoke test commands.
 
 Backups & rollback
 - Nightly DB backups and backup verification
