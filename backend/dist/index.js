@@ -18,6 +18,7 @@ const two_factor_routes_1 = __importDefault(require("./routes/two-factor.routes"
 const logger_middleware_1 = require("./middleware/logger.middleware");
 const env_1 = require("./config/env");
 const uploads_1 = require("./utils/uploads");
+const prisma_1 = require("./shared/prisma");
 const app = (0, express_1.default)();
 const allowedOrigins = env_1.env.corsOrigins;
 app.use((0, cors_1.default)({
@@ -60,6 +61,15 @@ app.use((error, req, res, next) => {
 const startServer = async () => {
     await (0, uploads_1.ensureUploadDirectory)('proofs');
     await (0, uploads_1.ensureUploadDirectory)('qrs');
+    // Initialize Prisma connection before starting the server
+    try {
+        await (0, prisma_1.initPrisma)();
+    }
+    catch (err) {
+        console.error('[BOOT_ERROR] Prisma initialization failed:', err);
+        // Fail fast — without DB the app cannot operate safely
+        process.exit(1);
+    }
     const server = app.listen(env_1.env.port, '0.0.0.0', () => {
         console.log(`Backend server running on http://0.0.0.0:${env_1.env.port}`);
     });
