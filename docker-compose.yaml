@@ -8,9 +8,11 @@ services:
       DATABASE_URL: "${DATABASE_URL}"
       PORT: "${PORT:-3001}"
       JWT_SECRET: "${JWT_SECRET}"
-      CORS_ORIGIN: "${CORS_ORIGIN:-http://localhost:3056}"
+      CORS_ORIGIN: "${CORS_ORIGIN:-*}"
     ports:
       - "3001:3001"
+    volumes:
+      - backend_uploads:/app/backend/uploads
 
   frontend:
     build:
@@ -27,3 +29,6 @@ services:
       NEXTAUTH_SECRET: "${NEXTAUTH_SECRET}"
     ports:
       - "3056:3056"
+
+volumes:
+  backend_uploads:
