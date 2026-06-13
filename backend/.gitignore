@@ -66,3 +66,5 @@ coverage/
 # temporary files
 tmp/
 temp/
+/dist
+/node_modules
