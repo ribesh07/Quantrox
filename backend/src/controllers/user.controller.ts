@@ -1,6 +1,9 @@
 import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { UserService } from '../services/user.service';
+import { prisma } from '@/shared/prisma';
+import bcrypt from 'bcryptjs';
+import { registerSchema } from '@/shared/schemas';
 
 export const getAllUsers = async (req: AuthRequest, res: Response) => {
   try {
@@ -8,6 +11,34 @@ export const getAllUsers = async (req: AuthRequest, res: Response) => {
     res.json({ success: true, users });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const createUser = async (req: AuthRequest, res: Response) => {
+  try {
+        const { username, email, password ,role} = req.body;
+    
+        const existingUser = await prisma.user.findFirst({
+          where: { OR: [{ email }, { username }] },
+        });
+    
+        if (existingUser) {
+          return res.status(400).json({ message: "User with this email or username already exists" });
+        }
+    
+        const hashedPassword = await bcrypt.hash(password, 10);
+    
+        const user = await prisma.user.create({
+          data: {
+            username,
+            email,
+            password: hashedPassword,
+            role: role || 'USER',
+          },
+        });
+    res.json({ success: true, user });
+  } catch (error: any) {
+    res.status(400).json({ success: false, message: error.message });
   }
 };
 

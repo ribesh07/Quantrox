@@ -26,6 +26,7 @@ router.patch('/orders/:id/review', OrderController.reviewOrder);
 
 // Users
 router.get('/users', UserController.getAllUsers);
+router.post('/users', UserController.createUser);
 router.patch('/users/:id/role', UserController.updateUserRole);
 router.delete('/users/:id', UserController.deleteUser);
 router.get('/stats', UserController.getDashboardStats);
