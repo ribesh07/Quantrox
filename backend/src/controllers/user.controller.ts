@@ -1,7 +1,7 @@
 import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { UserService } from '../services/user.service';
-import { prisma } from '@/shared/prisma';
+import { prisma } from "../shared/prisma";
 import bcrypt from 'bcryptjs';
 import { registerSchema } from '@/shared/schemas';
 
