@@ -56,9 +56,9 @@ export default function GamesPage() {
   });
 
   const { data: methods, isLoading: methodsLoading } = useQuery({
-    queryKey: ["payment-methods", "DEPOSIT"],
+    queryKey: ["payment-methods", "BOTH"],
     queryFn: async () => {
-      const result = await getPaymentMethodsAction("DEPOSIT");
+      const result = await getPaymentMethodsAction("BOTH");
       if (!result.success) throw new Error(result.error);
       return result.methods;
     },
@@ -430,7 +430,7 @@ export default function GamesPage() {
                         onClick={() => document.getElementById('payment-proof-game')?.click()}
                       >
                         {paymentPreview ? (
-                          <Image src={paymentPreview} alt="Preview" fill className="object-contain" />
+                          <Image src={paymentPreview} alt="Preview" fill className="object-contain" unoptimized />
                         ) : (
                           <>
                             <UploadCloud className="h-10 w-10 text-[#848E9C] mb-2" />

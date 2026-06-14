@@ -1,6 +1,8 @@
 import { prisma } from "../shared/prisma";
 import { PaymentMethodCategory } from "@prisma/client";
 
+const baseUrl = process.env.SERVICE_URL_BACKEND || "https://api.settlerpay.com";
+
 export const PaymentService = {
   async getAllActive(category?: PaymentMethodCategory) {
     const where: any = { active: true };
@@ -10,22 +12,39 @@ export const PaymentService = {
         { category: "BOTH" }
       ];
     }
-    return prisma.paymentMethod.findMany({
+    const methods = await prisma.paymentMethod.findMany({
       where,
       orderBy: { name: 'asc' }
     });
+
+    return methods.map(method => ({
+      ...method,
+      qrCode: method.qrCode ? `${baseUrl}${method.qrCode}` : null,
+    }));
   },
 
   async getAllAdmin() {
-    return prisma.paymentMethod.findMany({
+    const methods = await prisma.paymentMethod.findMany({
       orderBy: { name: 'asc' }
     });
+
+    return methods.map(method => ({
+      ...method,
+      qrCode: method.qrCode ? `${baseUrl}${method.qrCode}` : null,
+    }));
   },
 
   async getById(id: string) {
-    return prisma.paymentMethod.findUnique({
+    const method = await prisma.paymentMethod.findUnique({
       where: { id }
     });
+
+    if (!method) return null;
+
+    return {
+      ...method,
+      qrCode: method.qrCode ? `${baseUrl}${method.qrCode}` : null,
+    };
   },
 
   async create(data: any, adminId: string) {
@@ -47,7 +66,10 @@ export const PaymentService = {
       },
     });
 
-    return paymentMethod;
+    return {
+      ...paymentMethod,
+      qrCode: paymentMethod.qrCode ? `${baseUrl}${paymentMethod.qrCode}` : null,
+    };
   },
 
   async update(id: string, data: any, adminId: string) {
@@ -70,7 +92,10 @@ export const PaymentService = {
       },
     });
 
-    return paymentMethod;
+    return {
+      ...paymentMethod,
+      qrCode: paymentMethod.qrCode ? `${baseUrl}${paymentMethod.qrCode}` : null,
+    };
   },
 
   async delete(id: string, adminId: string) {
@@ -86,7 +111,10 @@ export const PaymentService = {
       },
     });
 
-    return paymentMethod;
+    return {
+      ...paymentMethod,
+      qrCode: paymentMethod.qrCode ? `${baseUrl}${paymentMethod.qrCode}` : null,
+    };
   }
 };
 

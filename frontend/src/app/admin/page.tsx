@@ -14,6 +14,7 @@ import {
   ArrowRightLeft,
   CheckCircle2,
   AlertCircle,
+  Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -55,14 +56,6 @@ export default async function AdminDashboard() {
         description: "Registered accounts",
         color: "text-[#848E9C]",
         bg: "bg-[#1E2329]",
-      },
-      {
-        title: "Total Deposits",
-        value: statsData.totalDeposits,
-        icon: TrendingUp,
-        description: "Lifetime deposits",
-        color: "text-primary",
-        bg: "bg-primary/10",
       },
       {
         title: "Total Exchanges",
@@ -192,6 +185,7 @@ export default async function AdminDashboard() {
                 { label: "Review Orders", href: "/admin/orders", icon: Clock, color: "text-primary", bg: "bg-primary/10" },
                 { label: "User Accounts", href: "/admin/users", icon: Users, color: "text-blue-500", bg: "bg-blue-500/10" },
                 { label: "Game Settings", href: "/admin/games", icon: Gamepad2, color: "text-[#0ECB81]", bg: "bg-[#0ECB81]/10" },
+                { label: "System Settings", href: "/admin/settings", icon: Settings, color: "text-orange-500", bg: "bg-orange-500/10" },
               ].map((action, i) => (
                 <Button
                   key={i}

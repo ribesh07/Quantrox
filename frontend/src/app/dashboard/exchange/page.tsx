@@ -1,87 +1,63 @@
-"use client";
+'use client';
 
-import React, { useMemo, useState } from "react";
-import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { ArrowUpDown, Copy, Loader2, UploadCloud, QrCode, Info } from "lucide-react";
-import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import React, { useState } from 'react';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { Copy, Loader2, UploadCloud, QrCode, Info, DollarSign } from 'lucide-react';
+import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-import { createOrderAction, uploadOrderProofAction } from "@/actions/order.actions";
-import { getUserWalletsAction } from "@/actions/wallet.actions";
-import { getPaymentMethodsAction } from "@/actions/payment.actions";
-import { getPaymentAccountAction } from "@/actions/payment-account.actions";
+import { createOrderAction, uploadOrderProofAction } from '@/actions/order.actions';
+import { getPaymentMethodsAction } from '@/actions/payment.actions';
 
 export default function WalletExchangePage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
 
-  const [fromWalletId, setFromWalletId] = useState("");
-  const [toWalletId, setToWalletId] = useState("");
-  const [amount, setAmount] = useState("");
-  const [receiveUsername, setReceiveUsername] = useState("");
-  const [receiveWalletNumber, setReceiveWalletNumber] = useState("");
-  const [receiveEmail, setReceiveEmail] = useState("");
-  const [receivePhone, setReceivePhone] = useState("");
-  const [transactionReference, setTransactionReference] = useState("");
+  const [paymentMethodId, setPaymentMethodId] = useState('');
+  const [amount, setAmount] = useState('');
+  const [receiveUsername, setReceiveUsername] = useState('');
+  const [receiveWalletNumber, setReceiveWalletNumber] = useState('');
+  const [receiveEmail, setReceiveEmail] = useState('');
+  const [receivePhone, setReceivePhone] = useState('');
+  const [transactionReference, setTransactionReference] = useState('');
   const [paymentProof, setPaymentProof] = useState<File | null>(null);
   const [paymentPreview, setPaymentPreview] = useState<string | null>(null);
   const [receiveQr, setReceiveQr] = useState<File | null>(null);
   const [receiveQrPreview, setReceiveQrPreview] = useState<string | null>(null);
   const [orderId, setOrderId] = useState<string | null>(null);
 
-  const { data: wallets, isLoading: walletsLoading } = useQuery({
-    queryKey: ["user-wallets"],
+  const { data: methods, isLoading: methodsLoading } = useQuery({
+    queryKey: ['exchange-methods'],
     queryFn: async () => {
-      const result = await getUserWalletsAction();
-      if (!result.success) throw new Error(result.error);
-      return result.wallets;
-    },
-  });
-
-  const { data: methods } = useQuery({
-    queryKey: ["exchange-methods"],
-    queryFn: async () => {
-      const result = await getPaymentMethodsAction("EXCHANGE");
+      const result = await getPaymentMethodsAction('EXCHANGE');
       if (!result.success) throw new Error(result.error);
       return result.methods;
     },
   });
 
-  const fromWallet = wallets?.find((wallet: any) => wallet.id === fromWalletId);
-  const toWallet = methods?.find((m: any) => m.id === toWalletId);
+  const selectedMethod = methods?.find((m: any) => m.id === paymentMethodId);
 
-  const { data: adminWallet } = useQuery({
-    queryKey: ["admin-wallet", fromWalletId],
-    queryFn: async () => {
-      const result = await getPaymentAccountAction(fromWalletId);
-      if (!result.success) throw new Error(result.error);
-      return result.account;
-    },
-    enabled: !!fromWalletId,
-  });
+  const calculateFee = () => {
+    if (!selectedMethod || !amount) return 0;
+    return (parseFloat(amount) * selectedMethod.feePercentage) / 100;
+  };
 
-  const exchangeRate = toWallet?.rate ?? 1;
-  const feePercentage = toWallet?.feePercentage ?? 0;
+  const calculateTotal = () => {
+    if (!amount) return 0;
+    return parseFloat(amount) + calculateFee();
+  };
 
-  const summary = useMemo(() => {
-    const amountNum = Number(amount || 0);
-    const fee = (amountNum * feePercentage) / 100;
-    const receive = amountNum * exchangeRate - fee;
-    return { fee, receive };
-  }, [amount, exchangeRate, feePercentage]);
-
-  const handleSwap = () => {
-    const from = fromWalletId;
-    setFromWalletId(toWalletId);
-    setToWalletId(from);
+  const calculateReceive = () => {
+    if (!selectedMethod || !amount) return 0;
+    return parseFloat(amount) * (selectedMethod.rate ?? 1);
   };
 
   const handleProofUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -99,46 +75,27 @@ export default function WalletExchangePage() {
   };
 
   const createOrderMutation = useMutation({
-    mutationFn: async () => {
-      const payload = {
-        type: "EXCHANGE",
-        paymentMethodId: toWalletId,
-        fromWalletId,
-        toWalletId,
-        amount: Number(amount),
-        exchangeRate,
-        fee: summary.fee,
-        receiveAmount: summary.receive,
-        adminWalletId: adminWallet?.id,
-        receiveUsername,
-        receiveWalletNumber,
-        receiveEmail,
-        receivePhone,
-        transactionReference,
-        total: Number(amount) + summary.fee,
-        rate: exchangeRate,
-      };
-
-      const result = await createOrderAction(payload);
-      if (!result.success) throw new Error(result.error);
-      return result.order;
+    mutationFn: async (data: any) => {
+      const res = await createOrderAction(data);
+      if (!res.success) throw new Error(res.error);
+      return res.order;
     },
     onSuccess: (order) => {
       setOrderId(order.id);
       setStep(2);
     },
     onError: (error: any) => {
-      toast.error(error.message);
+      toast.error(error.message || 'Failed to create order');
     },
   });
 
   const uploadMutation = useMutation({
     mutationFn: async () => {
-      if (!orderId || !paymentProof) throw new Error("Payment screenshot required");
+      if (!orderId || !paymentProof) throw new Error('Payment proof required');
 
       const formData = new FormData();
-      formData.append("file", paymentProof);
-      if (receiveQr) formData.append("receiveQrCode", receiveQr);
+      formData.append('file', paymentProof);
+      if (receiveQr) formData.append('receiveQrCode', receiveQr);
 
       const result = await uploadOrderProofAction(orderId, formData);
       if (!result.success) throw new Error(result.error);
@@ -146,33 +103,44 @@ export default function WalletExchangePage() {
       return result.order;
     },
     onSuccess: () => {
-      toast.success("Exchange request submitted successfully");
-      router.push("/dashboard/orders");
+      toast.success('Exchange request submitted successfully!');
+      router.push('/dashboard/orders');
     },
     onError: (error: any) => {
-      toast.error(error.message);
+      toast.error(error.message || 'Failed to upload proof');
     },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (step === 1) {
-      createOrderMutation.mutate();
+      createOrderMutation.mutate({
+        type: 'EXCHANGE',
+        paymentMethodId,
+        amount: parseFloat(amount),
+        fee: calculateFee(),
+        receiveAmount: calculateReceive(),
+        receiveUsername,
+        receiveWalletNumber,
+        receiveEmail,
+        receivePhone,
+        transactionReference,
+        total: calculateTotal(),
+        rate: selectedMethod?.rate ?? 1,
+      });
       return;
     }
-
-    if (!paymentProof) {
-      toast.error("Please upload payment proof");
-      return;
-    }
-
     uploadMutation.mutate();
   };
 
-  if (walletsLoading) {
+  if (methodsLoading) {
     return (
-      <div className="flex justify-center py-20">
-        <Loader2 className="animate-spin" />
+      <div className="flex flex-col items-center justify-center py-40 gap-4">
+        <div className="relative">
+          <div className="h-20 w-20 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+          <Loader2 className="h-10 w-10 text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+        </div>
+        <p className="text-[#848E9C] font-bold text-lg animate-pulse tracking-widest uppercase">Loading...</p>
       </div>
     );
   }
@@ -189,44 +157,22 @@ export default function WalletExchangePage() {
           <Card className="border-[#2B3139] bg-[#1E2329] rounded-3xl overflow-hidden">
             <CardHeader>
               <CardTitle className="text-white">Exchange Details</CardTitle>
-              <CardDescription>Select wallets and enter amount</CardDescription>
+              <CardDescription>Select payment method and enter amount</CardDescription>
             </CardHeader>
             <form onSubmit={handleSubmit}>
               <CardContent className="space-y-6">
                 {step === 1 ? (
                   <>
                     <div className="space-y-2">
-                      <Label className="text-[#848E9C] uppercase text-xs font-black tracking-widest">Send From</Label>
-                      <Select value={fromWalletId} onValueChange={setFromWalletId}>
+                      <Label className="text-[#848E9C] uppercase text-xs font-black tracking-widest">Select Payment Method</Label>
+                      <Select value={paymentMethodId} onValueChange={setPaymentMethodId}>
                         <SelectTrigger className="h-14 bg-[#0B0E11] border-[#2B3139] text-white rounded-xl">
-                          <SelectValue placeholder="Select wallet" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-[#1E2329] border-[#2B3139] text-white">
-                          {wallets?.map((wallet: any) => (
-                            <SelectItem key={wallet.id} value={wallet.id}>
-                              {wallet.paymentMethod.name} (Balance: {wallet.balance})
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="flex justify-center">
-                      <Button type="button" size="icon" onClick={handleSwap} className="rounded-full h-12 w-12">
-                        <ArrowUpDown className="h-5 w-5" />
-                      </Button>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="text-[#848E9C] uppercase text-xs font-black tracking-widest">Receive In</Label>
-                      <Select value={toWalletId} onValueChange={setToWalletId}>
-                        <SelectTrigger className="h-14 bg-[#0B0E11] border-[#2B3139] text-white rounded-xl">
-                          <SelectValue placeholder="Select destination wallet" />
+                          <SelectValue placeholder="Choose a payment method" />
                         </SelectTrigger>
                         <SelectContent className="bg-[#1E2329] border-[#2B3139] text-white">
                           {methods?.map((method: any) => (
                             <SelectItem key={method.id} value={method.id}>
-                              {method.name}
+                              {method.name} {method.feePercentage === 0 ? "(No Fee)" : `(${method.feePercentage}% fee)`}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -235,18 +181,21 @@ export default function WalletExchangePage() {
 
                     <div className="space-y-2">
                       <Label className="text-[#848E9C] uppercase text-xs font-black tracking-widest">Amount To Exchange</Label>
-                      <Input
-                        type="number"
-                        placeholder="1000"
-                        value={amount}
-                        onChange={(e) => setAmount(e.target.value)}
-                        className="h-14 bg-[#0B0E11] border-[#2B3139] text-white text-xl font-bold rounded-xl"
-                        required
-                        min="1"
-                      />
+                      <div className="relative">
+                        <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[#848E9C]" />
+                        <Input
+                          type="number"
+                          placeholder="1000"
+                          value={amount}
+                          onChange={(e) => setAmount(e.target.value)}
+                          className="h-14 pl-12 bg-[#0B0E11] border-[#2B3139] text-white text-xl font-bold rounded-xl"
+                          required
+                          min="1"
+                        />
+                      </div>
                     </div>
 
-                    {fromWallet && toWallet && amount && (
+                    {selectedMethod && amount && (
                       <div className="p-4 rounded-2xl bg-[#0B0E11] border border-[#2B3139] space-y-3">
                         <div className="flex justify-between text-sm">
                           <span className="text-[#848E9C]">Exchange Amount</span>
@@ -254,15 +203,15 @@ export default function WalletExchangePage() {
                         </div>
                         <div className="flex justify-between text-sm">
                           <span className="text-[#848E9C]">Exchange Rate</span>
-                          <span className="text-white font-bold">1 : {exchangeRate}</span>
+                          <span className="text-white font-bold">1 : {selectedMethod.rate ?? 1}</span>
                         </div>
                         <div className="flex justify-between text-sm">
-                          <span className="text-[#848E9C]">Processing Fee ({feePercentage}%)</span>
-                          <span className="text-orange-500 font-bold">{summary.fee.toFixed(2)}</span>
+                          <span className="text-[#848E9C]">Processing Fee ({selectedMethod.feePercentage}%)</span>
+                          <span className="text-orange-500 font-bold">{calculateFee().toFixed(2)}</span>
                         </div>
                         <div className="pt-2 border-t border-[#2B3139] flex justify-between">
                           <span className="text-white font-black">You Receive</span>
-                          <span className="text-primary font-black text-lg">{summary.receive.toFixed(2)}</span>
+                          <span className="text-primary font-black text-lg">{calculateReceive().toFixed(2)}</span>
                         </div>
                       </div>
                     )}
@@ -300,25 +249,25 @@ export default function WalletExchangePage() {
                 ) : (
                   <div className="space-y-6">
                     <div className="p-6 rounded-3xl bg-[#0B0E11] border-2 border-primary/20 flex flex-col items-center text-center space-y-4">
-                      {adminWallet?.qrCodeUrl ? (
-                        <Image src={adminWallet.qrCodeUrl} alt="QR Code" width={200} height={200} className="rounded-xl" />
+                      {selectedMethod?.qrCode ? (
+                        <Image src={selectedMethod.qrCode} alt="QR Code" width={200} height={200} className="rounded-xl" />
                       ) : (
                         <div className="p-8 bg-white rounded-xl">
-                          <QrCode className="h-32 w-32 text-black" />
+                          <QrCode className="h-40 w-40 text-black" />
                         </div>
                       )}
                       <div>
                         <p className="text-[#848E9C] text-sm uppercase font-black tracking-widest">Send Payment To</p>
-                        {fromWallet && (
-                          <p className="text-white font-bold text-lg mt-1">{fromWallet.paymentMethod.name}</p>
+                        {selectedMethod && (
+                          <p className="text-white font-bold text-lg mt-1">{selectedMethod.name}</p>
                         )}
                       </div>
-                      {adminWallet && (
+                      {selectedMethod?.details && (
                         <div className="w-full space-y-2">
                           <div className="flex items-center gap-2">
                             <Input
                               readOnly
-                              value={adminWallet.accountName || ""}
+                              value={selectedMethod.details}
                               className="h-10 bg-[#1E2329] border-[#2B3139] text-white text-center rounded-lg"
                             />
                             <Button
@@ -326,26 +275,8 @@ export default function WalletExchangePage() {
                               size="icon"
                               variant="secondary"
                               onClick={() => {
-                                navigator.clipboard.writeText(adminWallet.accountName || "");
-                                toast.success("Copied");
-                              }}
-                            >
-                              <Copy className="h-4 w-4" />
-                            </Button>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Input
-                              readOnly
-                              value={adminWallet.accountNumber || ""}
-                              className="h-10 bg-[#1E2329] border-[#2B3139] text-white text-center rounded-lg"
-                            />
-                            <Button
-                              type="button"
-                              size="icon"
-                              variant="secondary"
-                              onClick={() => {
-                                navigator.clipboard.writeText(adminWallet.accountNumber || "");
-                                toast.success("Copied");
+                                navigator.clipboard.writeText(selectedMethod.details);
+                                toast.success('Copied');
                               }}
                             >
                               <Copy className="h-4 w-4" />
@@ -354,8 +285,8 @@ export default function WalletExchangePage() {
                         </div>
                       )}
                       <div className="w-full pt-4 border-t border-[#2B3139]">
-                        <p className="text-primary font-black text-2xl">{amount}</p>
-                        <p className="text-[#848E9C] text-xs">Exact amount to send</p>
+                        <p className="text-primary font-black text-2xl">{calculateTotal().toFixed(2)}</p>
+                        <p className="text-[#848E9C] text-xs">Exact amount to be paid</p>
                       </div>
                     </div>
 
@@ -363,13 +294,13 @@ export default function WalletExchangePage() {
                       <Label className="text-[#848E9C] uppercase text-xs font-black tracking-widest">Your Receiving QR Code</Label>
                       <div
                         className={cn(
-                          "relative border-2 border-dashed border-[#2B3139] rounded-2xl p-8 flex flex-col items-center justify-center transition-all hover:border-primary/50 cursor-pointer overflow-hidden",
+                          "relative border-2 border-dashed border-[#2B3139] rounded-3xl p-8 flex flex-col items-center justify-center transition-all hover:border-primary/50 cursor-pointer overflow-hidden",
                           receiveQrPreview ? "aspect-video" : "h-40"
                         )}
-                        onClick={() => document.getElementById("receive-qr")?.click()}
+                        onClick={() => document.getElementById('receive-qr')?.click()}
                       >
                         {receiveQrPreview ? (
-                          <Image src={receiveQrPreview} alt="Preview" fill className="object-contain" />
+                          <Image src={receiveQrPreview} alt="Preview" fill className="object-contain" unoptimized />
                         ) : (
                           <>
                             <UploadCloud className="h-10 w-10 text-[#848E9C] mb-2" />
@@ -380,7 +311,7 @@ export default function WalletExchangePage() {
                           type="file"
                           id="receive-qr"
                           className="hidden"
-                          accept="image/png,image/jpeg,image/jpg,image/webp"
+                          accept="image/*"
                           onChange={handleReceiveQrUpload}
                         />
                       </div>
@@ -390,13 +321,13 @@ export default function WalletExchangePage() {
                       <Label className="text-[#848E9C] uppercase text-xs font-black tracking-widest">Upload Payment Proof</Label>
                       <div
                         className={cn(
-                          "relative border-2 border-dashed border-[#2B3139] rounded-2xl p-8 flex flex-col items-center justify-center transition-all hover:border-primary/50 cursor-pointer overflow-hidden",
+                          "relative border-2 border-dashed border-[#2B3139] rounded-3xl p-8 flex flex-col items-center justify-center transition-all hover:border-primary/50 cursor-pointer overflow-hidden",
                           paymentPreview ? "aspect-video" : "h-40"
                         )}
-                        onClick={() => document.getElementById("payment-proof")?.click()}
+                        onClick={() => document.getElementById('payment-proof')?.click()}
                       >
                         {paymentPreview ? (
-                          <Image src={paymentPreview} alt="Preview" fill className="object-contain" />
+                          <Image src={paymentPreview} alt="Preview" fill className="object-contain" unoptimized />
                         ) : (
                           <>
                             <UploadCloud className="h-10 w-10 text-[#848E9C] mb-2" />
@@ -407,7 +338,7 @@ export default function WalletExchangePage() {
                           type="file"
                           id="payment-proof"
                           className="hidden"
-                          accept="image/png,image/jpeg,image/jpg,image/webp"
+                          accept="image/*"
                           onChange={handleProofUpload}
                         />
                       </div>
@@ -415,7 +346,7 @@ export default function WalletExchangePage() {
 
                     <div className="space-y-2">
                       <Label className="text-[#848E9C] uppercase text-xs font-black tracking-widest">
-                        Transaction Reference ID (optional)
+                        Transaction Reference (optional)
                       </Label>
                       <Input
                         placeholder="TRX123456789"
@@ -433,8 +364,7 @@ export default function WalletExchangePage() {
                   disabled={
                     (step === 1 &&
                       (createOrderMutation.isPending ||
-                        !fromWalletId ||
-                        !toWalletId ||
+                        !paymentMethodId ||
                         !amount ||
                         !receiveUsername ||
                         !receiveWalletNumber)) ||
@@ -478,8 +408,8 @@ export default function WalletExchangePage() {
             </CardHeader>
             <CardContent className="space-y-4 text-sm">
               <div className="space-y-2">
-                <p className="text-white font-bold">1. Select Wallets</p>
-                <p className="text-[#848E9C]">Choose the wallet to send from and receive in.</p>
+                <p className="text-white font-bold">1. Select Payment Method</p>
+                <p className="text-[#848E9C]">Choose the payment method you want to use.</p>
               </div>
               <div className="space-y-2">
                 <p className="text-white font-bold">2. Enter Amount</p>

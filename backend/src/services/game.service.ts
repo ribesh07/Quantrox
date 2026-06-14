@@ -1,17 +1,31 @@
 import { prisma } from "../shared/prisma";
 
+const baseUrl = process.env.SERVICE_URL_BACKEND || "https://api.settlerpay.com";
+
 export const GameService = {
   async getAll(activeOnly: boolean = false) {
-    return prisma.game.findMany({
+    const games = await prisma.game.findMany({
       where: activeOnly ? { active: true } : {},
       orderBy: { name: 'asc' },
     });
+
+    return games.map(game => ({
+      ...game,
+      logo: game.logo ? `${baseUrl}${game.logo}` : null,
+    }));
   },
 
   async getById(id: string) {
-    return prisma.game.findUnique({
+    const game = await prisma.game.findUnique({
       where: { id },
     });
+
+    if (!game) return null;
+
+    return {
+      ...game,
+      logo: game.logo ? `${baseUrl}${game.logo}` : null,
+    };
   },
 
   async create(data: any, adminId: string) {
@@ -31,7 +45,10 @@ export const GameService = {
       },
     });
 
-    return game;
+    return {
+      ...game,
+      logo: game.logo ? `${baseUrl}${game.logo}` : null,
+    };
   },
 
   async update(id: string, data: any, adminId: string) {
@@ -52,7 +69,10 @@ export const GameService = {
       },
     });
 
-    return game;
+    return {
+      ...game,
+      logo: game.logo ? `${baseUrl}${game.logo}` : null,
+    };
   },
 
   async delete(id: string, adminId: string) {
