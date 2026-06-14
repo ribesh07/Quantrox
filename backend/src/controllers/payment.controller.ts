@@ -3,6 +3,7 @@ import { AuthRequest } from '../middleware/auth.middleware';
 import { PaymentService } from '../services/payment.service';
 import { AuditLogService } from '../services/audit-log.service';
 import { PaymentMethodCategory } from '@prisma/client';
+import { saveUploadedFile } from '../utils/uploads';
 
 export const getAllPaymentMethods = async (req: AuthRequest, res: Response) => {
   try {
@@ -25,7 +26,15 @@ export const getPublicPaymentMethods = async (req: Request, res: Response) => {
 
 export const createPaymentMethod = async (req: AuthRequest, res: Response) => {
   try {
-    const method = await PaymentService.create(req.body, req.user!.userId);
+    let qrCodeUrl: string | undefined;
+    if (req.file) {
+      qrCodeUrl = await saveUploadedFile({
+        tempPath: req.file.path,
+        originalName: req.file.originalname,
+        subdirectory: 'qrs',
+      });
+    }
+    const method = await PaymentService.create({ ...req.body, qrCode: qrCodeUrl }, req.user!.userId);
 
     await AuditLogService.log({
       userId: req.user!.userId,
@@ -46,7 +55,16 @@ export const updatePaymentMethod = async (req: AuthRequest, res: Response) => {
   try {
     const id = req.params.id as string;
     const oldMethod = await PaymentService.getById(id);
-    const method = await PaymentService.update(id, req.body, req.user!.userId);
+
+    let qrCodeUrl: string | undefined;
+    if (req.file) {
+      qrCodeUrl = await saveUploadedFile({
+        tempPath: req.file.path,
+        originalName: req.file.originalname,
+        subdirectory: 'qrs',
+      });
+    }
+    const method = await PaymentService.update(id, { ...req.body, qrCode: qrCodeUrl }, req.user!.userId);
 
     await AuditLogService.log({
       userId: req.user!.userId,

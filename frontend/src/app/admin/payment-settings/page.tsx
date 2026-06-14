@@ -23,7 +23,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { getAllPaymentMethodsAction, updatePaymentMethodAction } from "@/actions/admin.actions";
+import { UploadCloud, Loader2, Image as ImageIcon } from "lucide-react";
+import Image from "next/image";
+import { getAllPaymentMethodsAction, updatePaymentMethodAction, uploadPaymentMethodQRAction } from "@/actions/admin.actions";
+import { cn } from "@/lib/utils";
 
 export default function PaymentMethodsPage() {
   const queryClient = useQueryClient();
@@ -51,11 +54,29 @@ export default function PaymentMethodsPage() {
     }
   });
 
-  const handleUpdate = (id: string, data: any) => {
-    updateMutation.mutate({ id, ...data });
-  };
+  const uploadQRMutation = useMutation({
+    mutationFn: async ({ id, file }: { id: string; file: File }) => {
+      const formData = new FormData();
+      formData.append("qrCode", file);
+      const result = await uploadPaymentMethodQRAction(id, formData);
+      if (!result.success) throw new Error(result.error);
+      return result.method;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-payment-methods"] });
+      toast.success("QR code uploaded successfully");
+    },
+    onError: (error: any) => {
+      toast.error(error.message);
+    }
+  });
 
-  if (isLoading) return <div>Loading...</div>;
+  if (isLoading) return (
+    <div className="flex flex-col items-center justify-center py-20 gap-3">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <p className="text-sm text-muted-foreground">Loading payment methods...</p>
+    </div>
+  );
 
   return (
     <div className="space-y-6">
@@ -80,6 +101,7 @@ export default function PaymentMethodsPage() {
                 <TableHead>Rate</TableHead>
                 <TableHead>Fee (%)</TableHead>
                 <TableHead>Limits</TableHead>
+                <TableHead>QR Code</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
@@ -98,7 +120,7 @@ export default function PaymentMethodsPage() {
                         type="number"
                         step="0.01"
                         defaultValue={method.rate}
-                        onBlur={(e) => handleUpdate(method.id, { rate: e.target.value })}
+                        onBlur={(e) => updateMutation.mutate({ id: method.id, rate: parseFloat(e.target.value) })}
                       />
                     </div>
                   </TableCell>
@@ -109,7 +131,7 @@ export default function PaymentMethodsPage() {
                         type="number"
                         step="0.1"
                         defaultValue={method.feePercentage}
-                        onBlur={(e) => handleUpdate(method.id, { feePercentage: e.target.value })}
+                        onBlur={(e) => updateMutation.mutate({ id: method.id, feePercentage: parseFloat(e.target.value) })}
                       />
                     </div>
                   </TableCell>
@@ -121,7 +143,7 @@ export default function PaymentMethodsPage() {
                           className="w-16 h-6 p-1"
                           type="number"
                           defaultValue={method.minAmount}
-                          onBlur={(e) => handleUpdate(method.id, { minAmount: e.target.value })}
+                          onBlur={(e) => updateMutation.mutate({ id: method.id, minAmount: parseFloat(e.target.value) })}
                         />
                       </span>
                       <span className="flex items-center gap-1">
@@ -130,24 +152,62 @@ export default function PaymentMethodsPage() {
                           className="w-16 h-6 p-1"
                           type="number"
                           defaultValue={method.maxAmount}
-                          onBlur={(e) => handleUpdate(method.id, { maxAmount: e.target.value })}
+                          onBlur={(e) => updateMutation.mutate({ id: method.id, maxAmount: parseFloat(e.target.value) })}
                         />
                       </span>
                     </div>
                   </TableCell>
                   <TableCell>
+                    {method.qrCode ? (
+                      <div className="relative group">
+                        <Image
+                          src={method.qrCode}
+                          alt="QR"
+                          width={60}
+                          height={60}
+                          className="rounded-lg border"
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-15 h-15 rounded-lg border border-dashed flex items-center justify-center text-muted-foreground">
+                        <ImageIcon className="h-6 w-6" />
+                      </div>
+                    )}
+                  </TableCell>
+                  <TableCell>
                     <Switch
                       checked={method.active}
-                      onCheckedChange={(checked) => handleUpdate(method.id, { active: checked })}
+                      onCheckedChange={(checked) => updateMutation.mutate({ id: method.id, active: checked })}
                     />
                   </TableCell>
                   <TableCell>
-                    <Button variant="ghost" size="sm" onClick={() => {
-                      // Logic for details/QR code could go here in a dialog
-                      toast.info("Detailed editing coming soon");
-                    }}>
-                      Edit Info
-                    </Button>
+                    <div className="flex flex-col gap-2">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        id={`qr-${method.id}`}
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            uploadQRMutation.mutate({ id: method.id, file });
+                          }
+                        }}
+                      />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => document.getElementById(`qr-${method.id}`)?.click()}
+                        disabled={uploadQRMutation.isPending}
+                      >
+                        {uploadQRMutation.isPending ? (
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        ) : (
+                          <UploadCloud className="h-4 w-4 mr-2" />
+                        )}
+                        Upload QR
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}

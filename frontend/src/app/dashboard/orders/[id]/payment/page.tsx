@@ -19,7 +19,7 @@ import { toast } from "sonner";
 import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { getOrderByIdAction } from "@/actions/order.actions";
+import { getOrderByIdAction, uploadOrderProofAction } from "@/actions/order.actions";
 
 export default function OrderDetailsPage({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
   const params = use(paramsPromise);
@@ -33,15 +33,15 @@ export default function OrderDetailsPage({ params: paramsPromise }: { params: Pr
     queryKey: ["order", params.id],
     queryFn: async () => {
        const res = await getOrderByIdAction(params.id);
-      if (!res.success) throw new Error("Upload failed");
+      if (!res.success) throw new Error("Failed to load order");
       return res.order;
     },
   });
 
   const uploadMutation = useMutation({
     mutationFn: async (formData: FormData) => {
-      const res = await getOrderByIdAction(params.id);
-      if (!res.success) throw new Error("Upload failed");
+      const res = await uploadOrderProofAction(params.id, formData);
+      if (!res.success) throw new Error(res.error || "Upload failed");
       return res.order;
     },
     onSuccess: () => {
@@ -51,8 +51,8 @@ export default function OrderDetailsPage({ params: paramsPromise }: { params: Pr
       setSelectedFile(null);
       setPreviewUrl(null);
     },
-    onError: () => {
-      toast.error("Failed to upload proof");
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to upload proof");
       setUploading(false);
     },
   });

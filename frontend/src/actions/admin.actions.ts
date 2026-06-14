@@ -138,6 +138,17 @@ export async function deleteGameAction(id: string) {
   }
 }
 
+export async function createUserAction(data: { username: string; email: string; password: string; role: string }) {
+  try {
+    const config = await getAuthenticatedRequestConfig();
+    const response = await api.post("/admin/users", data, config);
+    revalidatePath("/admin/users");
+    return { success: true, user: response.data.user };
+  } catch (error: any) {
+    return { success: false, error: error.response?.data?.message || error.message };
+  }
+}
+
 // QR Code Actions
 export async function getAllQRCodesAction() {
   try {
@@ -177,6 +188,17 @@ export async function deleteQRCodeAction(id: string) {
     await api.delete(`/admin/qr-codes/${id}`, config);
     revalidatePath("/admin/qr-codes");
     return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.response?.data?.message || error.message };
+  }
+}
+
+export async function uploadPaymentMethodQRAction(id: string, formData: FormData) {
+  try {
+    const config = await getAuthenticatedRequestConfig();
+    const response = await api.patch(`/admin/payment-methods/${id}`, formData, config);
+    revalidatePath("/admin/payment-settings");
+    return { success: true, method: response.data.method };
   } catch (error: any) {
     return { success: false, error: error.response?.data?.message || error.message };
   }
