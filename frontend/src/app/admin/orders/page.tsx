@@ -82,7 +82,7 @@ export default function AdminOrdersPage() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Transaction Management</h1>
-          <p className="text-muted-foreground">Review and manage deposits and exchange requests</p>
+          <p className="text-muted-foreground">Review and manage exchange and top-up requests</p>
         </div>
       </div>
 

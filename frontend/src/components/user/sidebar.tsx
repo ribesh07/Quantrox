@@ -32,11 +32,6 @@ const routes = [
     href: "/dashboard",
   },
   {
-    label: "Deposit Funds",
-    icon: TrendingUp,
-    href: "/dashboard/deposit",
-  },
-  {
     label: "Wallet Exchange",
     icon: ArrowLeftRight,
     href: "/dashboard/exchange",

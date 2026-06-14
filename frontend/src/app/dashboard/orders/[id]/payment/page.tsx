@@ -117,7 +117,7 @@ export default function OrderDetailsPage({ params: paramsPromise }: { params: Pr
 
       <div className="grid gap-8 lg:grid-cols-12">
         <div className="lg:col-span-7 space-y-8">
-          {order.status === "PENDING_PAYMENT" && order.type === "DEPOSIT" && (
+          {order.status === "PENDING_PAYMENT" && (order.type === "DEPOSIT" || order.type === "EXCHANGE" || order.type === "GAME_TOPUP") && (
             <Card className="border-none shadow-xl bg-card/50 backdrop-blur-sm overflow-hidden">
               <div className="h-2 bg-primary" />
               <CardHeader>
@@ -126,7 +126,7 @@ export default function OrderDetailsPage({ params: paramsPromise }: { params: Pr
                   Scan to Pay
                 </CardTitle>
                 <CardDescription>
-                  Scan the QR code to pay the exact amount for this deposit.
+                  Scan the QR code to pay the exact amount for this {order.type.toLowerCase()}.
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex flex-col items-center justify-center space-y-8 py-10">

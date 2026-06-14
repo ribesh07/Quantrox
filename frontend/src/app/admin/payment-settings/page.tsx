@@ -90,7 +90,7 @@ export default function PaymentMethodsPage() {
       <Card>
         <CardHeader>
           <CardTitle>All Methods</CardTitle>
-          <CardDescription>Configure deposit and exchange settings</CardDescription>
+          <CardDescription>Configure exchange and top-up settings</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
