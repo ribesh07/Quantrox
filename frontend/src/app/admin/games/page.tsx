@@ -68,6 +68,21 @@ export default function GamesPage() {
     }
   });
 
+  const uploadLogoMutation = useMutation({
+    mutationFn: async ({ id, formData }: any) => {
+      const result = await uploadGameLogoAction(id, formData);
+      if (!result.success) throw new Error(result.error);
+      return result.game;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["games"] });
+      toast.success("Game logo updated");
+    },
+    onError: (error: any) => {
+      toast.error(error.message);
+    }
+  });
+
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       const result = await deleteGameAction(id);
@@ -108,13 +123,25 @@ export default function GamesPage() {
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                const formData = new FormData(e.currentTarget);
-                createMutation.mutate({
-                  name: formData.get("name"),
-                  logo: formData.get("logo"),
-                  buyRate: parseFloat(formData.get("buyRate") as string),
-                  sellRate: parseFloat(formData.get("sellRate") as string),
-                });
+                const form = e.currentTarget as HTMLFormElement & { logo?: HTMLInputElement };
+                const formData = new FormData();
+                const name = (form.querySelector('input[name="name"]') as HTMLInputElement).value;
+                const buyRate = (form.querySelector('input[name="buyRate"]') as HTMLInputElement).value;
+                const sellRate = (form.querySelector('input[name="sellRate"]') as HTMLInputElement).value;
+                // Prefer file upload if provided
+                const fileInput = form.querySelector('input[name="logo"]') as HTMLInputElement | null;
+                if (fileInput && fileInput.files && fileInput.files[0]) {
+                  formData.append('logo', fileInput.files[0]);
+                } else {
+                  const url = (form.querySelector('input[name="logoUrl"]') as HTMLInputElement).value;
+                  if (url) formData.append('logo', url);
+                }
+
+                formData.append('name', name);
+                formData.append('buyRate', buyRate);
+                formData.append('sellRate', sellRate);
+
+                createMutation.mutate(formData as unknown as any);
               }}
               className="space-y-6 pt-6"
             >
@@ -123,8 +150,11 @@ export default function GamesPage() {
                 <Input id="name" name="name" placeholder="e.g. Juwa Online" className="h-14 rounded-2xl border-2 border-[#2B3139] bg-[#0B0E11] text-white focus:border-primary transition-all font-bold" required />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="logo" className="text-[#848E9C] font-black uppercase tracking-widest text-xs ml-1">Poster Image URL</Label>
-                <Input id="logo" name="logo" placeholder="https://example.com/poster.jpg" className="h-14 rounded-2xl border-2 border-[#2B3139] bg-[#0B0E11] text-white focus:border-primary transition-all font-bold" />
+                <Label htmlFor="logoUrl" className="text-[#848E9C] font-black uppercase tracking-widest text-xs ml-1">Poster Image URL (or upload below)</Label>
+                <Input id="logoUrl" name="logoUrl" placeholder="https://example.com/poster.jpg" className="h-14 rounded-2xl border-2 border-[#2B3139] bg-[#0B0E11] text-white focus:border-primary transition-all font-bold" />
+                <div className="pt-2">
+                  <input type="file" name="logo" accept="image/*" className="text-sm text-white" />
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -196,6 +226,20 @@ export default function GamesPage() {
                       })
                     }
                   />
+                  <div className="pt-2">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        const formData = new FormData();
+                        formData.append('logo', file);
+                        uploadLogoMutation.mutate({ id: game.id, formData });
+                      }}
+                      className="text-sm text-white"
+                    />
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 pt-2">

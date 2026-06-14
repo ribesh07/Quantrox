@@ -67,6 +67,7 @@ app.use((error: Error, req: express.Request, res: express.Response, next: expres
 const startServer = async () => {
   await ensureUploadDirectory('proofs');
   await ensureUploadDirectory('qrs');
+  await ensureUploadDirectory('games');
 
   // Initialize Prisma connection before starting the server
   try {
