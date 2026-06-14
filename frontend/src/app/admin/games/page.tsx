@@ -22,7 +22,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { getAllGamesAction, createGameAction, updateGameAction, deleteGameAction } from "@/actions/admin.actions";
+import { getAllGamesAction, createGameAction, updateGameAction, deleteGameAction, uploadGameLogoAction } from "@/actions/admin.actions";
 
 export default function GamesPage() {
   const queryClient = useQueryClient();
