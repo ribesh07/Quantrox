@@ -123,6 +123,7 @@ model Order {
   receiveWalletNumber String?
   receiveEmail String?
   receivePhone String?
+  receiveQrCode String?
 
 
 

@@ -51,27 +51,37 @@ export const getOrderById = async (req: AuthRequest, res: Response) => {
 export const uploadProof = async (req: AuthRequest, res: Response) => {
   try {
     const id = req.params.id as string;
-    const file = req.file;
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
     const note = req.body.note;
 
-    if (!file) {
-      return res.status(400).json({ success: false, message: "No file uploaded" });
+    const updateData: any = {
+      adminNote: note || null,
+      status: OrderStatus.PENDING_REVIEW,
+    };
+
+    if (files['file'] && files['file'][0]) {
+      const imageUrl = await saveUploadedFile({
+        tempPath: files['file'][0].path,
+        originalName: files['file'][0].originalname,
+        prefix: id,
+        subdirectory: 'proofs',
+      });
+      updateData.screenshot = imageUrl;
     }
 
-    const imageUrl = await saveUploadedFile({
-      tempPath: file.path,
-      originalName: file.originalname,
-      prefix: id,
-      subdirectory: 'proofs',
-    });
+    if (files['receiveQrCode'] && files['receiveQrCode'][0]) {
+      const qrUrl = await saveUploadedFile({
+        tempPath: files['receiveQrCode'][0].path,
+        originalName: files['receiveQrCode'][0].originalname,
+        prefix: id,
+        subdirectory: 'qrs',
+      });
+      updateData.receiveQrCode = qrUrl;
+    }
 
     const order = await prisma.order.update({
       where: { id },
-      data: {
-        screenshot: imageUrl,
-        adminNote: note || null,
-        status: OrderStatus.PENDING_REVIEW,
-      },
+      data: updateData,
     });
 
     res.json({ success: true, order });

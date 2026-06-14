@@ -11,6 +11,6 @@ router.post('/', authenticate, OrderController.createOrder);
 router.get('/', authenticate, OrderController.getUserOrders);
 router.get('/stats', authenticate, OrderController.getUserStats);
 router.get('/:id', authenticate, OrderController.getOrderById);
-router.post('/:id/proof', authenticate, upload.single('file'), OrderController.uploadProof);
+router.post('/:id/proof', authenticate, upload.fields([{ name: 'file', maxCount: 1 }, { name: 'receiveQrCode', maxCount: 1 }]), OrderController.uploadProof);
 
 export default router;

@@ -198,22 +198,53 @@ export default function AdminOrdersPage() {
                 )}
               </div>
 
-              {selectedOrder.screenshot && (
-                <div className="space-y-2">
-                  <p className="text-sm font-medium flex items-center gap-2">
-                    Payment Proof
-                    <a href={selectedOrder.screenshot} target="_blank" rel="noreferrer" className="text-blue-500 hover:underline flex items-center text-xs">
-                      <ExternalLink className="h-3 w-3 mr-1" /> View Full
-                    </a>
-                  </p>
-                  <div className="relative aspect-video w-full overflow-hidden rounded-lg border bg-black">
-                    <Image
-                      src={selectedOrder.screenshot}
-                      alt="Proof"
-                      fill
-                      className="object-contain"
-                    />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {selectedOrder.screenshot && (
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium flex items-center gap-2">
+                      Payment Proof
+                      <a href={selectedOrder.screenshot} target="_blank" rel="noreferrer" className="text-blue-500 hover:underline flex items-center text-xs">
+                        <ExternalLink className="h-3 w-3 mr-1" /> View Full
+                      </a>
+                    </p>
+                    <div className="relative aspect-video w-full overflow-hidden rounded-lg border bg-black">
+                      <Image
+                        src={selectedOrder.screenshot}
+                        alt="Payment Proof"
+                        fill
+                        className="object-contain"
+                      />
+                    </div>
                   </div>
+                )}
+
+                {selectedOrder.receiveQrCode && (
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium flex items-center gap-2">
+                      Receiving QR Code
+                      <a href={selectedOrder.receiveQrCode} target="_blank" rel="noreferrer" className="text-blue-500 hover:underline flex items-center text-xs">
+                        <ExternalLink className="h-3 w-3 mr-1" /> View Full
+                      </a>
+                    </p>
+                    <div className="relative aspect-video w-full overflow-hidden rounded-lg border bg-black">
+                      <Image
+                        src={selectedOrder.receiveQrCode}
+                        alt="Receiving QR"
+                        fill
+                        className="object-contain"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {selectedOrder.type === "EXCHANGE" && (
+                <div className="p-4 bg-muted rounded-lg border space-y-2">
+                  <p className="text-sm font-medium">Receiving Wallet Details</p>
+                  {selectedOrder.receiveUsername && <p className="text-sm">Username: {selectedOrder.receiveUsername}</p>}
+                  {selectedOrder.receiveWalletNumber && <p className="text-sm">Wallet Number: {selectedOrder.receiveWalletNumber}</p>}
+                  {selectedOrder.receiveEmail && <p className="text-sm">Email: {selectedOrder.receiveEmail}</p>}
+                  {selectedOrder.receivePhone && <p className="text-sm">Phone: {selectedOrder.receivePhone}</p>}
                 </div>
               )}
 

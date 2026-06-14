@@ -33,8 +33,8 @@ router.get('/stats', UserController.getDashboardStats);
 
 // Payment Methods
 router.get('/payment-methods', PaymentController.getAllPaymentMethods);
-router.post('/payment-methods', PaymentController.createPaymentMethod);
-router.patch('/payment-methods/:id', PaymentController.updatePaymentMethod);
+router.post('/payment-methods', upload.single('qrCode'), PaymentController.createPaymentMethod);
+router.patch('/payment-methods/:id', upload.single('qrCode'), PaymentController.updatePaymentMethod);
 router.delete('/payment-methods/:id', PaymentController.deletePaymentMethod);
 
 // Payment Accounts
