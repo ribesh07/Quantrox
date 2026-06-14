@@ -157,6 +157,7 @@ model Wallet {
   paymentMethod   PaymentMethod @relation(fields: [paymentMethodId], references: [id])
   user            User          @relation(fields: [userId], references: [id])
   transactions    WalletTransaction[]
+    merchantInfos MerchantInfo[]
 
   @@unique([userId, paymentMethodId])
 }
