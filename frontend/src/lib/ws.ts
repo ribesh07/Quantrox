@@ -4,7 +4,7 @@ let socket: Socket | null = null;
 
 export function initSocket(token?: string) {
   if (socket) return socket;
-  const origin = typeof window !== 'undefined' ? `${window.location.protocol}//${window.location.hostname}:3001` : '';
+  const origin = process.env.NEXT_PUBLIC_WS_API_URL! ??  'https://api.settlerpay.com';
   const opts: any = { transports: ['websocket'] };
   socket = io(origin, opts);
   return socket;
