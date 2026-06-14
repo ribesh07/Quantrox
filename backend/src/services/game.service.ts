@@ -11,7 +11,11 @@ export const GameService = {
 
     return games.map(game => ({
       ...game,
-      logo: game.logo ? `${baseUrl}${game.logo}` : null,
+      logo: game.logo 
+        ? (game.logo.startsWith('http://') || game.logo.startsWith('https://') 
+          ? game.logo 
+          : `${baseUrl}${game.logo}`) 
+        : null,
     }));
   },
 
@@ -24,16 +28,29 @@ export const GameService = {
 
     return {
       ...game,
-      logo: game.logo ? `${baseUrl}${game.logo}` : null,
+      logo: game.logo 
+        ? (game.logo.startsWith('http://') || game.logo.startsWith('https://') 
+          ? game.logo 
+          : `${baseUrl}${game.logo}`) 
+        : null,
     };
   },
 
   async create(data: any, adminId: string) {
+    // Strip baseUrl from logo if present before saving
+    let processedData = { ...data };
+    if (processedData.logo && (processedData.logo.startsWith('http://') || processedData.logo.startsWith('https://'))) {
+      const pathMatch = processedData.logo.match(/\/uploads\/.*$/);
+      if (pathMatch) {
+        processedData.logo = pathMatch[0];
+      }
+    }
+
     const game = await prisma.game.create({
       data: {
-        ...data,
-        buyRate: parseFloat(data.buyRate || 0),
-        sellRate: parseFloat(data.sellRate || 0),
+        ...processedData,
+        buyRate: parseFloat(processedData.buyRate || 0),
+        sellRate: parseFloat(processedData.sellRate || 0),
       },
     });
 
@@ -47,17 +64,30 @@ export const GameService = {
 
     return {
       ...game,
-      logo: game.logo ? `${baseUrl}${game.logo}` : null,
+      logo: game.logo 
+        ? (game.logo.startsWith('http://') || game.logo.startsWith('https://') 
+          ? game.logo 
+          : `${baseUrl}${game.logo}`) 
+        : null,
     };
   },
 
   async update(id: string, data: any, adminId: string) {
+    // Strip baseUrl from logo if present before saving
+    let processedData = { ...data };
+    if (processedData.logo && (processedData.logo.startsWith('http://') || processedData.logo.startsWith('https://'))) {
+      const pathMatch = processedData.logo.match(/\/uploads\/.*$/);
+      if (pathMatch) {
+        processedData.logo = pathMatch[0];
+      }
+    }
+
     const game = await prisma.game.update({
       where: { id },
       data: {
-        ...data,
-        ...(data.buyRate !== undefined && { buyRate: parseFloat(data.buyRate) }),
-        ...(data.sellRate !== undefined && { sellRate: parseFloat(data.sellRate) }),
+        ...processedData,
+        ...(processedData.buyRate !== undefined && { buyRate: parseFloat(processedData.buyRate) }),
+        ...(processedData.sellRate !== undefined && { sellRate: parseFloat(processedData.sellRate) }),
       },
     });
 
@@ -71,7 +101,11 @@ export const GameService = {
 
     return {
       ...game,
-      logo: game.logo ? `${baseUrl}${game.logo}` : null,
+      logo: game.logo 
+        ? (game.logo.startsWith('http://') || game.logo.startsWith('https://') 
+          ? game.logo 
+          : `${baseUrl}${game.logo}`) 
+        : null,
     };
   },
 

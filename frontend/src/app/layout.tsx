@@ -20,7 +20,7 @@ export default function RootLayout({
 }>) {
   // Socket initialization moved to dashboard layout (authenticated pages)
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className="dark" suppressHydrationWarning>
       <body className={inter.className}>
         <Providers>
           {children}

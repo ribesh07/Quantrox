@@ -257,3 +257,223 @@ export async function updateSystemSettingsAction(data: any) {
     return { success: false, error: error.response?.data?.message || error.message };
   }
 }
+
+// Merchant Management Actions
+export async function getAllMerchantsAction() {
+  try {
+    const config = await getAuthenticatedRequestConfig();
+    const response = await api.get("/admin/merchants", config);
+    return { success: true, merchants: response.data.merchants, count: response.data.count };
+  } catch (error: any) {
+    return { success: false, error: error.response?.data?.message || error.message };
+  }
+}
+
+export async function approveMerchantAction(userId: string, adminNote?: string) {
+  try {
+    const config = await getAuthenticatedRequestConfig();
+    const response = await api.patch(`/admin/merchants/${userId}/approve`, { adminNote }, config);
+    revalidatePath("/admin/merchants");
+    return { success: true, merchant: response.data.merchant };
+  } catch (error: any) {
+    return { success: false, error: error.response?.data?.message || error.message };
+  }
+}
+
+export async function rejectMerchantAction(userId: string, adminNote?: string) {
+  try {
+    const config = await getAuthenticatedRequestConfig();
+    const response = await api.patch(`/admin/merchants/${userId}/reject`, { adminNote }, config);
+    revalidatePath("/admin/merchants");
+    return { success: true, merchant: response.data.merchant };
+  } catch (error: any) {
+    return { success: false, error: error.response?.data?.message || error.message };
+  }
+}
+
+// Merchant QR Code Actions
+export async function getAllMerchantQRCodesAction() {
+  try {
+    const config = await getAuthenticatedRequestConfig();
+    const response = await api.get("/admin/merchant-qrs", config);
+    return { success: true, qrs: response.data.qrs, count: response.data.count };
+  } catch (error: any) {
+    return { success: false, error: error.response?.data?.message || error.message };
+  }
+}
+
+export async function assignMerchantQRCodeAction(userId: string, formData: FormData) {
+  try {
+    const config = await getAuthenticatedRequestConfig();
+    const response = await api.post(`/admin/merchant-qrs/${userId}`, formData, config);
+    revalidatePath("/admin/merchant-qrs");
+    return { success: true, qrCode: response.data.qrCode };
+  } catch (error: any) {
+    return { success: false, error: error.response?.data?.message || error.message };
+  }
+}
+
+export async function disableMerchantQRCodeAction(userId: string) {
+  try {
+    const config = await getAuthenticatedRequestConfig();
+    const response = await api.patch(`/admin/merchant-qrs/${userId}/disable`, {}, config);
+    revalidatePath("/admin/merchant-qrs");
+    return { success: true, qrCode: response.data.qrCode };
+  } catch (error: any) {
+    return { success: false, error: error.response?.data?.message || error.message };
+  }
+}
+
+export async function enableMerchantQRCodeAction(userId: string) {
+  try {
+    const config = await getAuthenticatedRequestConfig();
+    const response = await api.patch(`/admin/merchant-qrs/${userId}/enable`, {}, config);
+    revalidatePath("/admin/merchant-qrs");
+    return { success: true, qrCode: response.data.qrCode };
+  } catch (error: any) {
+    return { success: false, error: error.response?.data?.message || error.message };
+  }
+}
+
+// Transaction Report Actions
+export async function getAllTransactionReportsAction() {
+  try {
+    const config = await getAuthenticatedRequestConfig();
+    const response = await api.get("/admin/transaction-reports", config);
+    return { success: true, reports: response.data.reports, count: response.data.count };
+  } catch (error: any) {
+    return { success: false, error: error.response?.data?.message || error.message };
+  }
+}
+
+export async function approveTransactionReportAction(id: string) {
+  try {
+    const config = await getAuthenticatedRequestConfig();
+    const response = await api.patch(`/admin/transaction-reports/${id}/approve`, {}, config);
+    revalidatePath("/admin/transaction-reports");
+    return { success: true, report: response.data.report };
+  } catch (error: any) {
+    return { success: false, error: error.response?.data?.message || error.message };
+  }
+}
+
+export async function rejectTransactionReportAction(id: string) {
+  try {
+    const config = await getAuthenticatedRequestConfig();
+    const response = await api.patch(`/admin/transaction-reports/${id}/reject`, {}, config);
+    revalidatePath("/admin/transaction-reports");
+    return { success: true, report: response.data.report };
+  } catch (error: any) {
+    return { success: false, error: error.response?.data?.message || error.message };
+  }
+}
+
+// Deposit Actions
+export async function getAllDepositsAction() {
+  try {
+    const config = await getAuthenticatedRequestConfig();
+    const response = await api.get("/admin/deposits", config);
+    return { success: true, deposits: response.data.deposits, count: response.data.count };
+  } catch (error: any) {
+    return { success: false, error: error.response?.data?.message || error.message };
+  }
+}
+
+export async function approveDepositAction(id: string) {
+  try {
+    const config = await getAuthenticatedRequestConfig();
+    const response = await api.patch(`/admin/deposits/${id}/approve`, {}, config);
+    revalidatePath("/admin/deposits");
+    return { success: true, deposit: response.data.deposit };
+  } catch (error: any) {
+    return { success: false, error: error.response?.data?.message || error.message };
+  }
+}
+
+export async function rejectDepositAction(id: string) {
+  try {
+    const config = await getAuthenticatedRequestConfig();
+    const response = await api.patch(`/admin/deposits/${id}/reject`, {}, config);
+    revalidatePath("/admin/deposits");
+    return { success: true, deposit: response.data.deposit };
+  } catch (error: any) {
+    return { success: false, error: error.response?.data?.message || error.message };
+  }
+}
+
+export async function freezeDepositAction(id: string) {
+  try {
+    const config = await getAuthenticatedRequestConfig();
+    const response = await api.patch(`/admin/deposits/${id}/freeze`, {}, config);
+    revalidatePath("/admin/deposits");
+    return { success: true, deposit: response.data.deposit };
+  } catch (error: any) {
+    return { success: false, error: error.response?.data?.message || error.message };
+  }
+}
+
+export async function releaseDepositAction(id: string) {
+  try {
+    const config = await getAuthenticatedRequestConfig();
+    const response = await api.patch(`/admin/deposits/${id}/release`, {}, config);
+    revalidatePath("/admin/deposits");
+    return { success: true, deposit: response.data.deposit };
+  } catch (error: any) {
+    return { success: false, error: error.response?.data?.message || error.message };
+  }
+}
+
+export async function adjustDepositAction(id: string, amount: number, notes?: string) {
+  try {
+    const config = await getAuthenticatedRequestConfig();
+    const response = await api.patch(`/admin/deposits/${id}/adjust`, { amount, notes }, config);
+    revalidatePath("/admin/deposits");
+    return { success: true, deposit: response.data.deposit };
+  } catch (error: any) {
+    return { success: false, error: error.response?.data?.message || error.message };
+  }
+}
+
+// Payout Request Actions
+export async function getAllPayoutRequestsAction() {
+  try {
+    const config = await getAuthenticatedRequestConfig();
+    const response = await api.get("/admin/payout-requests", config);
+    return { success: true, payouts: response.data.payouts, count: response.data.count };
+  } catch (error: any) {
+    return { success: false, error: error.response?.data?.message || error.message };
+  }
+}
+
+export async function approvePayoutRequestAction(id: string) {
+  try {
+    const config = await getAuthenticatedRequestConfig();
+    const response = await api.patch(`/admin/payout-requests/${id}/approve`, {}, config);
+    revalidatePath("/admin/payout-requests");
+    return { success: true, payout: response.data.payout };
+  } catch (error: any) {
+    return { success: false, error: error.response?.data?.message || error.message };
+  }
+}
+
+export async function rejectPayoutRequestAction(id: string, rejectionReason: string) {
+  try {
+    const config = await getAuthenticatedRequestConfig();
+    const response = await api.patch(`/admin/payout-requests/${id}/reject`, { rejectionReason }, config);
+    revalidatePath("/admin/payout-requests");
+    return { success: true, payout: response.data.payout };
+  } catch (error: any) {
+    return { success: false, error: error.response?.data?.message || error.message };
+  }
+}
+
+export async function markPayoutPaidAction(id: string, transactionHash: string) {
+  try {
+    const config = await getAuthenticatedRequestConfig();
+    const response = await api.patch(`/admin/payout-requests/${id}/mark-paid`, { transactionHash }, config);
+    revalidatePath("/admin/payout-requests");
+    return { success: true, payout: response.data.payout };
+  } catch (error: any) {
+    return { success: false, error: error.response?.data?.message || error.message };
+  }
+}

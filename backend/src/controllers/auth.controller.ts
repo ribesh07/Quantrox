@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { AuthRequest } from '../middleware/auth.middleware';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../shared/prisma';
@@ -152,6 +153,28 @@ export const login = async (req: Request, res: Response) => {
       res.json({ success: true });
     } catch (error: any) {
       res.status(400).json({ success: false, message: error.message });
+    }
+  };
+
+  export const getCurrentUser = async (req: AuthRequest, res: Response) => {
+    try {
+      const user = await prisma.user.findUnique({
+        where: { id: req.user!.userId },
+        select: {
+          id: true,
+          username: true,
+          email: true,
+          role: true,
+          status: true,
+          createdAt: true,
+        },
+      });
+      if (!user) {
+        return res.status(404).json({ success: false, message: 'User not found' });
+      }
+      res.json({ success: true, user });
+    } catch (error: any) {
+      res.status(500).json({ success: false, message: error.message });
     }
   };
 

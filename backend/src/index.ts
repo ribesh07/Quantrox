@@ -10,6 +10,7 @@ import exchangeRoutes from './routes/exchange.routes';
 import gamePointOrderRoutes from './routes/game-point-order.routes';
 import notificationRoutes from './routes/notification.routes';
 import twoFactorRoutes from './routes/two-factor.routes';
+import merchantRoutes from './routes/merchant.routes';
 import { logger } from './middleware/logger.middleware';
 import { env } from './config/env';
 import { ensureUploadDirectory, getUploadDirectory } from './utils/uploads';
@@ -52,6 +53,7 @@ app.use('/api/exchanges', exchangeRoutes);
 app.use('/api/game-point-orders', gamePointOrderRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/2fa', twoFactorRoutes);
+app.use('/api/merchant', merchantRoutes);
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });
@@ -68,6 +70,9 @@ const startServer = async () => {
   await ensureUploadDirectory('proofs');
   await ensureUploadDirectory('qrs');
   await ensureUploadDirectory('games');
+  await ensureUploadDirectory('reports');
+  await ensureUploadDirectory('merchant-qrs');
+  await ensureUploadDirectory('payout-qrs');
 
   // Initialize Prisma connection before starting the server
   try {

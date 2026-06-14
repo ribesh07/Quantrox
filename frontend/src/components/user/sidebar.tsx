@@ -10,6 +10,10 @@ import {
   TrendingUp,
   User,
   Menu,
+  QrCode,
+  FileText,
+  DollarSign,
+  Wallet,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import Link from "next/link";
@@ -30,6 +34,31 @@ const routes = [
     label: "Dashboard",
     icon: LayoutDashboard,
     href: "/dashboard",
+  },
+  {
+    label: "Merchant",
+    icon: Wallet,
+    href: "/dashboard/merchant",
+  },
+  {
+    label: "My QR Code",
+    icon: QrCode,
+    href: "/dashboard/qr",
+  },
+  {
+    label: "Transaction Reports",
+    icon: FileText,
+    href: "/dashboard/reports",
+  },
+  {
+    label: "Deposits",
+    icon: DollarSign,
+    href: "/dashboard/deposits",
+  },
+  {
+    label: "Payouts",
+    icon: TrendingUp,
+    href: "/dashboard/payouts",
   },
   {
     label: "Wallet Exchange",

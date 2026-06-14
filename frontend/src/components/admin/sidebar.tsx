@@ -38,6 +38,31 @@ const routes = [
     href: "/admin/orders",
   },
   {
+    label: "Merchants",
+    icon: Users,
+    href: "/admin/merchants",
+  },
+  {
+    label: "Merchant QRs",
+    icon: QrCode,
+    href: "/admin/merchant-qrs",
+  },
+  {
+    label: "Transaction Reports",
+    icon: BarChart3,
+    href: "/admin/transaction-reports",
+  },
+  {
+    label: "Deposits",
+    icon: TrendingUp,
+    href: "/admin/deposits",
+  },
+  {
+    label: "Payout Requests",
+    icon: TrendingUp,
+    href: "/admin/payout-requests",
+  },
+  {
     label: "Rates & Fees",
     icon: BarChart3,
     href: "/admin/payment-settings",

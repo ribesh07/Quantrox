@@ -11,6 +11,11 @@ import * as SystemSettingsController from '../controllers/system-settings.contro
 import * as PaymentAccountController from '../controllers/payment-account.controller';
 import * as ExchangeRequestController from '../controllers/exchange-request.controller';
 import * as GamePointOrderController from '../controllers/game-point-order.controller';
+import * as MerchantInfoController from '../controllers/merchant-info.controller';
+import * as MerchantQRCodeController from '../controllers/merchant-qr-code.controller';
+import * as TransactionReportController from '../controllers/transaction-report.controller';
+import * as DepositController from '../controllers/deposit.controller';
+import * as PayoutRequestController from '../controllers/payout-request.controller';
 import multer from 'multer';
 
 const router = Router();
@@ -93,5 +98,35 @@ router.get('/game-point-orders/pending', GamePointOrderController.getPendingGame
 router.get('/game-point-orders/:id', GamePointOrderController.getGamePointOrderById);
 router.patch('/game-point-orders/:id/fulfill', GamePointOrderController.fulfillGamePointOrder);
 router.patch('/game-point-orders/:id/fail', GamePointOrderController.failGamePointOrder);
+
+// Merchant Management
+router.get('/merchants', MerchantInfoController.getAllMerchants);
+router.patch('/merchants/:userId/approve', MerchantInfoController.approveMerchant);
+router.patch('/merchants/:userId/reject', MerchantInfoController.rejectMerchant);
+
+// Merchant QR Codes
+router.get('/merchant-qrs', MerchantQRCodeController.getAllMerchantQRCodes);
+router.post('/merchant-qrs/:userId', MerchantQRCodeController.upload.single('image'), MerchantQRCodeController.assignMerchantQRCode);
+router.patch('/merchant-qrs/:userId/disable', MerchantQRCodeController.disableMerchantQRCode);
+router.patch('/merchant-qrs/:userId/enable', MerchantQRCodeController.enableMerchantQRCode);
+
+// Transaction Reports
+router.get('/transaction-reports', TransactionReportController.getAllTransactionReports);
+router.patch('/transaction-reports/:id/approve', TransactionReportController.approveTransactionReport);
+router.patch('/transaction-reports/:id/reject', TransactionReportController.rejectTransactionReport);
+
+// Deposits
+router.get('/deposits', DepositController.getAllDeposits);
+router.patch('/deposits/:id/approve', DepositController.approveDeposit);
+router.patch('/deposits/:id/reject', DepositController.rejectDeposit);
+router.patch('/deposits/:id/freeze', DepositController.freezeDeposit);
+router.patch('/deposits/:id/release', DepositController.releaseDeposit);
+router.patch('/deposits/:id/adjust', DepositController.adjustDeposit);
+
+// Payout Requests
+router.get('/payout-requests', PayoutRequestController.getAllPayoutRequests);
+router.patch('/payout-requests/:id/approve', PayoutRequestController.approvePayoutRequest);
+router.patch('/payout-requests/:id/reject', PayoutRequestController.rejectPayoutRequest);
+router.patch('/payout-requests/:id/mark-paid', PayoutRequestController.markPayoutPaid);
 
 export default router;

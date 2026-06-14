@@ -9,14 +9,14 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User, Mail, Shield, Loader2, Save, Key } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { getUserByIdAction } from "@/actions/admin.actions";
+import { getCurrentUserAction } from "@/actions/auth.actions";
 
 export default function ProfilePage() {
   const { data: session, update } = useSession();
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState<any>(null);
 
-  console.log("Session Data:", session);
+  // console.log("Session Data:", session);
   const handleUpdateProfile = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
@@ -30,7 +30,8 @@ export default function ProfilePage() {
   const fetchuserdetails = async () => {
     if (session) {
       try {
-        const res = await getUserByIdAction((session.user as any).id);
+        const res = await getCurrentUserAction();
+        // console.log("Current User Response:", res);
         if (res.success) {
           setUser(res.user);
           // update({ ...session, user: res.user });
