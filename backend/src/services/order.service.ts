@@ -1,6 +1,8 @@
 import { prisma } from "../shared/prisma";
 import { OrderType, OrderStatus } from "@prisma/client";
 
+const baseUrl = process.env.SERVICE_URL_BACKEND || "https://api.settlerpay.com";
+
 export const OrderService = {
   async create(data: {
     userId: string;
@@ -140,7 +142,12 @@ export const OrderService = {
       throw new Error("Unauthorized");
     }
 
-    return order;
+    return {
+      ...order,
+        proofImage: order.screenshot
+    ? `${baseUrl}${order.screenshot}`
+    : null,
+    };
   },
 
   async updateStatus(id: string, status: OrderStatus, adminId: string, adminNote?: string) {

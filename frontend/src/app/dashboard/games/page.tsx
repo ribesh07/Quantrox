@@ -21,6 +21,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import Image from "next/image";
+import { getActiveGamesAction } from "@/actions/game.actions";
 
 export default function GamesPage() {
   const router = useRouter();
@@ -32,9 +33,11 @@ export default function GamesPage() {
   const { data: games, isLoading: gamesLoading } = useQuery({
     queryKey: ["games"],
     queryFn: async () => {
-      const res = await fetch("/api/games");
-      const data = await res.json();
-      return Array.isArray(data) ? data : [];
+      const res = await getActiveGamesAction();
+        if (!res.success) {
+        throw new Error(res.error);
+      }
+      return Array.isArray(res.games) ? res.games : [];
     },
   });
 

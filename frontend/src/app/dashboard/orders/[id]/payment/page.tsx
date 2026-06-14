@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { getOrderByIdAction } from "@/actions/order.actions";
 
 export default function OrderDetailsPage({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
   const params = use(paramsPromise);
@@ -31,19 +32,17 @@ export default function OrderDetailsPage({ params: paramsPromise }: { params: Pr
   const { data: order, isLoading: orderLoading } = useQuery({
     queryKey: ["order", params.id],
     queryFn: async () => {
-      const res = await fetch(`/api/orders/${params.id}`);
-      return res.json();
+       const res = await getOrderByIdAction(params.id);
+      if (!res.success) throw new Error("Upload failed");
+      return res.order;
     },
   });
 
   const uploadMutation = useMutation({
     mutationFn: async (formData: FormData) => {
-      const res = await fetch(`/api/orders/${params.id}/proof`, {
-        method: "POST",
-        body: formData,
-      });
-      if (!res.ok) throw new Error("Upload failed");
-      return res.json();
+      const res = await getOrderByIdAction(params.id);
+      if (!res.success) throw new Error("Upload failed");
+      return res.order;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["order", params.id] });
@@ -162,7 +161,7 @@ export default function OrderDetailsPage({ params: paramsPromise }: { params: Pr
             </Card>
           )}
 
-          {order.screenshot && (
+          {order.proofImage && (
             <Card className="border-none shadow-xl bg-card/50 backdrop-blur-sm">
               <CardHeader>
                 <CardTitle>Submitted Proof</CardTitle>
@@ -170,7 +169,7 @@ export default function OrderDetailsPage({ params: paramsPromise }: { params: Pr
               <CardContent>
                 <div className="relative aspect-video w-full overflow-hidden rounded-2xl border bg-black">
                   <Image
-                    src={order.screenshot}
+                    src={order.proofImage}
                     alt="Payment Proof"
                     fill
                     className="object-contain"
