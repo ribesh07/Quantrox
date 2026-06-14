@@ -30,6 +30,7 @@ router.post('/users', UserController.createUser);
 router.patch('/users/:id/role', UserController.updateUserRole);
 router.delete('/users/:id', UserController.deleteUser);
 router.get('/stats', UserController.getDashboardStats);
+router.get('/getuser/:id', UserController.getUserById);
 
 // Payment Methods
 router.get('/payment-methods', PaymentController.getAllPaymentMethods);

@@ -130,12 +130,12 @@ router.refresh();
             <Button className="w-full h-12 sm:h-14 rounded-2xl text-base sm:text-lg font-bold shadow-lg shadow-primary/20 hover:scale-[1.01] active:scale-[0.99] transition-all" type="submit" disabled={loading}>
               {loading ? "Logging in..." : "Login"}
             </Button>
-            <div className="text-center text-sm text-[#848E9C]">
+            {/* <div className="text-center text-sm text-[#848E9C]">
               Don&apos;t have an account?{" "}
               <Link href="/register" className="text-primary hover:underline font-bold">
                 Register Now
               </Link>
-            </div>
+            </div> */}
           </CardFooter>
         </form>
       </Card>

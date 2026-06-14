@@ -65,10 +65,16 @@ export function UserSidebar() {
     <aside className="hidden w-64 flex-col border-r border-border bg-[#0B0E11] md:flex h-screen sticky top-0">
       <div className="flex h-16 items-center border-b border-border px-6">
         <Link href="/dashboard" className="flex items-center gap-2 font-bold text-xl">
-          <div className="bg-primary p-1.5 rounded-lg">
+          {/* <div className="bg-primary p-1.5 rounded-lg">
             <TrendingUp className="h-5 w-5 text-primary-foreground" />
           </div>
-          <span className="text-white">Settlerpay</span>
+          
+          <span className="text-white">Settlerpay</span> */}
+          <img
+            src="/icons/logo.png"
+            alt="SettlerPay"
+            className="h-8 sm:h-10 md:h-11 lg:h-12 w-auto object-contain"
+          />
         </Link>
       </div>
       <nav className="flex-1 space-y-1 p-4">

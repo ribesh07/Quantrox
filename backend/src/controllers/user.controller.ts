@@ -14,6 +14,19 @@ export const getAllUsers = async (req: AuthRequest, res: Response) => {
   }
 };
 
+export const getUserById = async (req: AuthRequest, res: Response) => {
+  try {
+    const id = req.params.id as string;
+    const user = await UserService.getById(id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+    res.json({ success: true, user });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 export const createUser = async (req: AuthRequest, res: Response) => {
   try {
         const { username, email, password ,role} = req.body;

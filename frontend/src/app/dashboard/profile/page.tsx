@@ -7,13 +7,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User, Mail, Shield, Loader2, Save, Key } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { getUserByIdAction } from "@/actions/admin.actions";
 
 export default function ProfilePage() {
   const { data: session, update } = useSession();
   const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState<any>(null);
 
+  console.log("Session Data:", session);
   const handleUpdateProfile = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
@@ -23,6 +26,26 @@ export default function ProfilePage() {
       toast.success("Profile updated successfully!");
     }, 1000);
   };
+
+  const fetchuserdetails = async () => {
+    if (session) {
+      try {
+        const res = await getUserByIdAction((session.user as any).id);
+        if (res.success) {
+          setUser(res.user);
+          // update({ ...session, user: res.user });
+        }
+      } catch (err: any) {
+        console.error("Error fetching user data:", err);
+      }
+    }
+  }
+
+  useEffect( () => {
+    if (session) {
+      fetchuserdetails();
+    }
+  }, [session]);
 
   if (!session) return null;
 
@@ -41,19 +64,19 @@ export default function ProfilePage() {
             <Avatar className="h-24 w-24 border-4 border-background shadow-xl">
               <AvatarImage src="" />
               <AvatarFallback className="bg-primary text-primary-foreground text-2xl font-black">
-                {(session.user as any)?.username?.[0]?.toUpperCase() || "U"}
+                {(user?.username?.[0]?.toUpperCase() || "U")}
               </AvatarFallback>
             </Avatar>
             <div className="text-center">
-              <h3 className="font-bold text-lg">{(session.user as any)?.username}</h3>
+              <h3 className="font-bold text-lg">{user?.username}</h3>
               <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold mt-1">
-                {(session.user as any).role.replace("_", " ")}
+                {(user?.role || "").replace("_", " ")}
               </p>
             </div>
             <div className="w-full space-y-2 pt-4">
               <div className="flex items-center gap-3 text-sm p-3 rounded-xl bg-muted/50 border">
                 <Mail className="h-4 w-4 text-primary" />
-                <span className="truncate">{session.user?.email}</span>
+                <span className="truncate">{user?.email}</span>
               </div>
             </div>
           </CardContent>
@@ -75,7 +98,7 @@ export default function ProfilePage() {
                       <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input 
                         id="username" 
-                        defaultValue={(session.user as any)?.username || ""} 
+                        defaultValue={user?.username || ""} 
                         className="pl-10 h-12 rounded-xl border-2"
                       />
                     </div>
@@ -87,7 +110,7 @@ export default function ProfilePage() {
                       <Input 
                         id="email" 
                         type="email" 
-                        defaultValue={session.user?.email || ""} 
+                        defaultValue={user?.email || ""} 
                         className="pl-10 h-12 rounded-xl border-2"
                         disabled
                       />

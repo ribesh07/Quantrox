@@ -50,6 +50,16 @@ export async function updateUserRoleAction(userId: string, role: Role) {
   }
 }
 
+export async function getUserByIdAction(userId: string) {
+  try {
+    const config = await getAuthenticatedRequestConfig();
+    const response = await api.get(`/admin/getuser/${userId}`, config);
+    return { success: true, user: response.data.user };
+  } catch (error: any) {
+    return { success: false, error: error.response?.data?.message || error.message };
+  }
+}
+
 export async function deleteUserAction(userId: string) {
   try {
     const config = await getAuthenticatedRequestConfig();

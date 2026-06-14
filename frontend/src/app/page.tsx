@@ -27,9 +27,9 @@ export default function Home() {
             <Link className="hidden sm:block text-sm font-medium hover:text-primary transition-colors" href="/login">
               Login
             </Link>
-            <Button asChild size="sm" className="rounded-xl px-6 font-bold bg-primary text-primary-foreground hover:bg-primary/90 transition-all">
+            {/* <Button asChild size="sm" className="rounded-xl px-6 font-bold bg-primary text-primary-foreground hover:bg-primary/90 transition-all">
               <Link href="/register">Get Started</Link>
-            </Button>
+            </Button> */}
           </div>
         </div>
       </header>
@@ -54,11 +54,11 @@ export default function Home() {
                 </p>
               </div>
               <div className="flex flex-col sm:flex-row gap-5 w-full sm:w-auto pt-4">
-                <Button asChild size="lg" className="rounded-2xl px-10 text-lg h-16 font-black bg-primary text-primary-foreground hover:bg-primary/90 shadow-xl shadow-primary/20 transition-all hover:scale-[1.02]">
-                  <Link href="/register">
+                {/* <Button asChild size="lg" className="rounded-2xl px-10 text-lg h-16 font-black bg-primary text-primary-foreground hover:bg-primary/90 shadow-xl shadow-primary/20 transition-all hover:scale-[1.02]"> */}
+                  {/* <Link href="/register">
                     Start Exchanging <ArrowRight className="ml-2 h-6 w-6" />
-                  </Link>
-                </Button>
+                  </Link> */}
+                {/* </Button> */}
                 <Button variant="outline" size="lg" className="rounded-2xl px-10 text-lg h-16 font-bold border-2 border-[#2B3139] bg-transparent hover:bg-[#1E2329] text-white transition-all" asChild>
                   <Link href="/login">View Live Rates</Link>
                 </Button>
@@ -158,9 +158,9 @@ export default function Home() {
                         </div>
                       </div>
                     ))}
-                    <Button className="w-full mt-6 rounded-2xl h-14 font-black text-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-all shadow-lg shadow-primary/10" asChild>
+                    {/* <Button className="w-full mt-6 rounded-2xl h-14 font-black text-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-all shadow-lg shadow-primary/10" asChild>
                       <Link href="/register">Start Now</Link>
-                    </Button>
+                    </Button> */}
                   </div>
                 </div>
               </div>
@@ -181,10 +181,10 @@ export default function Home() {
                 {/* <span className="font-black text-2xl text-white">Settlerpay</span>
                  */}
                  <img
-  src="/icons/logo.png"
-  alt="SettlerPay"
-  className="h-8 sm:h-10 md:h-11 lg:h-12 w-auto object-contain"
-/>
+                    src="/icons/logo.png"
+                    alt="SettlerPay"
+                    className="h-8 sm:h-10 md:h-11 lg:h-12 w-auto object-contain"
+                  />
               </Link>
               <p className="text-[#848E9C] text-lg max-w-sm font-medium">
                 The most trusted digital asset exchange for Cash App users and gaming enthusiasts worldwide.
