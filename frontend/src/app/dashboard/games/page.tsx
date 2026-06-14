@@ -430,7 +430,7 @@ export default function GamesPage() {
                         onClick={() => document.getElementById('payment-proof-game')?.click()}
                       >
                         {paymentPreview ? (
-                          <Image src={paymentPreview} alt="Preview" fill className="object-contain" />
+                          <Image src={paymentPreview} alt="Preview" fill className="object-contain" unoptimized />
                         ) : (
                           <>
                             <UploadCloud className="h-10 w-10 text-[#848E9C] mb-2" />

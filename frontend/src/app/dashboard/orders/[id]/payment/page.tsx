@@ -241,7 +241,7 @@ export default function OrderDetailsPage({ params: paramsPromise }: { params: Pr
                       )}
                     >
                       {previewUrl ? (
-                        <Image src={previewUrl} alt="Preview" fill className="object-contain" />
+                        <Image src={previewUrl} alt="Preview" fill className="object-contain" unoptimized />
                       ) : (
                         <>
                           <div className="p-4 rounded-full bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors">

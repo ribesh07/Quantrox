@@ -139,7 +139,7 @@ export default function AdminOrdersPage() {
       </Card>
 
       <Dialog open={!!selectedOrder} onOpenChange={() => setSelectedOrder(null)}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl p-6 sm:p-8">
           <DialogHeader>
             <DialogTitle>Transaction Details - #{selectedOrder?.id.slice(-6)}</DialogTitle>
           </DialogHeader>

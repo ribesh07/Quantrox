@@ -300,7 +300,7 @@ export default function WalletExchangePage() {
                         onClick={() => document.getElementById('receive-qr')?.click()}
                       >
                         {receiveQrPreview ? (
-                          <Image src={receiveQrPreview} alt="Preview" fill className="object-contain" />
+                          <Image src={receiveQrPreview} alt="Preview" fill className="object-contain" unoptimized />
                         ) : (
                           <>
                             <UploadCloud className="h-10 w-10 text-[#848E9C] mb-2" />
@@ -327,7 +327,7 @@ export default function WalletExchangePage() {
                         onClick={() => document.getElementById('payment-proof')?.click()}
                       >
                         {paymentPreview ? (
-                          <Image src={paymentPreview} alt="Preview" fill className="object-contain" />
+                          <Image src={paymentPreview} alt="Preview" fill className="object-contain" unoptimized />
                         ) : (
                           <>
                             <UploadCloud className="h-10 w-10 text-[#848E9C] mb-2" />
