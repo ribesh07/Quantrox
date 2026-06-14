@@ -85,7 +85,7 @@ export const OrderService = {
   },
 
   async getUserOrders(userId: string) {
-    return prisma.order.findMany({
+    const orders = await prisma.order.findMany({
       where: { userId },
       include: { 
         game: true,
@@ -93,10 +93,16 @@ export const OrderService = {
       },
       orderBy: { createdAt: "desc" },
     });
+
+    return orders.map(order => ({
+      ...order,
+      proofImage: order.screenshot ? `${baseUrl}${order.screenshot}` : null,
+      receiveQrCode: order.receiveQrCode ? `${baseUrl}${order.receiveQrCode}` : null,
+    }));
   },
 
   async getAll() {
-    return prisma.order.findMany({
+    const orders = await prisma.order.findMany({
       include: { 
         user: { select: { username: true, email: true } }, 
         game: true,
@@ -104,6 +110,12 @@ export const OrderService = {
       },
       orderBy: { createdAt: "desc" },
     });
+
+    return orders.map(order => ({
+      ...order,
+      proofImage: order.screenshot ? `${baseUrl}${order.screenshot}` : null,
+      receiveQrCode: order.receiveQrCode ? `${baseUrl}${order.receiveQrCode}` : null,
+    }));
   },
 
   async getUserStats(userId: string) {
@@ -144,9 +156,10 @@ export const OrderService = {
 
     return {
       ...order,
-        proofImage: order.screenshot
+      proofImage: order.screenshot
     ? `${baseUrl}${order.screenshot}`
     : null,
+      receiveQrCode: order.receiveQrCode ? `${baseUrl}${order.receiveQrCode}` : null,
     };
   },
 

@@ -203,3 +203,25 @@ export async function uploadPaymentMethodQRAction(id: string, formData: FormData
     return { success: false, error: error.response?.data?.message || error.message };
   }
 }
+
+// System Settings Actions
+export async function getSystemSettingsAction() {
+  try {
+    const config = await getAuthenticatedRequestConfig();
+    const response = await api.get("/admin/system-settings", config);
+    return { success: true, settings: response.data.settings };
+  } catch (error: any) {
+    return { success: false, error: error.response?.data?.message || error.message };
+  }
+}
+
+export async function updateSystemSettingsAction(data: any) {
+  try {
+    const config = await getAuthenticatedRequestConfig();
+    const response = await api.patch("/admin/system-settings", data, config);
+    revalidatePath("/admin/settings");
+    return { success: true, settings: response.data.settings };
+  } catch (error: any) {
+    return { success: false, error: error.response?.data?.message || error.message };
+  }
+}
