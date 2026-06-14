@@ -224,7 +224,7 @@ export default function DepositPage() {
                         onClick={() => document.getElementById('screenshot')?.click()}
                       >
                         {previewUrl ? (
-                          <Image src={previewUrl} alt="Preview" fill className="object-contain" />
+                          <Image src={previewUrl} alt="Preview" fill className="object-contain" unoptimized />
                         ) : (
                           <>
                             <UploadCloud className="h-10 w-10 text-[#848E9C] mb-2" />
