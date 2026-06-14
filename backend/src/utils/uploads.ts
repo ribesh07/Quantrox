@@ -3,7 +3,7 @@ import path from 'path';
 import { env } from '../config/env';
 import { uploadFileToStorage } from './storage';
 
-type UploadSubdirectory = 'proofs' | 'qrs';
+type UploadSubdirectory = 'proofs' | 'qrs' | 'games';
 
 interface SaveUploadedFileInput {
   originalName: string;

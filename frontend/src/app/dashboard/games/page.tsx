@@ -32,7 +32,7 @@ export default function GamesPage() {
   const { data: games, isLoading: gamesLoading } = useQuery({
     queryKey: ["games"],
     queryFn: async () => {
-      const res = await fetch("/api/admin/games");
+      const res = await fetch("/api/games");
       const data = await res.json();
       return Array.isArray(data) ? data : [];
     },

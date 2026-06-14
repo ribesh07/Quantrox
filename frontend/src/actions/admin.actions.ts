@@ -116,6 +116,17 @@ export async function updateGameAction(id: string, data: any) {
   }
 }
 
+export async function uploadGameLogoAction(id: string, formData: FormData) {
+  try {
+    const config = await getAuthenticatedRequestConfig();
+    const response = await api.patch(`/admin/games/${id}`, formData, config);
+    revalidatePath("/admin/games");
+    return { success: true, game: response.data.game };
+  } catch (error: any) {
+    return { success: false, error: error.response?.data?.message || error.message };
+  }
+}
+
 export async function deleteGameAction(id: string) {
   try {
     const config = await getAuthenticatedRequestConfig();
