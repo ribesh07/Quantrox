@@ -50,7 +50,7 @@ export default function AdminSettingsPage() {
   if (!data) return <div>Settings not found</div>;
 
   const handleChange = (key: string, value: any) => {
-    setFormData(prev => ({ ...prev, [key]: value }));
+    setFormData((prev: any) => ({ ...prev, [key]: value }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
