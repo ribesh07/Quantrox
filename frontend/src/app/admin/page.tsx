@@ -58,14 +58,6 @@ export default async function AdminDashboard() {
         bg: "bg-[#1E2329]",
       },
       {
-        title: "Total Deposits",
-        value: statsData.totalDeposits,
-        icon: TrendingUp,
-        description: "Lifetime deposits",
-        color: "text-primary",
-        bg: "bg-primary/10",
-      },
-      {
         title: "Total Exchanges",
         value: statsData.totalExchanges,
         icon: ArrowRightLeft,

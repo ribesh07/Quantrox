@@ -99,11 +99,6 @@ export default async function DashboardPage() {
               <Link href="/dashboard/orders">History</Link>
             </Button>
             <Button asChild className="rounded-xl shadow-lg shadow-primary/20 bg-primary text-primary-foreground hover:bg-primary/90 font-bold">
-              <Link href="/dashboard/deposit">
-                <PlusCircle className="mr-2 h-4 w-4" /> Deposit
-              </Link>
-            </Button>
-            <Button asChild variant="secondary" className="rounded-xl font-bold">
               <Link href="/dashboard/exchange">
                 <ArrowRightLeft className="mr-2 h-4 w-4" /> Exchange
               </Link>
@@ -217,9 +212,6 @@ export default async function DashboardPage() {
 
               <div className="flex gap-3">
                 <Button asChild className="flex-1 bg-white text-primary hover:bg-white/90 rounded-2xl h-12 font-black shadow-lg">
-                  <Link href="/dashboard/deposit">Deposit</Link>
-                </Button>
-                <Button asChild variant="outline" className="flex-1 border-white/20 bg-transparent text-white hover:bg-white/10 rounded-2xl h-12 font-black">
                   <Link href="/dashboard/exchange">Exchange</Link>
                 </Button>
               </div>

@@ -56,9 +56,9 @@ export default function GamesPage() {
   });
 
   const { data: methods, isLoading: methodsLoading } = useQuery({
-    queryKey: ["payment-methods", "DEPOSIT"],
+    queryKey: ["payment-methods", "BOTH"],
     queryFn: async () => {
-      const result = await getPaymentMethodsAction("DEPOSIT");
+      const result = await getPaymentMethodsAction("BOTH");
       if (!result.success) throw new Error(result.error);
       return result.methods;
     },
