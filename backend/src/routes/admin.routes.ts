@@ -68,8 +68,8 @@ router.patch('/system-settings/maintenance', SystemSettingsController.toggleMain
 
 // Games
 router.get('/games', GameController.getAllGames);
-router.post('/games', GameController.createGame);
-router.patch('/games/:id', GameController.updateGame);
+router.post('/games', upload.single('logo'), GameController.createGame);
+router.patch('/games/:id', upload.single('logo'), GameController.updateGame);
 router.delete('/games/:id', GameController.deleteGame);
 
 // QR Codes

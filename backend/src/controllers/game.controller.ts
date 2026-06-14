@@ -21,6 +21,17 @@ export const getAllGames = async (req: AuthRequest, res: Response) => {
 
 export const createGame = async (req: AuthRequest, res: Response) => {
   try {
+    const file = (req as any).file;
+    if (file) {
+      const savedPath = await import('../utils/uploads').then(m => m.saveUploadedFile({
+        originalName: file.originalname,
+        tempPath: file.path,
+        subdirectory: 'games',
+        prefix: req.body.name || 'game',
+      }));
+      req.body.logo = savedPath;
+    }
+
     const game = await GameService.create(req.body, req.user!.userId);
     res.status(201).json({ success: true, game });
   } catch (error: any) {
@@ -31,6 +42,17 @@ export const createGame = async (req: AuthRequest, res: Response) => {
 export const updateGame = async (req: AuthRequest, res: Response) => {
   try {
     const id = req.params.id as string;
+    const file = (req as any).file;
+    if (file) {
+      const savedPath = await import('../utils/uploads').then(m => m.saveUploadedFile({
+        originalName: file.originalname,
+        tempPath: file.path,
+        subdirectory: 'games',
+        prefix: id,
+      }));
+      req.body.logo = savedPath;
+    }
+
     const game = await GameService.update(id, req.body, req.user!.userId);
     res.json({ success: true, game });
   } catch (error: any) {
