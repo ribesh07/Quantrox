@@ -11,10 +11,31 @@ export default withAuth(
       return NextResponse.redirect(new URL("/dashboard", req.url));
     }
 
+    // console.log("Middleware token:", token);
+
+  // Redirect admins from dashboard to admin panel
+    if (
+      path === "/dashboard" &&
+      (token?.role === "SUPER_ADMIN" || token?.role === "STAFF_ADMIN")
+    ) {
+      return NextResponse.redirect(new URL("/admin", req.url));
+    }
+
+      // Protect admin routes
+  if (
+    path.startsWith("/admin") &&
+    token?.role !== "SUPER_ADMIN" &&
+    token?.role !== "STAFF_ADMIN"
+  ) {
+    return NextResponse.redirect(new URL("/dashboard", req.url));
+  }
+
     // Redirect logged in users away from auth pages
     if ((path === "/login" || path === "/register" || path === "/forgot-password") && !!token) {
       return NextResponse.redirect(new URL("/dashboard", req.url));
     }
+
+    return NextResponse.next();
   },
   {
     callbacks: {

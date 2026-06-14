@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { getSession } from "next-auth/react";
 import {
   Card,
   CardContent,
@@ -39,11 +40,11 @@ function LoginPageContent() {
     }
 
     try {
+      
       const result = await signIn("credentials", {
         email,
         password,
         redirect: false,
-        callbackUrl: "/dashboard",
       });
 
       if (result?.error) {
@@ -51,13 +52,19 @@ function LoginPageContent() {
         return;
       }
 
-      if (!result?.ok) {
-        setError("Login failed. Please try again.");
-        return;
+      const session = await getSession();
+      const role = (session?.user as any)?.role;
+
+      if (
+        role === "SUPER_ADMIN" ||
+        role === "STAFF_ADMIN"
+      ) {
+        router.push("/admin");
+      } else {
+        router.push("/dashboard");
       }
 
-      router.push(result.url ?? "/dashboard");
-      router.refresh();
+router.refresh();
     } catch (err) {
       setError("Something went wrong");
     } finally {
