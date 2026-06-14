@@ -82,12 +82,34 @@ export async function getAllPaymentMethodsAction() {
   }
 }
 
+export async function createPaymentMethodAction(formData: FormData) {
+  try {
+    const config = await getAuthenticatedRequestConfig();
+    const response = await api.post("/admin/payment-methods", formData, config);
+    revalidatePath("/admin/payment-settings");
+    return { success: true, method: response.data.method };
+  } catch (error: any) {
+    return { success: false, error: error.response?.data?.message || error.message };
+  }
+}
+
 export async function updatePaymentMethodAction(id: string, data: any) {
   try {
     const config = await getAuthenticatedRequestConfig();
     const response = await api.patch(`/admin/payment-methods/${id}`, data, config);
     revalidatePath("/admin/payment-settings");
     return { success: true, method: response.data.method };
+  } catch (error: any) {
+    return { success: false, error: error.response?.data?.message || error.message };
+  }
+}
+
+export async function deletePaymentMethodAction(id: string) {
+  try {
+    const config = await getAuthenticatedRequestConfig();
+    await api.delete(`/admin/payment-methods/${id}`, config);
+    revalidatePath("/admin/payment-settings");
+    return { success: true };
   } catch (error: any) {
     return { success: false, error: error.response?.data?.message || error.message };
   }
