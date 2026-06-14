@@ -1,16 +1,39 @@
+
 "use client";
 
-import { Button } from "@/components/ui/button";
+import React, {
+  useMemo,
+  useState,
+} from "react";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+
+import { useMutation, useQuery } from "@tanstack/react-query";
+
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  ArrowUpDown,
+  
+  Download,
+  Expand,
+  
+  Upload,
+  Wallet,
+  QrCode,
+} from "lucide-react";
+
+import { toast } from "sonner";
+
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+
+
+import {
+
+  Copy,
+  Loader2,
+} from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -18,230 +41,957 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { ArrowDown, Info, Loader2, DollarSign, Wallet as WalletIcon, ArrowRightLeft } from "lucide-react";
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
-import { cn } from "@/lib/utils";
-import { createOrderAction } from "@/actions/order.actions";
-import { getUserWalletsAction } from "@/actions/wallet.actions";
 
-export default function ExchangePage() {
+import {
+  Dialog,
+  DialogContent,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+
+import {
+  createOrderAction,
+  uploadOrderProofAction,
+} from "@/actions/order.actions";
+
+import { getUserWalletsAction } from "@/actions/wallet.actions";
+import { getPaymentMethodsAction } from "@/actions/payment.actions";
+import { getPaymentAccountAction } from "@/actions/payment-account.actions";
+
+type ExchangePayload = {
+  type: "EXCHANGE";
+
+  fromWalletId: string;
+  toWalletId: string;
+
+  amount: number;
+
+  exchangeRate: number;
+  fee: number;
+  receiveAmount: number;
+
+  adminWalletId: string;
+
+  receiveUsername: string;
+  receiveWalletNumber: string;
+  receiveEmail?: string;
+  receivePhone?: string;
+
+  transactionReference?: string;
+
+  status: "PENDING";
+};
+
+export default function WalletExchangePage() {
   const router = useRouter();
+
+  const [fromWalletId, setFromWalletId] = useState("");
+  const [toWalletId, setToWalletId] = useState("");
+
   const [amount, setAmount] = useState("");
-  const [selectedWalletId, setSelectedWalletId] = useState("");
-  const [usdtAddress, setUsdtAddress] = useState("");
+
+  const [receiveUsername, setReceiveUsername] = useState("");
+  const [receiveWalletNumber, setReceiveWalletNumber] = useState("");
+  const [receiveEmail, setReceiveEmail] = useState("");
+  const [receivePhone, setReceivePhone] = useState("");
+
+  const [transactionReference, setTransactionReference] =
+    useState("");
+
+  const [paymentProof, setPaymentProof] =
+    useState<File | null>(null);
+
+  const [paymentPreview, setPaymentPreview] =
+    useState<string | null>(null);
+
+  const [receiveQr, setReceiveQr] =
+    useState<File | null>(null);
+
+  const [receiveQrPreview, setReceiveQrPreview] =
+    useState<string | null>(null);
 
   const { data: wallets, isLoading: walletsLoading } = useQuery({
     queryKey: ["user-wallets"],
     queryFn: async () => {
       const result = await getUserWalletsAction();
+
       if (!result.success) {
         throw new Error(result.error);
       }
+
       return result.wallets;
     },
   });
 
-  const selectedWallet = wallets?.find((w: any) => w.id === selectedWalletId);
-  const paymentMethod = selectedWallet?.paymentMethod;
+  const { data: methods } = useQuery({
+    queryKey: ["exchange-methods"],
+    queryFn: async () => {
+      const result =
+        await getPaymentMethodsAction("EXCHANGE");
 
-  const calculateUSDT = () => {
-    if (!amount || !paymentMethod) return 0;
-    const inputAmount = parseFloat(amount);
-    const grossUSDT = inputAmount * paymentMethod.rate;
-    const fee = (grossUSDT * paymentMethod.feePercentage) / 100;
-    return grossUSDT - fee;
-  };
-
-  const createOrderMutation = useMutation({
-    mutationFn: async (data: any) => {
-      const result = await createOrderAction(data);
       if (!result.success) {
         throw new Error(result.error);
       }
-      return result.order;
-    },
-    onSuccess: () => {
-      toast.success("Exchange request submitted!");
-      router.push("/dashboard/orders");
-    },
-    onError: (error: any) => {
-      toast.error(error.message);
+
+      return result.methods;
     },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const val = parseFloat(amount);
-    if (isNaN(val) || val <= 0) {
-      toast.error("Enter a valid amount");
-      return;
-    }
-    if (val > (selectedWallet?.balance || 0)) {
-      toast.error("Insufficient balance");
-      return;
-    }
-    if (!usdtAddress) {
-      toast.error("Please enter your USDT address");
-      return;
-    }
+  const fromWallet = wallets?.find(
+    (wallet: any) => wallet.id === fromWalletId
+  );
 
-    createOrderMutation.mutate({
-      type: "EXCHANGE",
-      paymentMethodId: paymentMethod.id,
-      amount: val,
-      walletAddress: usdtAddress,
-    });
+  const toWallet =
+  methods?.find(
+    (m: any) =>
+      m.id === toWalletId
+  );
+
+  const { data: adminWallet } = useQuery({
+    queryKey: ["admin-wallet", fromWalletId],
+    queryFn: async () => {
+      const result =
+        await getPaymentAccountAction(fromWalletId);
+
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+
+      return result.account;
+    },
+    enabled: !!fromWalletId,
+  });
+
+  const exchangeRate = toWallet?.rate ?? 1;
+
+  const feePercentage = toWallet?.feePercentage ?? 0;
+
+  const summary = useMemo(() => {
+    const amountNum = Number(amount || 0);
+
+    const fee =
+      (amountNum * feePercentage) / 100;
+
+    const receive =
+      amountNum * exchangeRate - fee;
+
+    return {
+      fee,
+      receive,
+    };
+  }, [
+    amount,
+    exchangeRate,
+    feePercentage,
+  ]);
+
+  const handleSwap = () => {
+    const from = fromWalletId;
+
+    setFromWalletId(toWalletId);
+    setToWalletId(from);
   };
 
-  if (walletsLoading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary" /></div>;
+  const handleProofUpload = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = e.target.files?.[0];
+
+    if (!file) return;
+
+    setPaymentProof(file);
+
+    setPaymentPreview(
+      URL.createObjectURL(file)
+    );
+  };
+
+  const handleReceiveQrUpload = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = e.target.files?.[0];
+
+    if (!file) return;
+
+    setReceiveQr(file);
+
+    setReceiveQrPreview(
+      URL.createObjectURL(file)
+    );
+  };
+
+
+const mutation = useMutation({
+  mutationFn: async () => {
+    if (
+      !transactionReference &&
+      !paymentProof
+    ) {
+      throw new Error(
+        "Transaction reference or screenshot required"
+      );
+    }
+
+    const payload = {
+      type: "EXCHANGE",
+
+      fromWalletId,
+      toWalletId,
+
+      amount: Number(amount),
+
+      exchangeRate,
+
+      fee: summary.fee,
+
+      receiveAmount: summary.receive,
+
+      adminWalletId: adminWallet?.id,
+
+      receiveUsername,
+      receiveWalletNumber,
+      receiveEmail,
+      receivePhone,
+
+      transactionReference,
+
+      status: "PENDING",
+    };
+
+    const result =
+      await createOrderAction(payload);
+
+    if (!result.success) {
+      throw new Error(result.error);
+    }
+
+    if (paymentProof) {
+      const formData = new FormData();
+
+      formData.append(
+        "file",
+        paymentProof
+      );
+
+      await uploadOrderProofAction(
+        result.order.id,
+        formData
+      );
+    }
+
+    return result.order;
+  },
+
+  onSuccess: () => {
+    toast.success(
+      "Exchange request submitted successfully"
+    );
+
+    router.push(
+      "/dashboard/orders"
+    );
+  },
+
+  onError: (error: any) => {
+    toast.error(error.message);
+  },
+});
+  if (walletsLoading) {
+    return (
+      <div className="flex justify-center py-20">
+        <Loader2 className="animate-spin" />
+      </div>
+    );
+  }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-10 pb-20">
-      <div className="text-center md:text-left">
-        <h1 className="text-4xl font-black text-white tracking-tight flex items-center gap-3">
-          <ArrowRightLeft className="text-primary h-10 w-10" />
-          Wallet Exchange
-        </h1>
-        <p className="text-[#848E9C] mt-2 font-medium text-lg">Convert your wallet balances into USDT instantly.</p>
+    <div className="mx-auto max-w-7xl space-y-8 pb-20">
+  <div>
+    <h1 className="text-4xl font-black text-white">
+      Wallet Exchange
+    </h1>
+
+    <p className="text-[#848E9C] mt-2">
+      Exchange funds between eSewa, Khalti,
+      PayPal, Binance, Chime, Zelle,
+      Cash App and other supported wallets.
+    </p>
+  </div>
+
+  <div className="grid gap-6 lg:grid-cols-3">
+    <div className="lg:col-span-2 space-y-6">
+
+      {/* SEND FROM */}
+
+      <Card className="bg-[#1E2329] border-[#2B3139]">
+        <CardHeader>
+          <CardTitle>
+            Send From
+          </CardTitle>
+        </CardHeader>
+
+        <CardContent>
+
+       <Select
+  value={fromWalletId}
+  onValueChange={setFromWalletId}
+>
+  <SelectTrigger>
+    <SelectValue placeholder="Select wallet" />
+  </SelectTrigger>
+
+  <SelectContent>
+    {wallets?.map((wallet: any) => (
+      <SelectItem
+        key={wallet.id}
+        value={wallet.id}
+      >
+        {wallet.paymentMethod.name}
+        {" "}
+        (Balance: {wallet.balance})
+      </SelectItem>
+    ))}
+  </SelectContent>
+</Select>
+
+          {fromWallet && (
+            <div className="mt-4 rounded-xl border border-[#2B3139] p-4">
+              <p className="text-xs text-muted-foreground">
+                Available Balance
+              </p>
+
+              <p className="font-bold text-lg">
+                {fromWallet.balance}
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* SWAP */}
+
+      <div className="flex justify-center">
+        <Button
+          type="button"
+          size="icon"
+          onClick={handleSwap}
+          className="rounded-full h-14 w-14"
+        >
+          <ArrowUpDown className="h-5 w-5" />
+        </Button>
       </div>
 
-      <div className="grid gap-8 md:grid-cols-5">
-        <div className="md:col-span-3">
-          <Card className="border border-[#2B3139] bg-[#1E2329] shadow-2xl rounded-[2.5rem] overflow-hidden">
-            <div className="h-2 bg-primary" />
-            <CardHeader className="pt-10 px-8">
-              <CardTitle className="text-2xl font-black text-white">Exchange Details</CardTitle>
-            </CardHeader>
-            <form onSubmit={handleSubmit}>
-              <CardContent className="space-y-8 px-8 py-6">
-                <div className="space-y-4">
-                  <Label className="text-sm font-black text-[#848E9C] uppercase tracking-widest">Select Source Wallet</Label>
-                  <Select value={selectedWalletId} onValueChange={setSelectedWalletId}>
-                    <SelectTrigger className="h-16 bg-[#0B0E11] border-2 border-[#2B3139] text-white rounded-2xl">
-                      <SelectValue placeholder="Choose a wallet" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-[#1E2329] border-[#2B3139] text-white">
-                      {wallets?.map((wallet: any) => (
-                        <SelectItem key={wallet.id} value={wallet.id}>
-                          {wallet.paymentMethod.name} (Balance: ${wallet.balance.toFixed(2)})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {selectedWallet && (
-                    <p className="text-xs text-primary font-bold">
-                      Available: ${selectedWallet.balance.toFixed(2)}
-                    </p>
-                  )}
-                </div>
+      {/* RECEIVE IN */}
 
-                <div className="space-y-4">
-                  <div className="flex justify-between items-end">
-                    <Label className="text-sm font-black text-[#848E9C] uppercase tracking-widest">Amount to Convert</Label>
-                  </div>
-                  <div className="relative group">
-                    <div className="absolute left-6 top-1/2 -translate-y-1/2 bg-[#0B0E11] p-2 rounded-xl">
-                      <DollarSign className="h-6 w-6 text-primary" />
-                    </div>
-                    <Input
-                      type="number"
-                      placeholder="0.00"
-                      value={amount}
-                      onChange={(e) => setAmount(e.target.value)}
-                      className="pl-16 text-2xl h-20 rounded-3xl border-2 border-[#2B3139] bg-[#0B0E11] text-white focus:border-primary transition-all font-black"
-                      required
-                    />
-                  </div>
-                </div>
+      <Card className="bg-[#1E2329] border-[#2B3139]">
+        <CardHeader>
+          <CardTitle>
+            Receive In
+          </CardTitle>
+        </CardHeader>
 
-                <div className="flex justify-center py-2">
-                  <ArrowDown className="h-8 w-8 text-primary animate-bounce" />
-                </div>
+        <CardContent>
 
-                <div className="space-y-4">
-                  <Label className="text-sm font-black text-[#848E9C] uppercase tracking-widest">You Receive (Estimated)</Label>
-                  <div className="relative">
-                    <div className="absolute left-6 top-1/2 -translate-y-1/2 bg-primary/10 p-2 rounded-xl">
-                      <span className="font-black text-primary text-xl px-1">₮</span>
-                    </div>
-                    <Input
-                      type="text"
-                      value={`${calculateUSDT().toFixed(2)} USDT`}
-                      className="pl-16 text-2xl h-20 rounded-3xl border-2 border-[#2B3139] bg-[#0B0E11]/50 text-primary font-black cursor-not-allowed"
-                      readOnly
-                    />
-                  </div>
-                </div>
+          <Select
+            value={toWalletId}
+            onValueChange={setToWalletId}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select destination wallet" />
+            </SelectTrigger>
 
-                <div className="space-y-4">
-                  <Label className="text-sm font-black text-[#848E9C] uppercase tracking-widest">Your USDT Address (TRC20)</Label>
-                  <Input
-                    placeholder="Enter your USDT wallet address"
-                    value={usdtAddress}
-                    onChange={(e) => setUsdtAddress(e.target.value)}
-                    className="h-16 rounded-2xl border-2 border-[#2B3139] bg-[#0B0E11] text-white focus:border-primary font-mono text-sm"
-                    required
-                  />
-                </div>
-              </CardContent>
-              <CardFooter className="flex flex-col gap-6 px-8 pb-12">
-                <Button
-                  className="w-full text-xl h-20 rounded-[1.5rem] bg-primary text-[#0B0E11] font-black shadow-xl shadow-primary/20 hover:scale-[1.01] active:scale-[0.99] transition-all"
-                  size="lg"
-                  type="submit"
-                  disabled={createOrderMutation.isPending || !amount || !selectedWalletId}
+            <SelectContent>
+
+              {methods?.map((method: any) => (
+                <SelectItem
+                  key={method.id}
+                  value={method.id}
                 >
-                  {createOrderMutation.isPending ? <Loader2 className="animate-spin h-8 w-8" /> : "Request Exchange"}
-                </Button>
-              </CardFooter>
-            </form>
-          </Card>
-        </div>
+                  {method.name}
+                </SelectItem>
+              ))}
 
-        <div className="md:col-span-2 space-y-6">
-          <Card className="border-[#2B3139] bg-[#1E2329] rounded-[2rem]">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
-                <Info className="h-5 w-5 text-primary" />
-                Exchange Info
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6 text-sm">
-              {paymentMethod ? (
-                <div className="space-y-4 p-4 bg-[#0B0E11] rounded-2xl border border-[#2B3139]">
-                  <div className="flex justify-between">
-                    <span className="text-[#848E9C]">Market Rate</span>
-                    <span className="text-white font-bold">1 USD = {paymentMethod.rate} USDT</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-[#848E9C]">Exchange Fee</span>
-                    <span className="text-orange-500 font-bold">{paymentMethod.feePercentage}%</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-[#848E9C]">Min. Exchange</span>
-                    <span className="text-white font-bold">${paymentMethod.minAmount}</span>
-                  </div>
-                </div>
-              ) : (
-                <p className="text-[#848E9C] italic">Select a wallet to see specific rates and fees.</p>
-              )}
+            </SelectContent>
+          </Select>
 
-              <div className="space-y-3">
-                <p className="text-white font-bold">Important Notes:</p>
-                <ul className="list-disc list-inside text-[#848E9C] space-y-2">
-                  <li>Ensure your USDT address is correct.</li>
-                  <li>We currently support <b>TRC20</b> network only.</li>
-                  <li>Processing time: 5-30 minutes.</li>
-                  <li>Balance is deducted immediately upon request.</li>
-                </ul>
+        </CardContent>
+      </Card>
+
+      {/* AMOUNT DETAILS */}
+
+      <Card className="bg-[#1E2329] border-[#2B3139]">
+        <CardHeader>
+          <CardTitle>
+            Amount Details
+          </CardTitle>
+        </CardHeader>
+
+        <CardContent className="space-y-4">
+
+          <div>
+            <Label>
+              Amount To Exchange
+            </Label>
+
+            <Input
+              type="number"
+              value={amount}
+              onChange={(e) =>
+                setAmount(e.target.value)
+              }
+              placeholder="1000"
+            />
+          </div>
+
+          <div className="rounded-xl border border-[#2B3139] p-4 space-y-3">
+
+            <div className="flex justify-between">
+              <span>
+                Exchange Rate
+              </span>
+
+              <span>
+                1 : {exchangeRate}
+              </span>
+            </div>
+
+            <div className="flex justify-between">
+              <span>
+                Processing Fee
+              </span>
+
+              <span>
+                {summary.fee.toFixed(2)}
+              </span>
+            </div>
+
+            <div className="flex justify-between font-bold">
+              <span>
+                You Receive
+              </span>
+
+              <span>
+                {summary.receive.toFixed(2)}
+              </span>
+            </div>
+
+          </div>
+
+        </CardContent>
+      </Card>
+
+      {/* ADMIN WALLET */}
+
+      {adminWallet && (
+        <Card className="bg-[#1E2329] border-[#2B3139]">
+          <CardHeader>
+            <CardTitle>
+              Send Payment To
+            </CardTitle>
+          </CardHeader>
+
+          <CardContent className="space-y-4">
+
+            {adminWallet.qrCodeUrl && (
+              <div className="flex justify-center">
+
+                <Dialog>
+
+                  <DialogTrigger asChild>
+
+                    <button>
+
+                      <Image
+                        src={adminWallet.qrCodeUrl}
+                        alt="QR"
+                        width={220}
+                        height={220}
+                        className="rounded-xl"
+                      />
+
+                    </button>
+
+                  </DialogTrigger>
+
+                  <DialogContent>
+
+                    <Image
+                      src={adminWallet.qrCodeUrl}
+                      alt="QR"
+                      width={500}
+                      height={500}
+                    />
+
+                  </DialogContent>
+
+                </Dialog>
+
               </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+            )}
+
+            <div className="space-y-2">
+
+              <div>
+                <Label>
+                  Username
+                </Label>
+
+                <div className="flex gap-2">
+                  <Input
+                    readOnly
+                    value={
+                      adminWallet.accountName || ""
+                    }
+                  />
+
+                  <Button
+                    type="button"
+                    size="icon"
+                    onClick={() => {
+                      navigator.clipboard.writeText(
+                        adminWallet.accountName || ""
+                      );
+
+                      toast.success(
+                        "Copied"
+                      );
+                    }}
+                  >
+                    <Copy />
+                  </Button>
+                </div>
+              </div>
+
+              <div>
+                <Label>
+                  Wallet Number
+                </Label>
+
+                <div className="flex gap-2">
+
+                  <Input
+                    readOnly
+                    value={
+                      adminWallet.accountNumber || ""
+                    }
+                  />
+
+                  <Button
+                    type="button"
+                    size="icon"
+                    onClick={() => {
+                      navigator.clipboard.writeText(
+                        adminWallet.accountNumber || ""
+                      );
+
+                      toast.success(
+                        "Copied"
+                      );
+                    }}
+                  >
+                    <Copy />
+                  </Button>
+
+                </div>
+
+              </div>
+
+            </div>
+
+            <div className="rounded-xl bg-primary/10 p-4">
+              Processing Time:
+              5–30 Minutes
+            </div>
+
+          </CardContent>
+        </Card>
+      )}
+
+      {/* RECEIVING DETAILS */}
+
+      <Card className="bg-[#1E2329] border-[#2B3139]">
+        <CardHeader>
+          <CardTitle>
+            Your Receiving Wallet Details
+          </CardTitle>
+        </CardHeader>
+
+        <CardContent className="space-y-4">
+
+          <Input
+            placeholder="Username / Account Name"
+            value={receiveUsername}
+            onChange={(e) =>
+              setReceiveUsername(
+                e.target.value
+              )
+            }
+          />
+
+          <Input
+            placeholder="Wallet Number / Account ID"
+            value={receiveWalletNumber}
+            onChange={(e) =>
+              setReceiveWalletNumber(
+                e.target.value
+              )
+            }
+          />
+
+          <Input
+            placeholder="Email"
+            value={receiveEmail}
+            onChange={(e) =>
+              setReceiveEmail(
+                e.target.value
+              )
+            }
+          />
+
+          <Input
+            placeholder="Phone"
+            value={receivePhone}
+            onChange={(e) =>
+              setReceivePhone(
+                e.target.value
+              )
+            }
+          />
+
+          <div>
+
+            <Label>
+              Upload QR Code
+            </Label>
+
+            <Input
+              type="file"
+              accept="image/*"
+              onChange={
+                handleReceiveQrUpload
+              }
+            />
+
+          </div>
+
+          {receiveQrPreview && (
+            <Image
+              src={receiveQrPreview}
+              alt=""
+              width={180}
+              height={180}
+              className="rounded-xl"
+            />
+          )}
+
+        </CardContent>
+      </Card>
+            {/* PAYMENT VERIFICATION */}
+
+      <Card className="bg-[#1E2329] border-[#2B3139]">
+        <CardHeader>
+          <CardTitle>
+            Payment Verification
+          </CardTitle>
+        </CardHeader>
+
+        <CardContent className="space-y-6">
+
+          <div className="space-y-2">
+            <Label>
+              Transaction Reference ID
+            </Label>
+
+            <Input
+              placeholder="TRX123456789"
+              value={transactionReference}
+              onChange={(e) =>
+                setTransactionReference(
+                  e.target.value
+                )
+              }
+            />
+          </div>
+
+          <div className="space-y-2">
+
+            <Label>
+              Payment Screenshot
+            </Label>
+
+            <div className="border-2 border-dashed border-[#2B3139] rounded-2xl p-6">
+
+              <Input
+                type="file"
+                accept="
+                image/png,
+                image/jpeg,
+                image/jpg,
+                image/webp
+                "
+                onChange={handleProofUpload}
+              />
+
+            </div>
+
+          </div>
+
+          {paymentPreview && (
+            <div className="space-y-2">
+
+              <Label>
+                Preview
+              </Label>
+
+              <Image
+                src={paymentPreview}
+                alt="Payment Proof"
+                width={400}
+                height={300}
+                className="
+                rounded-xl
+                border
+                border-[#2B3139]
+                "
+              />
+
+            </div>
+          )}
+
+          {!transactionReference &&
+            !paymentProof && (
+              <div
+                className="
+                rounded-xl
+                border
+                border-red-500/30
+                bg-red-500/10
+                p-4
+                text-red-400
+                text-sm
+                "
+              >
+                You must provide either
+                Transaction Reference ID
+                or Payment Screenshot.
+              </div>
+            )}
+
+        </CardContent>
+      </Card>
+
     </div>
+
+    {/* RIGHT SIDEBAR */}
+
+    <div className="space-y-6">
+
+      {/* SUMMARY */}
+
+      <Card className="bg-[#1E2329] border-[#2B3139] sticky top-6">
+
+        <CardHeader>
+          <CardTitle>
+            Exchange Summary
+          </CardTitle>
+        </CardHeader>
+
+        <CardContent className="space-y-4">
+
+          <div className="flex justify-between">
+            <span className="text-[#848E9C]">
+              From
+            </span>
+
+            <span className="font-medium">
+              {fromWallet?.paymentMethod
+                ?.name || "-"}
+            </span>
+          </div>
+
+          <div className="flex justify-between">
+            <span className="text-[#848E9C]">
+              To
+            </span>
+
+            <span className="font-medium">
+              {toWallet?.name || "-"}
+            </span>
+          </div>
+
+          <div className="flex justify-between">
+            <span className="text-[#848E9C]">
+              Amount
+            </span>
+
+            <span className="font-medium">
+              {amount || 0}
+            </span>
+          </div>
+
+          <div className="flex justify-between">
+            <span className="text-[#848E9C]">
+              Rate
+            </span>
+
+            <span className="font-medium">
+              1 : {exchangeRate}
+            </span>
+          </div>
+
+          <div className="flex justify-between">
+            <span className="text-[#848E9C]">
+              Fee
+            </span>
+
+            <span className="text-orange-400 font-medium">
+              {summary.fee.toFixed(2)}
+            </span>
+          </div>
+
+          <div className="border-t border-[#2B3139]" />
+
+          <div className="flex justify-between text-lg font-bold">
+
+            <span>
+              You Receive
+            </span>
+
+            <span className="text-primary">
+              {summary.receive.toFixed(2)}
+            </span>
+
+          </div>
+
+          <div className="border-t border-[#2B3139]" />
+
+          <div className="flex justify-between">
+
+            <span className="text-[#848E9C]">
+              Status
+            </span>
+
+            <span
+              className="
+              text-yellow-400
+              font-semibold
+              "
+            >
+              Pending Approval
+            </span>
+
+          </div>
+
+        </CardContent>
+
+      </Card>
+
+      {/* SUBMIT */}
+
+      <Card className="bg-[#1E2329] border-[#2B3139]">
+
+        <CardContent className="pt-6">
+
+          <Button
+            type="button"
+            className="
+            w-full
+            h-14
+            text-lg
+            font-bold
+            "
+            disabled={
+              mutation.isPending ||
+              !fromWalletId ||
+              !toWalletId ||
+              !amount ||
+              !receiveUsername ||
+              !receiveWalletNumber
+            }
+            onClick={() => {
+
+              if (
+                !transactionReference &&
+                !paymentProof
+              ) {
+                toast.error(
+                  "Provide transaction reference or payment screenshot"
+                );
+
+                return;
+              }
+
+              mutation.mutate();
+            }}
+          >
+            {mutation.isPending ? (
+              <>
+                <Loader2
+                  className="
+                  h-5
+                  w-5
+                  mr-2
+                  animate-spin
+                  "
+                />
+
+                Submitting...
+              </>
+            ) : (
+              "Submit Exchange Request"
+            )}
+          </Button>
+
+        </CardContent>
+
+      </Card>
+
+      {/* INFO */}
+
+      <Card className="bg-[#1E2329] border-[#2B3139]">
+
+        <CardHeader>
+          <CardTitle>
+            Important Notes
+          </CardTitle>
+        </CardHeader>
+
+        <CardContent>
+
+          <ul className="space-y-3 text-sm text-[#848E9C]">
+
+            <li>
+              • Processing time:
+              5–30 minutes
+            </li>
+
+            <li>
+              • Ensure wallet details
+              are correct.
+            </li>
+
+            <li>
+              • Upload clear payment proof.
+            </li>
+
+            <li>
+              • Incorrect information
+              may delay approval.
+            </li>
+
+            <li>
+              • Exchange requests are
+              manually verified.
+            </li>
+
+          </ul>
+
+        </CardContent>
+
+      </Card>
+
+    </div>
+  </div>
+</div>
+
   );
 }

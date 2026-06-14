@@ -113,6 +113,20 @@ model Order {
   user            User          @relation(fields: [userId], references: [id])
   transaction     Transaction?
   proofUploads    ProofUpload[]
+
+  fromWalletId String?
+  toWalletId String?
+
+  transactionReference String?
+
+  receiveUsername String?
+  receiveWalletNumber String?
+  receiveEmail String?
+  receivePhone String?
+
+
+
+ 
 }
 
 model Transaction {
