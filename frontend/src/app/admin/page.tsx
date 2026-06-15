@@ -20,33 +20,30 @@ import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { OrderType, OrderStatus, Role } from "@/lib/prisma-types";
-import axios from "axios";
+import { serverGet } from "@/lib/server-api";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminDashboard() {
   const session = await getServerSession(authOptions);
   const userRole = (session?.user as any)?.role;
-  const accessToken = (session?.user as any)?.accessToken;
 
   if (!session || (userRole !== Role.SUPER_ADMIN && userRole !== Role.STAFF_ADMIN)) {
     redirect("/dashboard");
   }
 
-  const API_URL = (process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api').replace(/\/+$/, '');
+  if (session.error === "RefreshAccessTokenError") {
+    redirect("/login");
+  }
 
   try {
-    const [statsResponse, recentOrdersResponse] = await Promise.all([
-      axios.get(`${API_URL}/admin/stats`, {
-        headers: { Authorization: `Bearer ${accessToken}` }
-      }),
-      axios.get(`${API_URL}/admin/orders`, {
-        headers: { Authorization: `Bearer ${accessToken}` }
-      }),
+    const [statsPayload, ordersPayload] = await Promise.all([
+      serverGet<{ stats: any }>("/admin/stats"),
+      serverGet<{ orders: any[] }>("/admin/orders"),
     ]);
 
-    const statsData = statsResponse.data.stats;
-    const recentOrders = recentOrdersResponse.data.orders.slice(0, 6);
+    const statsData = statsPayload.stats;
+    const recentOrders = ordersPayload.orders.slice(0, 6);
 
     const stats = [
       {

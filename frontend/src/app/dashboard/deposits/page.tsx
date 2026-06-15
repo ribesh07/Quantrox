@@ -56,10 +56,10 @@ export default function MerchantDepositsPage() {
   };
 
   return (
-    <div className="space-y-8 pb-10">
+    <div className="space-y-6 sm:space-y-8 pb-10">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">My Deposits</h1>
-        <p className="text-muted-foreground mt-1">View your deposit history</p>
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">My Deposits</h1>
+        <p className="text-muted-foreground mt-1 text-sm sm:text-base">View your deposit history</p>
       </div>
 
       <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
@@ -88,29 +88,56 @@ export default function MerchantDepositsPage() {
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
               <p className="text-sm text-muted-foreground">Loading deposits...</p>
             </div>
+          ) : !deposits?.length ? (
+            <p className="text-center text-sm text-muted-foreground py-10">No deposits yet.</p>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Required</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {deposits?.map((deposit: any) => (
-                  <TableRow key={deposit.id}>
-                    <TableCell>{new Date(deposit.createdAt).toLocaleDateString()}</TableCell>
-                    <TableCell>${deposit.amount.toLocaleString()}</TableCell>
-                    <TableCell>{getTypeBadge(deposit.type)}</TableCell>
-                    <TableCell>${deposit.requiredDeposit?.toLocaleString() || 0}</TableCell>
-                    <TableCell>{getStatusBadge(deposit.status)}</TableCell>
-                  </TableRow>
+            <>
+              <div className="hidden sm:block overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Required</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {deposits.map((deposit: any) => (
+                      <TableRow key={deposit.id}>
+                        <TableCell>{new Date(deposit.createdAt).toLocaleDateString()}</TableCell>
+                        <TableCell>${deposit.amount.toLocaleString()}</TableCell>
+                        <TableCell>{getTypeBadge(deposit.type)}</TableCell>
+                        <TableCell>${deposit.requiredDeposit?.toLocaleString() || 0}</TableCell>
+                        <TableCell>{getStatusBadge(deposit.status)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+              <div className="sm:hidden space-y-3">
+                {deposits.map((deposit: any) => (
+                  <div key={deposit.id} className="rounded-xl border p-4 space-y-2">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="font-semibold">${deposit.amount.toLocaleString()}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(deposit.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                      {getStatusBadge(deposit.status)}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {getTypeBadge(deposit.type)}
+                      <span className="text-xs text-muted-foreground">
+                        Required: ${deposit.requiredDeposit?.toLocaleString() || 0}
+                      </span>
+                    </div>
+                  </div>
                 ))}
-              </TableBody>
-            </Table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

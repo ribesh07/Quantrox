@@ -57,6 +57,9 @@ app.use('/api/merchant', merchantRoutes);
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok' });
+});
 app.use((req, res) => {
   res.status(404).json({ success: false, message: 'Route not found' });
 });

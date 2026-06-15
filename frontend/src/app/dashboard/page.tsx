@@ -15,30 +15,31 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import axios from "axios";
+import { serverGet } from "@/lib/server-api";
 
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
-  const accessToken = (session?.user as any)?.accessToken;
-  
+
   if (!session || !(session.user as any)?.id) {
     redirect("/login");
   }
 
-  const API_URL = (process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api').replace(/\/+$/, '');
+  if (session.error === "RefreshAccessTokenError") {
+    redirect("/login");
+  }
 
   try {
-    const [ordersResponse, walletsResponse, statsResponse] = await Promise.all([
-      axios.get(`${API_URL}/orders`, { headers: { Authorization: `Bearer ${accessToken}` } }),
-      axios.get(`${API_URL}/wallets`, { headers: { Authorization: `Bearer ${accessToken}` } }),
-      axios.get(`${API_URL}/orders/stats`, { headers: { Authorization: `Bearer ${accessToken}` } })
+    const [ordersData, walletsData, statsData] = await Promise.all([
+      serverGet<{ orders: any[] }>("/orders"),
+      serverGet<{ wallets: any[] }>("/wallets"),
+      serverGet<{ stats: any[] }>("/orders/stats"),
     ]);
 
-    const orders = ordersResponse.data.orders;
-    const wallets = walletsResponse.data.wallets;
-    const stats = statsResponse.data.stats;
+    const orders = ordersData.orders;
+    const wallets = walletsData.wallets;
+    const stats = statsData.stats;
 
     const totalBalance = wallets.reduce((acc: any, w: any) => acc + w.balance, 0);
     const totalOrders = stats.reduce((acc: any, s: any) => acc + s._count, 0);

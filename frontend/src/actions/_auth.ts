@@ -5,7 +5,12 @@ import { getServerSession } from "next-auth";
 
 export async function getAuthenticatedRequestConfig() {
   const session = await getServerSession(authOptions);
-  const accessToken = (session?.user as any)?.accessToken as string | undefined;
+
+  if (session?.error === "RefreshAccessTokenError") {
+    throw new Error("Session expired. Please log in again.");
+  }
+
+  const accessToken = session?.user?.accessToken;
 
   if (!accessToken) {
     throw new Error("Please log in to continue.");

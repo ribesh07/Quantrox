@@ -12,9 +12,9 @@ export const createTransactionReport = async (req: AuthRequest, res: Response) =
   try {
     const { transactionDate, totalTransactions, totalAmount, notes } = req.body;
     let proofImage;
-    
+
     if (req.file) {
-      proofImage = await saveUploadedFile(req.file, 'reports');
+      proofImage = await saveUploadedFile(req.file, "reports");
     }
 
     const report = await TransactionReportService.create({
@@ -29,17 +29,17 @@ export const createTransactionReport = async (req: AuthRequest, res: Response) =
     await AuditLogService.log({
       userId: req.user!.userId,
       userEmail: req.user!.email,
-      action: 'CREATE_TRANSACTION_REPORT',
-      resource: 'TRANSACTION_REPORT',
+      action: "CREATE_TRANSACTION_REPORT",
+      resource: "TRANSACTION_REPORT",
       resourceId: report.id,
-      result: 'SUCCESS',
+      result: "SUCCESS",
       ipAddress: req.ip,
-      userAgent: req.get('user-agent'),
+      userAgent: req.get("user-agent"),
     });
 
-    res.json({ success: true, data: report });
+    res.json({ success: true, report });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Failed to create report' });
+    res.status(500).json({ success: false, message: "Failed to create report" });
   }
 };
 
@@ -53,9 +53,9 @@ export const getMyTransactionReports = async (req: AuthRequest, res: Response) =
       limit: queryInt(limit),
       offset: queryInt(offset),
     });
-    res.json({ success: true, data: result });
+    res.json({ success: true, reports: result.reports, count: result.count });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Failed to get reports' });
+    res.status(500).json({ success: false, message: "Failed to get reports" });
   }
 };
 
@@ -70,9 +70,9 @@ export const getAllTransactionReports = async (req: AuthRequest, res: Response) 
       limit: queryInt(limit),
       offset: queryInt(offset),
     });
-    res.json({ success: true, data: result });
+    res.json({ success: true, reports: result.reports, count: result.count });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Failed to get reports' });
+    res.status(500).json({ success: false, message: "Failed to get reports" });
   }
 };
 
@@ -80,21 +80,21 @@ export const approveTransactionReport = async (req: AuthRequest, res: Response) 
   try {
     const id = paramString(req.params.id);
     const report = await TransactionReportService.approve(id, req.user!.userId);
-    
+
     await AuditLogService.log({
       userId: req.user!.userId,
       userEmail: req.user!.email,
-      action: 'APPROVE_TRANSACTION_REPORT',
-      resource: 'TRANSACTION_REPORT',
+      action: "APPROVE_TRANSACTION_REPORT",
+      resource: "TRANSACTION_REPORT",
       resourceId: id,
-      result: 'SUCCESS',
+      result: "SUCCESS",
       ipAddress: req.ip,
-      userAgent: req.get('user-agent'),
+      userAgent: req.get("user-agent"),
     });
 
-    res.json({ success: true, data: report });
+    res.json({ success: true, report });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Failed to approve report' });
+    res.status(500).json({ success: false, message: "Failed to approve report" });
   }
 };
 
@@ -103,21 +103,21 @@ export const rejectTransactionReport = async (req: AuthRequest, res: Response) =
     const id = paramString(req.params.id);
     const { rejectionReason } = req.body;
     const report = await TransactionReportService.reject(id, req.user!.userId, rejectionReason);
-    
+
     await AuditLogService.log({
       userId: req.user!.userId,
       userEmail: req.user!.email,
-      action: 'REJECT_TRANSACTION_REPORT',
-      resource: 'TRANSACTION_REPORT',
+      action: "REJECT_TRANSACTION_REPORT",
+      resource: "TRANSACTION_REPORT",
       resourceId: id,
-      result: 'SUCCESS',
+      result: "SUCCESS",
       ipAddress: req.ip,
-      userAgent: req.get('user-agent'),
+      userAgent: req.get("user-agent"),
     });
 
-    res.json({ success: true, data: report });
+    res.json({ success: true, report });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Failed to reject report' });
+    res.status(500).json({ success: false, message: "Failed to reject report" });
   }
 };
 
