@@ -17,7 +17,7 @@ export async function getMyMerchantInfoAction() {
 export async function createMerchantInfoAction(data: {
   businessName: string;
   businessDescription?: string;
-  preferredWalletId: string;
+  preferredPaymentMethodId: string;
   expectedDailyVolume: number;
 }) {
   try {
@@ -34,7 +34,7 @@ export async function createMerchantInfoAction(data: {
 export async function updateMyMerchantInfoAction(data: Partial<{
   businessName: string;
   businessDescription?: string;
-  preferredWalletId: string;
+  preferredPaymentMethodId: string;
   expectedDailyVolume: number;
 }>) {
   try {

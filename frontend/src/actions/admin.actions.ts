@@ -291,6 +291,24 @@ export async function rejectMerchantAction(userId: string, adminNote?: string) {
   }
 }
 
+export async function createMerchantAction(data: {
+  userId: string;
+  businessName: string;
+  businessDescription?: string;
+  preferredPaymentMethodId: string;
+  expectedDailyVolume: number;
+  autoApprove?: boolean;
+}) {
+  try {
+    const config = await getAuthenticatedRequestConfig();
+    const response = await api.post("/admin/merchants", data, config);
+    revalidatePath("/admin/merchants");
+    return { success: true, merchant: response.data.merchant };
+  } catch (error: any) {
+    return { success: false, error: error.response?.data?.message || error.message };
+  }
+}
+
 // Merchant QR Code Actions
 export async function getAllMerchantQRCodesAction() {
   try {

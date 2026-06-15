@@ -14,7 +14,6 @@ import {
   createMerchantInfoAction,
   updateMyMerchantInfoAction,
 } from "@/actions/merchant.actions";
-import { getUserWalletsAction } from "@/actions/wallet.actions";
 import { getPaymentMethodsAction } from "@/actions/payment.actions";
 
 export default function MerchantPage() {
@@ -22,7 +21,7 @@ export default function MerchantPage() {
 
   const [businessName, setBusinessName] = useState("");
   const [businessDescription, setBusinessDescription] = useState("");
-  const [preferredWalletId, setPreferredWalletId] = useState("");
+  const [preferredPaymentMethodId, setPreferredPaymentMethodId] = useState("");
   const [expectedDailyVolume, setExpectedDailyVolume] = useState("");
 
   const { data: merchantInfo, isLoading: infoLoading } = useQuery({
@@ -33,7 +32,7 @@ export default function MerchantPage() {
         if (result.info) {
           setBusinessName(result.info.businessName);
           setBusinessDescription(result.info.businessDescription || "");
-          setPreferredWalletId(result.info.preferredWalletId);
+          setPreferredPaymentMethodId(result.info.preferredWallet?.paymentMethodId || "");
           setExpectedDailyVolume(result.info.expectedDailyVolume.toString());
         }
         return result.info;
@@ -42,28 +41,20 @@ export default function MerchantPage() {
     },
   });
 
-  // const { data: wallets } = useQuery({
-  //   queryKey: ["my-wallets"],
-  //   queryFn: async () => {
-  //     const result = await getUserWalletsAction();
-  //     return result.success ? result.wallets : [];
-  //   },
-  // });
-
-    const { data: wallets } = useQuery({
-      queryKey: ["my-wallets"],
-      queryFn: async () => {
-        const result = await getUserWalletsAction();
-        return result.success ? result.wallets : [];
-      },
-    });
+  const { data: paymentMethods } = useQuery({
+    queryKey: ["merchant-payment-methods"],
+    queryFn: async () => {
+      const result = await getPaymentMethodsAction("BOTH");
+      return result.success ? result.methods : [];
+    },
+  });
 
   const createMutation = useMutation({
     mutationFn: async () => {
       const result = await createMerchantInfoAction({
         businessName,
         businessDescription,
-        preferredWalletId,
+        preferredPaymentMethodId,
         expectedDailyVolume: parseFloat(expectedDailyVolume),
       });
       if (!result.success) throw new Error(result.error);
@@ -83,7 +74,7 @@ export default function MerchantPage() {
       const result = await updateMyMerchantInfoAction({
         businessName,
         businessDescription,
-        preferredWalletId,
+        preferredPaymentMethodId,
         expectedDailyVolume: parseFloat(expectedDailyVolume),
       });
       if (!result.success) throw new Error(result.error);
@@ -106,7 +97,7 @@ export default function MerchantPage() {
       createMutation.mutate();
     }
   };
-console.log(wallets);
+
   if (infoLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-3">
@@ -174,15 +165,15 @@ console.log(wallets);
             </div>
 
             <div className="space-y-2">
-              <Label>Preferred Payout Wallet</Label>
-              <Select value={preferredWalletId} onValueChange={setPreferredWalletId} >
+              <Label>Preferred Payout Payment Method</Label>
+              <Select value={preferredPaymentMethodId} onValueChange={setPreferredPaymentMethodId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select a wallet"/>
+                  <SelectValue placeholder="Select payment method" />
                 </SelectTrigger>
                 <SelectContent>
-                  {wallets?.map((wallet: any) => (
-                    <SelectItem key={wallet.id} value={wallet.id}>
-                      {wallet.paymentMethod?.name}
+                  {paymentMethods?.map((method: any) => (
+                    <SelectItem key={method.id} value={method.id}>
+                      {method.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -202,7 +193,7 @@ console.log(wallets);
 
             <Button
               type="submit"
-              disabled={createMutation.isPending || updateMutation.isPending}
+              disabled={createMutation.isPending || updateMutation.isPending || !preferredPaymentMethodId}
             >
               {createMutation.isPending || updateMutation.isPending ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
