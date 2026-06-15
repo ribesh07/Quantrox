@@ -1,12 +1,13 @@
-import { Request, Response } from "express";
+import { AuthRequest } from "../middleware/auth.middleware";
+import { Response } from "express";
 import { PayoutRequestService } from "../services/payout-request.service";
 import { AuditLogService } from "../services/audit-log.service";
 import multer from "multer";
 import { getUploadDirectory, saveUploadedFile } from "../utils/uploads";
 
-const upload = multer({ dest: getUploadDirectory('payout-qrs') });
+const upload = multer({ dest: getUploadDirectory() });
 
-export const createPayoutRequest = async (req: Request, res: Response) => {
+export const createPayoutRequest = async (req: AuthRequest, res: Response) => {
   try {
     const { amount, walletAddress, walletNetwork, remarks } = req.body;
     let qrCodeImage;
@@ -16,7 +17,7 @@ export const createPayoutRequest = async (req: Request, res: Response) => {
     }
 
     const payout = await PayoutRequestService.create({
-      userId: (req as any).user.id,
+      userId: req.user!.id,
       amount: parseFloat(amount),
       walletAddress,
       walletNetwork,
@@ -25,8 +26,8 @@ export const createPayoutRequest = async (req: Request, res: Response) => {
     });
 
     await AuditLogService.log({
-      userId: (req as any).user.id,
-      userEmail: (req as any).user.email,
+      userId: req.user!.id,
+      userEmail: req.user!.email,
       action: 'CREATE_PAYOUT_REQUEST',
       resource: 'PAYOUT_REQUEST',
       resourceId: payout.id,
@@ -41,15 +42,15 @@ export const createPayoutRequest = async (req: Request, res: Response) => {
   }
 };
 
-export const getMyPayoutRequests = async (req: Request, res: Response) => {
+export const getMyPayoutRequests = async (req: AuthRequest, res: Response) => {
   try {
     const { status, fromDate, toDate, limit, offset } = req.query;
-    const result = await PayoutRequestService.getByUserId((req as any).user.id, {
+    const result = await PayoutRequestService.getByUserId(req.user!.id, {
       status: status as any,
-      fromDate: fromDate ? new Date(fromDate as string) : undefined,
-      toDate: toDate ? new Date(toDate as string) : undefined,
-      limit: limit ? parseInt(limit as string) : undefined,
-      offset: offset ? parseInt(offset as string) : undefined,
+      fromDate: fromDate ? new Date(Array.isArray(fromDate) ? fromDate[0] : fromDate) : undefined,
+      toDate: toDate ? new Date(Array.isArray(toDate) ? toDate[0] : toDate) : undefined,
+      limit: limit ? parseInt(Array.isArray(limit) ? limit[0] : limit) : undefined,
+      offset: offset ? parseInt(Array.isArray(offset) ? offset[0] : offset) : undefined,
     });
     res.json({ success: true, data: result });
   } catch (error) {
@@ -57,16 +58,16 @@ export const getMyPayoutRequests = async (req: Request, res: Response) => {
   }
 };
 
-export const getAllPayoutRequests = async (req: Request, res: Response) => {
+export const getAllPayoutRequests = async (req: AuthRequest, res: Response) => {
   try {
     const { status, userId, fromDate, toDate, limit, offset } = req.query;
     const result = await PayoutRequestService.getAll({
       status: status as any,
-      userId: userId as string,
-      fromDate: fromDate ? new Date(fromDate as string) : undefined,
-      toDate: toDate ? new Date(toDate as string) : undefined,
-      limit: limit ? parseInt(limit as string) : undefined,
-      offset: offset ? parseInt(offset as string) : undefined,
+      userId: Array.isArray(userId) ? userId[0] : userId,
+      fromDate: fromDate ? new Date(Array.isArray(fromDate) ? fromDate[0] : fromDate) : undefined,
+      toDate: toDate ? new Date(Array.isArray(toDate) ? toDate[0] : toDate) : undefined,
+      limit: limit ? parseInt(Array.isArray(limit) ? limit[0] : limit) : undefined,
+      offset: offset ? parseInt(Array.isArray(offset) ? offset[0] : offset) : undefined,
     });
     res.json({ success: true, data: result });
   } catch (error) {
@@ -74,7 +75,7 @@ export const getAllPayoutRequests = async (req: Request, res: Response) => {
   }
 };
 
-export const submitPayoutForReview = async (req: Request, res: Response) => {
+export const submitPayoutForReview = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const payout = await PayoutRequestService.submitForReview(id);
@@ -84,14 +85,14 @@ export const submitPayoutForReview = async (req: Request, res: Response) => {
   }
 };
 
-export const approvePayoutRequest = async (req: Request, res: Response) => {
+export const approvePayoutRequest = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const payout = await PayoutRequestService.approve(id, (req as any).user.id);
+    const payout = await PayoutRequestService.approve(id, req.user!.id);
     
     await AuditLogService.log({
-      userId: (req as any).user.id,
-      userEmail: (req as any).user.email,
+      userId: req.user!.id,
+      userEmail: req.user!.email,
       action: 'APPROVE_PAYOUT',
       resource: 'PAYOUT_REQUEST',
       resourceId: id,
@@ -106,15 +107,15 @@ export const approvePayoutRequest = async (req: Request, res: Response) => {
   }
 };
 
-export const rejectPayoutRequest = async (req: Request, res: Response) => {
+export const rejectPayoutRequest = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const { rejectionReason } = req.body;
-    const payout = await PayoutRequestService.reject(id, (req as any).user.id, rejectionReason);
+    const payout = await PayoutRequestService.reject(id, req.user!.id, rejectionReason);
     
     await AuditLogService.log({
-      userId: (req as any).user.id,
-      userEmail: (req as any).user.email,
+      userId: req.user!.id,
+      userEmail: req.user!.email,
       action: 'REJECT_PAYOUT',
       resource: 'PAYOUT_REQUEST',
       resourceId: id,
@@ -129,15 +130,15 @@ export const rejectPayoutRequest = async (req: Request, res: Response) => {
   }
 };
 
-export const markPayoutPaid = async (req: Request, res: Response) => {
+export const markPayoutPaid = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const { transactionHash } = req.body;
-    const payout = await PayoutRequestService.markPaid(id, (req as any).user.id, transactionHash);
+    const payout = await PayoutRequestService.markPaid(id, req.user!.id, transactionHash);
     
     await AuditLogService.log({
-      userId: (req as any).user.id,
-      userEmail: (req as any).user.email,
+      userId: req.user!.id,
+      userEmail: req.user!.email,
       action: 'MARK_PAYOUT_PAID',
       resource: 'PAYOUT_REQUEST',
       resourceId: id,
