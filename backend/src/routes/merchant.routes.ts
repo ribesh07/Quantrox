@@ -27,9 +27,9 @@ router.post('/deposits', DepositController.createDeposit);
 router.get('/deposits', DepositController.getMyDeposits);
 router.get('/deposits/total', DepositController.getMyTotalDeposit);
 
-// Payout Requests
-router.post('/payouts', PayoutRequestController.upload.single('qrCodeImage'), PayoutRequestController.createPayoutRequest);
-router.get('/payouts', PayoutRequestController.getMyPayoutRequests);
+// Payout Requests (merchant wallet-based)
+router.post('/payouts', PayoutRequestController.upload.single('qrCodeImage'), PayoutRequestController.createMerchantPayoutRequest);
+router.get('/payouts', PayoutRequestController.getMyMerchantPayoutRequests);
 router.put('/payouts/:id/submit', PayoutRequestController.submitPayoutForReview);
 
 export default router;

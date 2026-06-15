@@ -18,37 +18,33 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getMyUserPayoutRequestsAction, createUserPayoutRequestAction } from "@/actions/user.actions";
-import { getPaymentMethodsAction } from "@/actions/payment.actions";
+import { getMyMerchantPayoutRequestsAction, createMerchantPayoutRequestAction } from "@/actions/merchant.actions";
 import { PayoutStatus } from "@/lib/prisma-types";
 
-export default function UserPayoutsPage() {
+const WALLET_NETWORKS = [
+  "TRC20",
+  "BEP20",
+  "ERC20",
+  "BTC",
+  "Other",
+];
+
+export default function MerchantPayoutsPage() {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [detailPayout, setDetailPayout] = useState<any>(null);
 
-  const [paymentMethodId, setPaymentMethodId] = useState("");
   const [amount, setAmount] = useState("");
-  const [uid, setUid] = useState("");
+  const [walletAddress, setWalletAddress] = useState("");
+  const [walletNetwork, setWalletNetwork] = useState("");
   const [remarks, setRemarks] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [qrPreview, setQrPreview] = useState<string | null>(null);
 
-  const { data: methods, isLoading: methodsLoading } = useQuery({
-    queryKey: ["payout-methods"],
-    queryFn: async () => {
-      const result = await getPaymentMethodsAction();
-      if (!result.success) throw new Error(result.error);
-      return result.methods?.filter((m: any) => m.category !== "EXCHANGE") ?? [];
-    },
-  });
-
-  const selectedMethod = methods?.find((m: any) => m.id === paymentMethodId);
-
   const { data, isLoading } = useQuery({
-    queryKey: ["my-payouts"],
+    queryKey: ["my-merchant-payouts"],
     queryFn: async () => {
-      const result = await getMyUserPayoutRequestsAction();
+      const result = await getMyMerchantPayoutRequestsAction();
       return result.success ? result.payouts : [];
     },
   });
@@ -57,19 +53,19 @@ export default function UserPayoutsPage() {
     mutationFn: async () => {
       const formData = new FormData();
       formData.append("amount", amount);
-      formData.append("paymentMethodId", paymentMethodId);
-      formData.append("uid", uid);
+      formData.append("walletAddress", walletAddress);
+      formData.append("walletNetwork", walletNetwork);
       formData.append("remarks", remarks);
       if (file) {
         formData.append("qrCodeImage", file);
       }
-      const result = await createUserPayoutRequestAction(formData);
+      const result = await createMerchantPayoutRequestAction(formData);
       if (!result.success) throw new Error(result.error);
       return result.payout;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["my-payouts"] });
-      toast.success("Payout request submitted!");
+      queryClient.invalidateQueries({ queryKey: ["my-merchant-payouts"] });
+      toast.success("Merchant payout request submitted!");
       resetForm();
       setOpen(false);
     },
@@ -80,8 +76,8 @@ export default function UserPayoutsPage() {
 
   const resetForm = () => {
     setAmount("");
-    setPaymentMethodId("");
-    setUid("");
+    setWalletAddress("");
+    setWalletNetwork("");
     setRemarks("");
     setFile(null);
     setQrPreview(null);
@@ -110,31 +106,30 @@ export default function UserPayoutsPage() {
   };
 
   const canSubmit =
-    paymentMethodId &&
     amount &&
-    uid.trim() &&
-    file &&
+    walletAddress.trim() &&
+    walletNetwork &&
     !createMutation.isPending;
 
   return (
     <div className="space-y-6 sm:space-y-8 pb-10">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">User Payout Requests</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Merchant Payout Requests</h1>
           <p className="text-muted-foreground mt-1 text-sm sm:text-base">
-            Choose a payment method, upload your receiving QR, and submit a user payout request
+            Request a payout to your crypto wallet address
           </p>
         </div>
         <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) resetForm(); }}>
           <DialogTrigger asChild>
             <Button className="w-full sm:w-auto">
               <Plus className="mr-2 h-4 w-4" />
-              New Payout Request
+              New Merchant Payout
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-md w-[calc(100vw-2rem)] sm:max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Submit Payout Request</DialogTitle>
+              <DialogTitle>Submit Merchant Payout Request</DialogTitle>
             </DialogHeader>
             <form
               onSubmit={(e) => {
@@ -144,34 +139,11 @@ export default function UserPayoutsPage() {
               className="space-y-4"
             >
               <div className="space-y-2">
-                <Label>Payment Method</Label>
-                <Select value={paymentMethodId} onValueChange={setPaymentMethodId} required>
-                  <SelectTrigger>
-                    <SelectValue placeholder={methodsLoading ? "Loading..." : "Select payment method"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {methods?.map((method: any) => (
-                      <SelectItem key={method.id} value={method.id}>
-                        {method.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {selectedMethod && (
-                  <p className="text-xs text-muted-foreground">
-                    Min: ${selectedMethod.minAmount} · Max: ${selectedMethod.maxAmount}
-                    {selectedMethod.feePercentage > 0 && ` · Fee: ${selectedMethod.feePercentage}%`}
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-2">
                 <Label>Amount (USD)</Label>
                 <Input
                   type="number"
                   step="0.01"
-                  min={selectedMethod?.minAmount ?? 0}
-                  max={selectedMethod?.maxAmount ?? undefined}
+                  min="0"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                   placeholder="100.00"
@@ -180,17 +152,33 @@ export default function UserPayoutsPage() {
               </div>
 
               <div className="space-y-2">
-                <Label>UID / Account ID</Label>
+                <Label>Wallet Network</Label>
+                <Select value={walletNetwork} onValueChange={setWalletNetwork} required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select network" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {WALLET_NETWORKS.map((network) => (
+                      <SelectItem key={network} value={network}>
+                        {network}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Wallet Address</Label>
                 <Input
-                  value={uid}
-                  onChange={(e) => setUid(e.target.value)}
-                  placeholder="Your payment UID, cashtag, or account ID"
+                  value={walletAddress}
+                  onChange={(e) => setWalletAddress(e.target.value)}
+                  placeholder="Your crypto wallet address"
                   required
                 />
               </div>
 
               <div className="space-y-2">
-                <Label>Receiving QR Code</Label>
+                <Label>Receiving QR Code (Optional)</Label>
                 <div className="border-2 border-dashed rounded-xl p-4 text-center">
                   {qrPreview ? (
                     <div className="space-y-2">
@@ -202,8 +190,8 @@ export default function UserPayoutsPage() {
                   ) : (
                     <label className="cursor-pointer flex flex-col items-center gap-2 py-4">
                       <UploadCloud className="h-8 w-8 text-muted-foreground" />
-                      <span className="text-sm text-muted-foreground">Click to upload receiving QR</span>
-                      <Input type="file" accept="image/*" className="hidden" onChange={handleQrUpload} required />
+                      <span className="text-sm text-muted-foreground">Click to upload receiving QR (optional)</span>
+                      <Input type="file" accept="image/*" className="hidden" onChange={handleQrUpload} />
                     </label>
                   )}
                 </div>
@@ -232,7 +220,7 @@ export default function UserPayoutsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg sm:text-xl">My Payout Requests</CardTitle>
+          <CardTitle className="text-lg sm:text-xl">My Merchant Payout Requests</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -241,7 +229,7 @@ export default function UserPayoutsPage() {
               <p className="text-sm text-muted-foreground">Loading payouts...</p>
             </div>
           ) : !data?.length ? (
-            <p className="text-center text-sm text-muted-foreground py-10">No payout requests yet.</p>
+            <p className="text-center text-sm text-muted-foreground py-10">No merchant payout requests yet.</p>
           ) : (
             <>
               <div className="hidden md:block overflow-x-auto">
@@ -249,9 +237,9 @@ export default function UserPayoutsPage() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Date</TableHead>
-                      <TableHead>Method</TableHead>
+                      <TableHead>Network</TableHead>
                       <TableHead>Amount</TableHead>
-                      <TableHead>UID</TableHead>
+                      <TableHead>Wallet</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Proof</TableHead>
                       <TableHead></TableHead>
@@ -261,9 +249,9 @@ export default function UserPayoutsPage() {
                     {data.map((payout: any) => (
                       <TableRow key={payout.id}>
                         <TableCell>{new Date(payout.createdAt).toLocaleDateString()}</TableCell>
-                        <TableCell>{payout.paymentMethod?.name || payout.walletNetwork || "-"}</TableCell>
+                        <TableCell>{payout.walletNetwork || "-"}</TableCell>
                         <TableCell>${payout.amount.toLocaleString()}</TableCell>
-                        <TableCell className="font-mono text-xs max-w-[120px] truncate">{payout.uid || payout.walletAddress || "-"}</TableCell>
+                        <TableCell className="font-mono text-xs max-w-[120px] truncate">{payout.walletAddress || "-"}</TableCell>
                         <TableCell>{getStatusBadge(payout.status)}</TableCell>
                         <TableCell>
                           {payout.paymentProofImage ? (
@@ -290,13 +278,13 @@ export default function UserPayoutsPage() {
                       <div>
                         <p className="font-semibold">${payout.amount.toLocaleString()}</p>
                         <p className="text-xs text-muted-foreground">
-                          {payout.paymentMethod?.name || payout.walletNetwork} · {new Date(payout.createdAt).toLocaleDateString()}
+                          {payout.walletNetwork} · {new Date(payout.createdAt).toLocaleDateString()}
                         </p>
                       </div>
                       {getStatusBadge(payout.status)}
                     </div>
                     <p className="text-sm font-mono break-all">
-                      <span className="text-muted-foreground font-sans">UID: </span>{payout.uid || payout.walletAddress}
+                      <span className="text-muted-foreground font-sans">Wallet: </span>{payout.walletAddress}
                     </p>
                     {payout.rejectionReason && (
                       <p className="text-sm text-destructive">Rejected: {payout.rejectionReason}</p>
@@ -315,7 +303,7 @@ export default function UserPayoutsPage() {
       <Dialog open={!!detailPayout} onOpenChange={(v) => !v && setDetailPayout(null)}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Payout Request Details</DialogTitle>
+            <DialogTitle>Merchant Payout Details</DialogTitle>
           </DialogHeader>
           {detailPayout && (
             <div className="space-y-4">
@@ -329,12 +317,12 @@ export default function UserPayoutsPage() {
                   <p className="font-semibold">${detailPayout.amount.toLocaleString()}</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">Payment Method</p>
-                  <p>{detailPayout.paymentMethod?.name || detailPayout.walletNetwork || "-"}</p>
+                  <p className="text-muted-foreground">Network</p>
+                  <p>{detailPayout.walletNetwork || "-"}</p>
                 </div>
-                <div>
-                  <p className="text-muted-foreground">UID</p>
-                  <p className="font-mono text-xs break-all">{detailPayout.uid || detailPayout.walletAddress}</p>
+                <div className="col-span-2">
+                  <p className="text-muted-foreground">Wallet Address</p>
+                  <p className="font-mono text-xs break-all">{detailPayout.walletAddress}</p>
                 </div>
               </div>
               {detailPayout.remarks && (
@@ -345,7 +333,7 @@ export default function UserPayoutsPage() {
               )}
               {detailPayout.qrCodeImage && (
                 <div>
-                  <p className="text-sm text-muted-foreground mb-2">Your Receiving QR</p>
+                  <p className="text-sm text-muted-foreground mb-2">Receiving QR</p>
                   <img src={detailPayout.qrCodeImage} alt="Receiving QR" className="h-40 w-40 object-contain rounded-lg border" />
                 </div>
               )}

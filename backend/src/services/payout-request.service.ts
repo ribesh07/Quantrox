@@ -1,5 +1,5 @@
 import { prisma } from "../shared/prisma";
-import { PayoutStatus } from "@prisma/client";
+import { PayoutStatus, PayoutType } from "@prisma/client";
 
 const baseUrl = process.env.SERVICE_URL_BACKEND || "https://api.settlerpay.com";
 
@@ -20,26 +20,46 @@ const withImageUrls = <T extends { qrCodeImage?: string | null; paymentProofImag
 });
 
 export const PayoutRequestService = {
-  async create(data: {
+  async createMerchant(data: {
+    userId: string;
+    amount: number;
+    walletAddress: string;
+    walletNetwork: string;
+    qrCodeImage?: string;
+    remarks?: string;
+  }) {
+    const payout = await prisma.payoutRequest.create({
+      data: {
+        userId: data.userId,
+        type: "MERCHANT",
+        amount: data.amount,
+        walletAddress: data.walletAddress,
+        walletNetwork: data.walletNetwork,
+        qrCodeImage: data.qrCodeImage,
+        remarks: data.remarks,
+        status: "PENDING",
+      },
+    });
+    return withImageUrls(payout);
+  },
+
+  async createUser(data: {
     userId: string;
     amount: number;
     paymentMethodId: string;
     uid: string;
     qrCodeImage: string;
     remarks?: string;
-    walletAddress?: string;
-    walletNetwork?: string;
   }) {
     const payout = await prisma.payoutRequest.create({
       data: {
         userId: data.userId,
+        type: "USER",
         amount: data.amount,
         paymentMethodId: data.paymentMethodId,
         uid: data.uid,
         qrCodeImage: data.qrCodeImage,
         remarks: data.remarks,
-        walletAddress: data.walletAddress,
-        walletNetwork: data.walletNetwork,
         status: "PENDING",
       },
       include: { paymentMethod: true },
@@ -56,6 +76,7 @@ export const PayoutRequestService = {
   },
 
   async getByUserId(userId: string, filters?: {
+    type?: PayoutType;
     status?: PayoutStatus;
     fromDate?: Date;
     toDate?: Date;
@@ -63,6 +84,10 @@ export const PayoutRequestService = {
     offset?: number;
   }) {
     const where: any = { userId };
+
+    if (filters?.type) {
+      where.type = filters.type;
+    }
 
     if (filters?.status) {
       where.status = filters.status;
@@ -93,6 +118,7 @@ export const PayoutRequestService = {
   },
 
   async getAll(filters?: {
+    type?: PayoutType;
     status?: PayoutStatus;
     userId?: string;
     fromDate?: Date;
@@ -101,6 +127,10 @@ export const PayoutRequestService = {
     offset?: number;
   }) {
     const where: any = {};
+
+    if (filters?.type) {
+      where.type = filters.type;
+    }
 
     if (filters?.status) {
       where.status = filters.status;
@@ -185,9 +215,10 @@ export const PayoutRequestService = {
     return withImageUrls(payout);
   },
 
-  async getStatusCounts() {
+  async getStatusCounts(type?: PayoutType) {
     const counts = await prisma.payoutRequest.groupBy({
       by: ["status"],
+      where: type ? { type } : undefined,
       _count: { status: true },
     });
     return counts.reduce(

@@ -57,7 +57,12 @@ const routes = [
     href: "/dashboard/deposits",
   },
   {
-    label: "Payout Requests",
+    label: "Merchant Payouts",
+    icon: DollarSign,
+    href: "/dashboard/merchant/payouts",
+  },
+  {
+    label: "User Payouts",
     icon: TrendingUp,
     href: "/dashboard/payouts",
   },

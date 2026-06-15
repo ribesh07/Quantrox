@@ -99,18 +99,18 @@ export async function getMyTotalDepositAction() {
   }
 }
 
-export async function createPayoutRequestAction(formData: FormData) {
+export async function createMerchantPayoutRequestAction(formData: FormData) {
   try {
     const config = await getAuthenticatedRequestConfig();
     const response = await api.post("/merchant/payouts", formData, config);
-    revalidatePath("/dashboard/payouts");
+    revalidatePath("/dashboard/merchant/payouts");
     return { success: true, payout: response.data.payout };
   } catch (error: any) {
     return { success: false, error: error.response?.data?.message || error.message };
   }
 }
 
-export async function getMyPayoutRequestsAction() {
+export async function getMyMerchantPayoutRequestsAction() {
   try {
     const config = await getAuthenticatedRequestConfig();
     const response = await api.get("/merchant/payouts", config);
