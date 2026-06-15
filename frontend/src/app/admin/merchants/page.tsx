@@ -5,15 +5,41 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, CheckCircle2, XCircle, Search } from "lucide-react";
+import { Loader2, CheckCircle2, XCircle, Search, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { getAllMerchantsAction, approveMerchantAction, rejectMerchantAction } from "@/actions/admin.actions";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  getAllMerchantsAction,
+  approveMerchantAction,
+  rejectMerchantAction,
+  createMerchantAction,
+  getAllUsersAction,
+} from "@/actions/admin.actions";
+import { getPaymentMethodsAction } from "@/actions/payment.actions";
 
 export default function AdminMerchantsPage() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
+  const [open, setOpen] = useState(false);
+  const [newMerchant, setNewMerchant] = useState({
+    userId: "",
+    businessName: "",
+    businessDescription: "",
+    preferredPaymentMethodId: "",
+    expectedDailyVolume: "",
+    autoApprove: true,
+  });
 
   const { data, isLoading } = useQuery({
     queryKey: ["admin-merchants"],
@@ -23,6 +49,28 @@ export default function AdminMerchantsPage() {
       return result.merchants || [];
     },
   });
+
+  const { data: users } = useQuery({
+    queryKey: ["admin-users"],
+    queryFn: async () => {
+      const result = await getAllUsersAction();
+      if (!result.success) throw new Error(result.error);
+      return result.users || [];
+    },
+  });
+
+  const { data: paymentMethods } = useQuery({
+    queryKey: ["admin-merchant-payment-methods"],
+    queryFn: async () => {
+      const result = await getPaymentMethodsAction("BOTH");
+      return result.success ? result.methods : [];
+    },
+  });
+
+  const availableUsers = useMemo(() => {
+    const merchantUserIds = new Set((data || []).map((merchant: any) => merchant.userId));
+    return (users || []).filter((user: any) => !merchantUserIds.has(user.id));
+  }, [data, users]);
 
   const approveMutation = useMutation({
     mutationFn: async (userId: string) => {
@@ -54,11 +102,47 @@ export default function AdminMerchantsPage() {
     },
   });
 
+  const createMerchantMutation = useMutation({
+    mutationFn: async () => {
+      const result = await createMerchantAction({
+        userId: newMerchant.userId,
+        businessName: newMerchant.businessName,
+        businessDescription: newMerchant.businessDescription || undefined,
+        preferredPaymentMethodId: newMerchant.preferredPaymentMethodId,
+        expectedDailyVolume: parseFloat(newMerchant.expectedDailyVolume),
+        autoApprove: newMerchant.autoApprove,
+      });
+      if (!result.success) throw new Error(result.error);
+      return result.merchant;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-merchants"] });
+      toast.success("Merchant created successfully");
+      setOpen(false);
+      setNewMerchant({
+        userId: "",
+        businessName: "",
+        businessDescription: "",
+        preferredPaymentMethodId: "",
+        expectedDailyVolume: "",
+        autoApprove: true,
+      });
+    },
+    onError: (error: any) => {
+      toast.error(error.message);
+    },
+  });
+
   const filteredMerchants = Array.isArray(data) ? data.filter((m: any) => 
     m.businessName?.toLowerCase().includes(search.toLowerCase()) ||
     m.user?.username?.toLowerCase().includes(search.toLowerCase()) ||
     m.user?.email?.toLowerCase().includes(search.toLowerCase())
   ) : [];
+
+  const handleCreateMerchant = (e: React.FormEvent) => {
+    e.preventDefault();
+    createMerchantMutation.mutate();
+  };
 
   return (
     <div className="space-y-8 pb-10">
@@ -67,6 +151,117 @@ export default function AdminMerchantsPage() {
           <h1 className="text-3xl font-bold tracking-tight">Merchant Management</h1>
           <p className="text-muted-foreground mt-1">Approve and manage merchant applications</p>
         </div>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild>
+            <Button className="rounded-xl font-bold">
+              <Plus className="mr-2 h-4 w-4" />
+              Add Merchant
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Add Merchant</DialogTitle>
+              <DialogDescription>Create a merchant profile for an existing user.</DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleCreateMerchant} className="space-y-4">
+              <div className="space-y-2">
+                <Label>User</Label>
+                <Select
+                  value={newMerchant.userId}
+                  onValueChange={(value) => setNewMerchant({ ...newMerchant, userId: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select user" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableUsers.map((user: any) => (
+                      <SelectItem key={user.id} value={user.id}>
+                        {user.username} ({user.email})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Business Name</Label>
+                <Input
+                  value={newMerchant.businessName}
+                  onChange={(e) => setNewMerchant({ ...newMerchant, businessName: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Business Description</Label>
+                <Input
+                  value={newMerchant.businessDescription}
+                  onChange={(e) => setNewMerchant({ ...newMerchant, businessDescription: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Preferred Payout Payment Method</Label>
+                <Select
+                  value={newMerchant.preferredPaymentMethodId}
+                  onValueChange={(value) => setNewMerchant({ ...newMerchant, preferredPaymentMethodId: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select payment method" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {paymentMethods?.map((method: any) => (
+                      <SelectItem key={method.id} value={method.id}>
+                        {method.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Expected Daily Volume (USD)</Label>
+                <Input
+                  type="number"
+                  value={newMerchant.expectedDailyVolume}
+                  onChange={(e) => setNewMerchant({ ...newMerchant, expectedDailyVolume: e.target.value })}
+                  required
+                  min="0"
+                />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  id="autoApprove"
+                  type="checkbox"
+                  checked={newMerchant.autoApprove}
+                  onChange={(e) => setNewMerchant({ ...newMerchant, autoApprove: e.target.checked })}
+                  className="h-4 w-4 rounded border"
+                />
+                <Label htmlFor="autoApprove">Approve merchant immediately</Label>
+              </div>
+
+              <div className="flex justify-end gap-3">
+                <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={
+                    createMerchantMutation.isPending ||
+                    !newMerchant.userId ||
+                    !newMerchant.preferredPaymentMethodId
+                  }
+                >
+                  {createMerchantMutation.isPending ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : null}
+                  Create Merchant
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <Card className="border-none shadow-xl bg-card/50 backdrop-blur-sm overflow-hidden">

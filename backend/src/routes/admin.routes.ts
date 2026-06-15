@@ -101,6 +101,7 @@ router.patch('/game-point-orders/:id/fail', GamePointOrderController.failGamePoi
 
 // Merchant Management
 router.get('/merchants', MerchantInfoController.getAllMerchants);
+router.post('/merchants', MerchantInfoController.createMerchant);
 router.patch('/merchants/:userId/approve', MerchantInfoController.approveMerchant);
 router.patch('/merchants/:userId/reject', MerchantInfoController.rejectMerchant);
 
