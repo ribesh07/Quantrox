@@ -11,8 +11,16 @@ import { Loader2, Plus, FileText } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { getMyPayoutRequestsAction, createPayoutRequestAction } from "@/actions/merchant.actions";
 import { PayoutStatus } from "@/lib/prisma-types";
+import { WALLET_NETWORKS } from "@/lib/constants";
 
 export default function MerchantPayoutsPage() {
   const queryClient = useQueryClient();
@@ -76,20 +84,20 @@ export default function MerchantPayoutsPage() {
   };
 
   return (
-    <div className="space-y-8 pb-10">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="space-y-6 sm:space-y-8 pb-10">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Payouts</h1>
-          <p className="text-muted-foreground mt-1">Request and track your payouts</p>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Payouts</h1>
+          <p className="text-muted-foreground mt-1 text-sm sm:text-base">Request and track your payouts</p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button>
+            <Button className="w-full sm:w-auto">
               <Plus className="mr-2 h-4 w-4" />
               Request Payout
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-w-md w-[calc(100vw-2rem)] sm:max-w-lg">
             <DialogHeader>
               <DialogTitle>Request Payout</DialogTitle>
             </DialogHeader>
@@ -115,12 +123,18 @@ export default function MerchantPayoutsPage() {
               </div>
               <div className="space-y-2">
                 <Label>Wallet Network</Label>
-                <Input
-                  value={walletNetwork}
-                  onChange={(e) => setWalletNetwork(e.target.value)}
-                  placeholder="USDT (TRC20)"
-                  required
-                />
+                <Select value={walletNetwork} onValueChange={setWalletNetwork} required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose wallet network" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {WALLET_NETWORKS.map((network) => (
+                      <SelectItem key={network} value={network}>
+                        {network}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label>QR Code (Optional)</Label>
@@ -138,9 +152,9 @@ export default function MerchantPayoutsPage() {
                   placeholder="Any additional notes"
                 />
               </div>
-              <div className="flex justify-end gap-2">
+              <div className="flex flex-col-reverse sm:flex-row justify-end gap-2">
                 <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
-                <Button type="submit" disabled={createMutation.isPending}>
+                <Button type="submit" disabled={createMutation.isPending || !walletNetwork}>
                   {createMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                   Submit Request
                 </Button>
@@ -152,7 +166,7 @@ export default function MerchantPayoutsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Payout History</CardTitle>
+          <CardTitle className="text-lg sm:text-xl">Payout History</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -160,41 +174,74 @@ export default function MerchantPayoutsPage() {
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
               <p className="text-sm text-muted-foreground">Loading payouts...</p>
             </div>
+          ) : !data?.length ? (
+            <p className="text-center text-sm text-muted-foreground py-10">No payout requests yet.</p>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Wallet</TableHead>
-                  <TableHead>Network</TableHead>
-                  <TableHead>QR</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Transaction Hash</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data?.map((payout: any) => (
-                  <TableRow key={payout.id}>
-                    <TableCell>{new Date(payout.createdAt).toLocaleDateString()}</TableCell>
-                    <TableCell>${payout.amount.toLocaleString()}</TableCell>
-                    <TableCell className="font-mono text-xs">{payout.walletAddress}</TableCell>
-                    <TableCell>{payout.walletNetwork}</TableCell>
-                    <TableCell>
-                      {payout.qrCodeImage ? (
-                        <img src={payout.qrCodeImage} alt="QR" className="h-10 w-10 object-contain" />
-                      ) : (
-                        <FileText className="h-5 w-5 text-muted-foreground" />
+            <>
+              <div className="hidden md:block overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Wallet</TableHead>
+                      <TableHead>Network</TableHead>
+                      <TableHead>QR</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Transaction Hash</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {data.map((payout: any) => (
+                      <TableRow key={payout.id}>
+                        <TableCell>{new Date(payout.createdAt).toLocaleDateString()}</TableCell>
+                        <TableCell>${payout.amount.toLocaleString()}</TableCell>
+                        <TableCell className="font-mono text-xs max-w-[120px] truncate">{payout.walletAddress}</TableCell>
+                        <TableCell>{payout.walletNetwork}</TableCell>
+                        <TableCell>
+                          {payout.qrCodeImage ? (
+                            <img src={payout.qrCodeImage} alt="QR" className="h-10 w-10 object-contain" />
+                          ) : (
+                            <FileText className="h-5 w-5 text-muted-foreground" />
+                          )}
+                        </TableCell>
+                        <TableCell>{getStatusBadge(payout.status)}</TableCell>
+                        <TableCell className="font-mono text-xs max-w-[140px] truncate">
+                          {payout.transactionHash || "-"}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              <div className="md:hidden space-y-3">
+                {data.map((payout: any) => (
+                  <div key={payout.id} className="rounded-xl border bg-card p-4 space-y-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className="font-semibold">${payout.amount.toLocaleString()}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(payout.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                      {getStatusBadge(payout.status)}
+                    </div>
+                    <div className="text-sm space-y-1">
+                      <p><span className="text-muted-foreground">Network:</span> {payout.walletNetwork}</p>
+                      <p className="font-mono text-xs break-all">
+                        <span className="text-muted-foreground font-sans">Wallet:</span> {payout.walletAddress}
+                      </p>
+                      {payout.transactionHash && (
+                        <p className="font-mono text-xs break-all">
+                          <span className="text-muted-foreground font-sans">Tx:</span> {payout.transactionHash}
+                        </p>
                       )}
-                    </TableCell>
-                    <TableCell>{getStatusBadge(payout.status)}</TableCell>
-                    <TableCell className="font-mono text-xs">
-                      {payout.transactionHash || "-"}
-                    </TableCell>
-                  </TableRow>
+                    </div>
+                  </div>
                 ))}
-              </TableBody>
-            </Table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

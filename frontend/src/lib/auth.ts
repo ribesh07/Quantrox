@@ -1,27 +1,40 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import axios from "axios";
+import type { JWT } from "next-auth/jwt";
+import { resolveServerApiBaseUrl } from "@/lib/api-url";
 
 export const dynamic = "force-dynamic";
 
-const resolveServerApiUrl = () => {
-  const apiUrl = process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL;
-  if (apiUrl?.trim()) {
-    return apiUrl.replace(/\/+$/, "");
+const ACCESS_TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
+
+async function refreshAccessToken(token: JWT): Promise<JWT> {
+  if (!token.refreshToken) {
+    return { ...token, error: "RefreshAccessTokenError" };
   }
 
-  if (process.env.NODE_ENV === "production") {
-    throw new Error("Missing INTERNAL_API_URL or NEXT_PUBLIC_API_URL for authentication.");
+  try {
+    const response = await axios.post(`${resolveServerApiBaseUrl()}/auth/refresh`, {
+      refreshToken: token.refreshToken,
+    });
+
+    return {
+      ...token,
+      accessToken: response.data.token,
+      refreshToken: response.data.refreshToken ?? token.refreshToken,
+      accessTokenExpires: Date.now() + ACCESS_TOKEN_TTL_MS,
+      error: undefined,
+    };
+  } catch {
+    return { ...token, error: "RefreshAccessTokenError" };
   }
+}
 
-  return "http://localhost:3001/api";
-};
-
-const SERVER_API_URL = resolveServerApiUrl();
 export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   session: {
     strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60,
   },
   pages: {
     signIn: "/login",
@@ -39,7 +52,7 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
-          const response = await axios.post(`${SERVER_API_URL}/auth/login`, {
+          const response = await axios.post(`${resolveServerApiBaseUrl()}/auth/login`, {
             email: credentials.email,
             password: credentials.password,
           });
@@ -50,16 +63,18 @@ export const authOptions: NextAuthOptions = {
             return {
               ...data.user,
               accessToken: data.token,
+              refreshToken: data.refreshToken,
             };
           }
           return null;
-        } catch (error: any) {
-          if (error.response?.status === 401) {
+        } catch (error: unknown) {
+          if (axios.isAxiosError(error) && error.response?.status === 401) {
             return null;
           }
-          throw new Error(
-            error.response?.data?.message || "Authentication service is unavailable. Please try again."
-          );
+          const message = axios.isAxiosError(error)
+            ? error.response?.data?.message
+            : undefined;
+          throw new Error(message || "Authentication service is unavailable. Please try again.");
         }
       },
     }),
@@ -67,19 +82,34 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.role = (user as any).role;
-        token.username = (user as any).username;
+        token.role = (user as { role?: string }).role;
+        token.username = (user as { username?: string }).username;
         token.id = user.id;
-        token.accessToken = (user as any).accessToken;
+        token.accessToken = (user as { accessToken?: string }).accessToken;
+        token.refreshToken = (user as { refreshToken?: string }).refreshToken;
+        token.accessTokenExpires = Date.now() + ACCESS_TOKEN_TTL_MS;
+        return token;
       }
-      return token;
+
+      if (token.error === "RefreshAccessTokenError") {
+        return token;
+      }
+
+      if (token.accessTokenExpires && Date.now() < token.accessTokenExpires) {
+        return token;
+      }
+
+      return refreshAccessToken(token);
     },
     async session({ session, token }) {
       if (session.user) {
-        (session.user as any).role = token.role;
-        (session.user as any).username = token.username;
-        (session.user as any).id = token.id;
-        (session.user as any).accessToken = token.accessToken;
+        session.user.role = token.role;
+        session.user.username = token.username;
+        session.user.id = token.id;
+        session.user.accessToken = token.accessToken;
+      }
+      if (token.error) {
+        session.error = token.error;
       }
       return session;
     },

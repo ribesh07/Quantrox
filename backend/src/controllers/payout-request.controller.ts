@@ -6,15 +6,25 @@ import multer from "multer";
 import { getUploadDirectory, saveUploadedFile } from "../utils/uploads";
 import { paramString, queryDate, queryInt, queryString } from "../utils/request";
 
+const ALLOWED_WALLET_NETWORKS = ["ERC20", "TRC20", "BEP20", "Polygon"];
+
 const upload = multer({ dest: getUploadDirectory() });
 
 export const createPayoutRequest = async (req: AuthRequest, res: Response) => {
   try {
     const { amount, walletAddress, walletNetwork, remarks } = req.body;
+
+    if (!walletNetwork || !ALLOWED_WALLET_NETWORKS.includes(walletNetwork)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid wallet network. Allowed: ${ALLOWED_WALLET_NETWORKS.join(", ")}`,
+      });
+    }
+
     let qrCodeImage;
-    
+
     if (req.file) {
-      qrCodeImage = await saveUploadedFile(req.file, 'payout-qrs');
+      qrCodeImage = await saveUploadedFile(req.file, "payout-qrs");
     }
 
     const payout = await PayoutRequestService.create({
@@ -29,17 +39,17 @@ export const createPayoutRequest = async (req: AuthRequest, res: Response) => {
     await AuditLogService.log({
       userId: req.user!.userId,
       userEmail: req.user!.email,
-      action: 'CREATE_PAYOUT_REQUEST',
-      resource: 'PAYOUT_REQUEST',
+      action: "CREATE_PAYOUT_REQUEST",
+      resource: "PAYOUT_REQUEST",
       resourceId: payout.id,
-      result: 'SUCCESS',
+      result: "SUCCESS",
       ipAddress: req.ip,
-      userAgent: req.get('user-agent'),
+      userAgent: req.get("user-agent"),
     });
 
-    res.json({ success: true, data: payout });
+    res.json({ success: true, payout });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Failed to create payout request' });
+    res.status(500).json({ success: false, message: "Failed to create payout request" });
   }
 };
 
@@ -53,9 +63,9 @@ export const getMyPayoutRequests = async (req: AuthRequest, res: Response) => {
       limit: queryInt(limit),
       offset: queryInt(offset),
     });
-    res.json({ success: true, data: result });
+    res.json({ success: true, payouts: result.payouts, count: result.count });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Failed to get payout requests' });
+    res.status(500).json({ success: false, message: "Failed to get payout requests" });
   }
 };
 
@@ -70,9 +80,9 @@ export const getAllPayoutRequests = async (req: AuthRequest, res: Response) => {
       limit: queryInt(limit),
       offset: queryInt(offset),
     });
-    res.json({ success: true, data: result });
+    res.json({ success: true, payouts: result.payouts, count: result.count });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Failed to get payout requests' });
+    res.status(500).json({ success: false, message: "Failed to get payout requests" });
   }
 };
 
@@ -80,9 +90,9 @@ export const submitPayoutForReview = async (req: AuthRequest, res: Response) => 
   try {
     const id = paramString(req.params.id);
     const payout = await PayoutRequestService.submitForReview(id);
-    res.json({ success: true, data: payout });
+    res.json({ success: true, payout });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Failed to submit payout for review' });
+    res.status(500).json({ success: false, message: "Failed to submit payout for review" });
   }
 };
 
@@ -90,21 +100,21 @@ export const approvePayoutRequest = async (req: AuthRequest, res: Response) => {
   try {
     const id = paramString(req.params.id);
     const payout = await PayoutRequestService.approve(id, req.user!.userId);
-    
+
     await AuditLogService.log({
       userId: req.user!.userId,
       userEmail: req.user!.email,
-      action: 'APPROVE_PAYOUT',
-      resource: 'PAYOUT_REQUEST',
+      action: "APPROVE_PAYOUT",
+      resource: "PAYOUT_REQUEST",
       resourceId: id,
-      result: 'SUCCESS',
+      result: "SUCCESS",
       ipAddress: req.ip,
-      userAgent: req.get('user-agent'),
+      userAgent: req.get("user-agent"),
     });
 
-    res.json({ success: true, data: payout });
+    res.json({ success: true, payout });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Failed to approve payout' });
+    res.status(500).json({ success: false, message: "Failed to approve payout" });
   }
 };
 
@@ -113,21 +123,21 @@ export const rejectPayoutRequest = async (req: AuthRequest, res: Response) => {
     const id = paramString(req.params.id);
     const { rejectionReason } = req.body;
     const payout = await PayoutRequestService.reject(id, req.user!.userId, rejectionReason);
-    
+
     await AuditLogService.log({
       userId: req.user!.userId,
       userEmail: req.user!.email,
-      action: 'REJECT_PAYOUT',
-      resource: 'PAYOUT_REQUEST',
+      action: "REJECT_PAYOUT",
+      resource: "PAYOUT_REQUEST",
       resourceId: id,
-      result: 'SUCCESS',
+      result: "SUCCESS",
       ipAddress: req.ip,
-      userAgent: req.get('user-agent'),
+      userAgent: req.get("user-agent"),
     });
 
-    res.json({ success: true, data: payout });
+    res.json({ success: true, payout });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Failed to reject payout' });
+    res.status(500).json({ success: false, message: "Failed to reject payout" });
   }
 };
 
@@ -136,21 +146,21 @@ export const markPayoutPaid = async (req: AuthRequest, res: Response) => {
     const id = paramString(req.params.id);
     const { transactionHash } = req.body;
     const payout = await PayoutRequestService.markPaid(id, req.user!.userId, transactionHash);
-    
+
     await AuditLogService.log({
       userId: req.user!.userId,
       userEmail: req.user!.email,
-      action: 'MARK_PAYOUT_PAID',
-      resource: 'PAYOUT_REQUEST',
+      action: "MARK_PAYOUT_PAID",
+      resource: "PAYOUT_REQUEST",
       resourceId: id,
-      result: 'SUCCESS',
+      result: "SUCCESS",
       ipAddress: req.ip,
-      userAgent: req.get('user-agent'),
+      userAgent: req.get("user-agent"),
     });
 
-    res.json({ success: true, data: payout });
+    res.json({ success: true, payout });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Failed to mark payout as paid' });
+    res.status(500).json({ success: false, message: "Failed to mark payout as paid" });
   }
 };
 

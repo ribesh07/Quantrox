@@ -10,6 +10,7 @@ import {
   TrendingUp,
   User,
   Menu,
+  Bell,
   QrCode,
   FileText,
   DollarSign,
@@ -74,6 +75,11 @@ const routes = [
     label: "History",
     icon: History,
     href: "/dashboard/orders",
+  },
+  {
+    label: "Notifications",
+    icon: Bell,
+    href: "/dashboard/notifications",
   },
   {
     label: "Profile",
