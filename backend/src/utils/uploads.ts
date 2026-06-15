@@ -3,7 +3,7 @@ import path from 'path';
 import { env } from '../config/env';
 import { uploadFileToStorage } from './storage';
 
-type UploadSubdirectory = 'proofs' | 'qrs' | 'games' | 'reports' | 'merchant-qrs' | 'payout-qrs';
+type UploadSubdirectory = 'proofs' | 'qrs' | 'games' | 'reports' | 'merchant-qrs' | 'payout-qrs' | 'payout-proofs';
 
 const sanitizeFilename = (filename: string): string =>
   path.basename(filename).replace(/[^a-zA-Z0-9._-]/g, '-');

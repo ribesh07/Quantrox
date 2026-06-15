@@ -57,7 +57,7 @@ const routes = [
     href: "/dashboard/deposits",
   },
   {
-    label: "Payouts",
+    label: "Payout Requests",
     icon: TrendingUp,
     href: "/dashboard/payouts",
   },
