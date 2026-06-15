@@ -3,14 +3,7 @@ import path from 'path';
 import { env } from '../config/env';
 import { uploadFileToStorage } from './storage';
 
-type UploadSubdirectory = 'proofs' | 'qrs' | 'games';
-
-interface SaveUploadedFileInput {
-  originalName: string;
-  prefix?: string;
-  subdirectory: UploadSubdirectory;
-  tempPath: string;
-}
+type UploadSubdirectory = 'proofs' | 'qrs' | 'games' | 'reports' | 'merchant-qrs' | 'payout-qrs';
 
 const sanitizeFilename = (filename: string): string =>
   path.basename(filename).replace(/[^a-zA-Z0-9._-]/g, '-');
@@ -24,19 +17,20 @@ export const ensureUploadDirectory = async (subdirectory?: UploadSubdirectory): 
   return targetDirectory;
 };
 
-export const getUploadDirectory = (): string => env.uploadDir;
+export const getUploadDirectory = (subdirectory?: UploadSubdirectory): string => {
+  return subdirectory ? path.join(env.uploadDir, subdirectory) : env.uploadDir;
+};
 
-export const saveUploadedFile = async ({
-  originalName,
-  prefix,
-  subdirectory,
-  tempPath,
-}: SaveUploadedFileInput): Promise<string> => {
-  const safeFilename = sanitizeFilename(originalName || 'upload.bin');
+export const saveUploadedFile = async (
+  file: { originalname: string; path: string },
+  subdirectory: UploadSubdirectory,
+  prefix?: string
+): Promise<string> => {
+  const safeFilename = sanitizeFilename(file.originalname || 'upload.bin');
   const filenamePrefix = prefix ? `${prefix}-` : '';
   const filename = `${filenamePrefix}${Date.now()}-${safeFilename}`;
   const key = `${subdirectory}/${filename}`;
 
-  const result = await uploadFileToStorage({ localPath: tempPath, key, contentType: 'application/octet-stream' });
+  const result = await uploadFileToStorage({ localPath: file.path, key, contentType: 'application/octet-stream' });
   return result;
 };
