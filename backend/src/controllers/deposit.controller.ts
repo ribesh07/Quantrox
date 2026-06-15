@@ -2,12 +2,13 @@ import { AuthRequest } from "../middleware/auth.middleware";
 import { Response } from "express";
 import { DepositService } from "../services/deposit.service";
 import { AuditLogService } from "../services/audit-log.service";
+import { paramString, queryDate, queryInt, queryString } from "../utils/request";
 
 export const createDeposit = async (req: AuthRequest, res: Response) => {
   try {
     const { amount, type, requiredDeposit, notes } = req.body;
     const deposit = await DepositService.create({
-      userId: req.user!.id,
+      userId: req.user!.userId,
       amount: parseFloat(amount),
       type,
       requiredDeposit: requiredDeposit ? parseFloat(requiredDeposit) : undefined,
@@ -22,13 +23,13 @@ export const createDeposit = async (req: AuthRequest, res: Response) => {
 export const getMyDeposits = async (req: AuthRequest, res: Response) => {
   try {
     const { status, type, fromDate, toDate, limit, offset } = req.query;
-    const result = await DepositService.getByUserId(req.user!.id, {
+    const result = await DepositService.getByUserId(req.user!.userId, {
       status: status as any,
       type: type as any,
-      fromDate: fromDate ? new Date(Array.isArray(fromDate) ? fromDate[0] : fromDate) : undefined,
-      toDate: toDate ? new Date(Array.isArray(toDate) ? toDate[0] : toDate) : undefined,
-      limit: limit ? parseInt(Array.isArray(limit) ? limit[0] : limit) : undefined,
-      offset: offset ? parseInt(Array.isArray(offset) ? offset[0] : offset) : undefined,
+      fromDate: queryDate(fromDate),
+      toDate: queryDate(toDate),
+      limit: queryInt(limit),
+      offset: queryInt(offset),
     });
     res.json({ success: true, data: result });
   } catch (error) {
@@ -41,12 +42,12 @@ export const getAllDeposits = async (req: AuthRequest, res: Response) => {
     const { status, userId, type, fromDate, toDate, limit, offset } = req.query;
     const result = await DepositService.getAll({
       status: status as any,
-      userId: Array.isArray(userId) ? userId[0] : userId,
+      userId: queryString(userId),
       type: type as any,
-      fromDate: fromDate ? new Date(Array.isArray(fromDate) ? fromDate[0] : fromDate) : undefined,
-      toDate: toDate ? new Date(Array.isArray(toDate) ? toDate[0] : toDate) : undefined,
-      limit: limit ? parseInt(Array.isArray(limit) ? limit[0] : limit) : undefined,
-      offset: offset ? parseInt(Array.isArray(offset) ? offset[0] : offset) : undefined,
+      fromDate: queryDate(fromDate),
+      toDate: queryDate(toDate),
+      limit: queryInt(limit),
+      offset: queryInt(offset),
     });
     res.json({ success: true, data: result });
   } catch (error) {
@@ -56,11 +57,11 @@ export const getAllDeposits = async (req: AuthRequest, res: Response) => {
 
 export const approveDeposit = async (req: AuthRequest, res: Response) => {
   try {
-    const { id } = req.params;
-    const deposit = await DepositService.approve(id, req.user!.id);
+    const id = paramString(req.params.id);
+    const deposit = await DepositService.approve(id, req.user!.userId);
     
     await AuditLogService.log({
-      userId: req.user!.id,
+      userId: req.user!.userId,
       userEmail: req.user!.email,
       action: 'APPROVE_DEPOSIT',
       resource: 'DEPOSIT',
@@ -78,11 +79,11 @@ export const approveDeposit = async (req: AuthRequest, res: Response) => {
 
 export const rejectDeposit = async (req: AuthRequest, res: Response) => {
   try {
-    const { id } = req.params;
-    const deposit = await DepositService.reject(id, req.user!.id);
+    const id = paramString(req.params.id);
+    const deposit = await DepositService.reject(id, req.user!.userId);
     
     await AuditLogService.log({
-      userId: req.user!.id,
+      userId: req.user!.userId,
       userEmail: req.user!.email,
       action: 'REJECT_DEPOSIT',
       resource: 'DEPOSIT',
@@ -100,11 +101,11 @@ export const rejectDeposit = async (req: AuthRequest, res: Response) => {
 
 export const freezeDeposit = async (req: AuthRequest, res: Response) => {
   try {
-    const { id } = req.params;
-    const deposit = await DepositService.freeze(id, req.user!.id);
+    const id = paramString(req.params.id);
+    const deposit = await DepositService.freeze(id, req.user!.userId);
     
     await AuditLogService.log({
-      userId: req.user!.id,
+      userId: req.user!.userId,
       userEmail: req.user!.email,
       action: 'FREEZE_DEPOSIT',
       resource: 'DEPOSIT',
@@ -122,11 +123,11 @@ export const freezeDeposit = async (req: AuthRequest, res: Response) => {
 
 export const releaseDeposit = async (req: AuthRequest, res: Response) => {
   try {
-    const { id } = req.params;
-    const deposit = await DepositService.release(id, req.user!.id);
+    const id = paramString(req.params.id);
+    const deposit = await DepositService.release(id, req.user!.userId);
     
     await AuditLogService.log({
-      userId: req.user!.id,
+      userId: req.user!.userId,
       userEmail: req.user!.email,
       action: 'RELEASE_DEPOSIT',
       resource: 'DEPOSIT',
@@ -144,12 +145,12 @@ export const releaseDeposit = async (req: AuthRequest, res: Response) => {
 
 export const adjustDeposit = async (req: AuthRequest, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = paramString(req.params.id);
     const { amount, notes } = req.body;
-    const deposit = await DepositService.adjust(id, parseFloat(amount), req.user!.id, notes);
+    const deposit = await DepositService.adjust(id, parseFloat(amount), req.user!.userId, notes);
     
     await AuditLogService.log({
-      userId: req.user!.id,
+      userId: req.user!.userId,
       userEmail: req.user!.email,
       action: 'ADJUST_DEPOSIT',
       resource: 'DEPOSIT',
@@ -167,7 +168,7 @@ export const adjustDeposit = async (req: AuthRequest, res: Response) => {
 
 export const getMyTotalDeposit = async (req: AuthRequest, res: Response) => {
   try {
-    const total = await DepositService.getUserTotalDeposit(req.user!.id);
+    const total = await DepositService.getUserTotalDeposit(req.user!.userId);
     res.json({ success: true, data: { total } });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Failed to get total deposit' });

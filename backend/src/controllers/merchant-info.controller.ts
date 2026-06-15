@@ -3,12 +3,13 @@ import { Response } from "express";
 import { MerchantInfoService } from "../services/merchant-info.service";
 import { AuditLogService } from "../services/audit-log.service";
 import { NotificationService } from "../services/notification.service";
+import { paramString, queryInt, queryString } from "../utils/request";
 
 export const createMerchantInfo = async (req: AuthRequest, res: Response) => {
   try {
     const { businessName, businessDescription, preferredWalletId, expectedDailyVolume } = req.body;
     const merchantInfo = await MerchantInfoService.create({
-      userId: req.user!.id,
+      userId: req.user!.userId,
       businessName,
       businessDescription,
       preferredWalletId,
@@ -16,7 +17,7 @@ export const createMerchantInfo = async (req: AuthRequest, res: Response) => {
     });
 
     await AuditLogService.log({
-      userId: req.user!.id,
+      userId: req.user!.userId,
       userEmail: req.user!.email,
       action: 'CREATE_MERCHANT_INFO',
       resource: 'MERCHANT_INFO',
@@ -34,7 +35,7 @@ export const createMerchantInfo = async (req: AuthRequest, res: Response) => {
 
 export const getMyMerchantInfo = async (req: AuthRequest, res: Response) => {
   try {
-    const merchantInfo = await MerchantInfoService.getByUserId(req.user!.id);
+    const merchantInfo = await MerchantInfoService.getByUserId(req.user!.userId);
     res.json({ success: true, data: merchantInfo });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Failed to get merchant info' });
@@ -45,9 +46,9 @@ export const getAllMerchants = async (req: AuthRequest, res: Response) => {
   try {
     const { approved, limit, offset } = req.query;
     const result = await MerchantInfoService.getAll({
-      approved: approved ? approved === 'true' : undefined,
-      limit: limit ? parseInt(Array.isArray(limit) ? limit[0] : limit) : undefined,
-      offset: offset ? parseInt(Array.isArray(offset) ? offset[0] : offset) : undefined,
+      approved: queryString(approved) ? queryString(approved) === 'true' : undefined,
+      limit: queryInt(limit),
+      offset: queryInt(offset),
     });
     res.json({ success: true, data: result });
   } catch (error) {
@@ -57,9 +58,9 @@ export const getAllMerchants = async (req: AuthRequest, res: Response) => {
 
 export const approveMerchant = async (req: AuthRequest, res: Response) => {
   try {
-    const { userId } = req.params;
+    const userId = paramString(req.params.userId);
     const { adminNote } = req.body;
-    const merchantInfo = await MerchantInfoService.approve(userId, req.user!.id, adminNote);
+    const merchantInfo = await MerchantInfoService.approve(userId, req.user!.userId, adminNote);
     
     await NotificationService.send({
       userId,
@@ -71,7 +72,7 @@ export const approveMerchant = async (req: AuthRequest, res: Response) => {
     });
 
     await AuditLogService.log({
-      userId: req.user!.id,
+      userId: req.user!.userId,
       userEmail: req.user!.email,
       action: 'APPROVE_MERCHANT',
       resource: 'MERCHANT_INFO',
@@ -89,9 +90,9 @@ export const approveMerchant = async (req: AuthRequest, res: Response) => {
 
 export const rejectMerchant = async (req: AuthRequest, res: Response) => {
   try {
-    const { userId } = req.params;
+    const userId = paramString(req.params.userId);
     const { adminNote } = req.body;
-    const merchantInfo = await MerchantInfoService.reject(userId, req.user!.id, adminNote);
+    const merchantInfo = await MerchantInfoService.reject(userId, req.user!.userId, adminNote);
     
     await NotificationService.send({
       userId,
@@ -103,7 +104,7 @@ export const rejectMerchant = async (req: AuthRequest, res: Response) => {
     });
 
     await AuditLogService.log({
-      userId: req.user!.id,
+      userId: req.user!.userId,
       userEmail: req.user!.email,
       action: 'REJECT_MERCHANT',
       resource: 'MERCHANT_INFO',
@@ -122,7 +123,7 @@ export const rejectMerchant = async (req: AuthRequest, res: Response) => {
 export const updateMyMerchantInfo = async (req: AuthRequest, res: Response) => {
   try {
     const { businessName, businessDescription, preferredWalletId, expectedDailyVolume } = req.body;
-    const merchantInfo = await MerchantInfoService.update(req.user!.id, {
+    const merchantInfo = await MerchantInfoService.update(req.user!.userId, {
       businessName,
       businessDescription,
       preferredWalletId,

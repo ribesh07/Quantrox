@@ -4,6 +4,7 @@ import { TransactionReportService } from "../services/transaction-report.service
 import { AuditLogService } from "../services/audit-log.service";
 import multer from "multer";
 import { getUploadDirectory, saveUploadedFile } from "../utils/uploads";
+import { paramString, queryDate, queryInt, queryString } from "../utils/request";
 
 const upload = multer({ dest: getUploadDirectory() });
 
@@ -17,16 +18,16 @@ export const createTransactionReport = async (req: AuthRequest, res: Response) =
     }
 
     const report = await TransactionReportService.create({
-      userId: req.user!.id,
-      transactionDate: new Date(Array.isArray(transactionDate) ? transactionDate[0] : transactionDate),
-      totalTransactions: parseInt(Array.isArray(totalTransactions) ? totalTransactions[0] : totalTransactions),
-      totalAmount: parseFloat(Array.isArray(totalAmount) ? totalAmount[0] : totalAmount),
+      userId: req.user!.userId,
+      transactionDate: new Date(transactionDate),
+      totalTransactions: parseInt(totalTransactions, 10),
+      totalAmount: parseFloat(totalAmount),
       proofImage,
       notes,
     });
 
     await AuditLogService.log({
-      userId: req.user!.id,
+      userId: req.user!.userId,
       userEmail: req.user!.email,
       action: 'CREATE_TRANSACTION_REPORT',
       resource: 'TRANSACTION_REPORT',
@@ -45,12 +46,12 @@ export const createTransactionReport = async (req: AuthRequest, res: Response) =
 export const getMyTransactionReports = async (req: AuthRequest, res: Response) => {
   try {
     const { status, fromDate, toDate, limit, offset } = req.query;
-    const result = await TransactionReportService.getByUserId(req.user!.id, {
+    const result = await TransactionReportService.getByUserId(req.user!.userId, {
       status: status as any,
-      fromDate: fromDate ? new Date(Array.isArray(fromDate) ? fromDate[0] : fromDate) : undefined,
-      toDate: toDate ? new Date(Array.isArray(toDate) ? toDate[0] : toDate) : undefined,
-      limit: limit ? parseInt(Array.isArray(limit) ? limit[0] : limit) : undefined,
-      offset: offset ? parseInt(Array.isArray(offset) ? offset[0] : offset) : undefined,
+      fromDate: queryDate(fromDate),
+      toDate: queryDate(toDate),
+      limit: queryInt(limit),
+      offset: queryInt(offset),
     });
     res.json({ success: true, data: result });
   } catch (error) {
@@ -63,11 +64,11 @@ export const getAllTransactionReports = async (req: AuthRequest, res: Response) 
     const { status, userId, fromDate, toDate, limit, offset } = req.query;
     const result = await TransactionReportService.getAll({
       status: status as any,
-      userId: Array.isArray(userId) ? userId[0] : userId,
-      fromDate: fromDate ? new Date(Array.isArray(fromDate) ? fromDate[0] : fromDate) : undefined,
-      toDate: toDate ? new Date(Array.isArray(toDate) ? toDate[0] : toDate) : undefined,
-      limit: limit ? parseInt(Array.isArray(limit) ? limit[0] : limit) : undefined,
-      offset: offset ? parseInt(Array.isArray(offset) ? offset[0] : offset) : undefined,
+      userId: queryString(userId),
+      fromDate: queryDate(fromDate),
+      toDate: queryDate(toDate),
+      limit: queryInt(limit),
+      offset: queryInt(offset),
     });
     res.json({ success: true, data: result });
   } catch (error) {
@@ -77,11 +78,11 @@ export const getAllTransactionReports = async (req: AuthRequest, res: Response) 
 
 export const approveTransactionReport = async (req: AuthRequest, res: Response) => {
   try {
-    const { id } = req.params;
-    const report = await TransactionReportService.approve(id, req.user!.id);
+    const id = paramString(req.params.id);
+    const report = await TransactionReportService.approve(id, req.user!.userId);
     
     await AuditLogService.log({
-      userId: req.user!.id,
+      userId: req.user!.userId,
       userEmail: req.user!.email,
       action: 'APPROVE_TRANSACTION_REPORT',
       resource: 'TRANSACTION_REPORT',
@@ -99,12 +100,12 @@ export const approveTransactionReport = async (req: AuthRequest, res: Response) 
 
 export const rejectTransactionReport = async (req: AuthRequest, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = paramString(req.params.id);
     const { rejectionReason } = req.body;
-    const report = await TransactionReportService.reject(id, req.user!.id, rejectionReason);
+    const report = await TransactionReportService.reject(id, req.user!.userId, rejectionReason);
     
     await AuditLogService.log({
-      userId: req.user!.id,
+      userId: req.user!.userId,
       userEmail: req.user!.email,
       action: 'REJECT_TRANSACTION_REPORT',
       resource: 'TRANSACTION_REPORT',

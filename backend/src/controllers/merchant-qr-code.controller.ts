@@ -4,12 +4,13 @@ import { MerchantQRCodeService } from "../services/merchant-qr-code.service";
 import { AuditLogService } from "../services/audit-log.service";
 import multer from "multer";
 import { getUploadDirectory, saveUploadedFile } from "../utils/uploads";
+import { paramString, queryInt, queryString } from "../utils/request";
 
 const upload = multer({ dest: getUploadDirectory() });
 
 export const assignMerchantQRCode = async (req: AuthRequest, res: Response) => {
   try {
-    const { userId } = req.params;
+    const userId = paramString(req.params.userId);
     if (!req.file) {
       return res.status(400).json({ success: false, message: 'QR code image is required' });
     }
@@ -17,11 +18,11 @@ export const assignMerchantQRCode = async (req: AuthRequest, res: Response) => {
     const qrCode = await MerchantQRCodeService.assign({
       userId,
       imageUrl,
-      assignedBy: req.user!.id,
+      assignedBy: req.user!.userId,
     });
 
     await AuditLogService.log({
-      userId: req.user!.id,
+      userId: req.user!.userId,
       userEmail: req.user!.email,
       action: 'ASSIGN_MERCHANT_QR',
       resource: 'MERCHANT_QR_CODE',
@@ -39,7 +40,7 @@ export const assignMerchantQRCode = async (req: AuthRequest, res: Response) => {
 
 export const getMyMerchantQRCode = async (req: AuthRequest, res: Response) => {
   try {
-    const qrCode = await MerchantQRCodeService.getByUserId(req.user!.id);
+    const qrCode = await MerchantQRCodeService.getByUserId(req.user!.userId);
     res.json({ success: true, data: qrCode });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Failed to get QR code' });
@@ -49,10 +50,11 @@ export const getMyMerchantQRCode = async (req: AuthRequest, res: Response) => {
 export const getAllMerchantQRCodes = async (req: AuthRequest, res: Response) => {
   try {
     const { active, limit, offset } = req.query;
+    const activeValue = queryString(active);
     const result = await MerchantQRCodeService.getAll({
-      active: active !== undefined ? active === 'true' : undefined,
-      limit: limit ? parseInt(Array.isArray(limit) ? limit[0] : limit) : undefined,
-      offset: offset ? parseInt(Array.isArray(offset) ? offset[0] : offset) : undefined,
+      active: activeValue !== undefined ? activeValue === 'true' : undefined,
+      limit: queryInt(limit),
+      offset: queryInt(offset),
     });
     res.json({ success: true, data: result });
   } catch (error) {
@@ -62,7 +64,7 @@ export const getAllMerchantQRCodes = async (req: AuthRequest, res: Response) => 
 
 export const disableMerchantQRCode = async (req: AuthRequest, res: Response) => {
   try {
-    const { userId } = req.params;
+    const userId = paramString(req.params.userId);
     const qrCode = await MerchantQRCodeService.disable(userId);
     res.json({ success: true, data: qrCode });
   } catch (error) {
@@ -72,7 +74,7 @@ export const disableMerchantQRCode = async (req: AuthRequest, res: Response) => 
 
 export const enableMerchantQRCode = async (req: AuthRequest, res: Response) => {
   try {
-    const { userId } = req.params;
+    const userId = paramString(req.params.userId);
     const qrCode = await MerchantQRCodeService.enable(userId);
     res.json({ success: true, data: qrCode });
   } catch (error) {
