@@ -119,29 +119,34 @@ model Deposit {
 }
 
 model PayoutRequest {
-  id                      String                  @id @default(cuid())
-  userId                  String
-  amount                  Float
-  walletAddress           String
-  walletNetwork           String
-  qrCodeImage             String?
-  remarks                 String?
-  status                  PayoutStatus            @default(PENDING)
-  approvedAt              DateTime?
-  approvedBy              String?
-  rejectedAt              DateTime?
-  rejectedBy              String?
-  rejectionReason         String?
-  paidAt                  DateTime?
-  transactionHash         String?
-  paidBy                  String?
-  createdAt               DateTime                @default(now())
-  updatedAt               DateTime                @updatedAt
-  user                    User                    @relation(fields: [userId], references: [id])
-  
+  id                String         @id @default(cuid())
+  userId            String
+  paymentMethodId   String?
+  amount            Float
+  uid               String?
+  walletAddress     String?
+  walletNetwork     String?
+  qrCodeImage       String?
+  remarks           String?
+  status            PayoutStatus   @default(PENDING)
+  approvedAt        DateTime?
+  approvedBy        String?
+  rejectedAt        DateTime?
+  rejectedBy        String?
+  rejectionReason   String?
+  paidAt            DateTime?
+  transactionHash   String?
+  paymentProofImage String?
+  paidBy            String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  user              User           @relation(fields: [userId], references: [id])
+  paymentMethod     PaymentMethod? @relation(fields: [paymentMethodId], references: [id])
+
   @@index([userId])
   @@index([status])
   @@index([createdAt])
+  @@index([paymentMethodId])
 }
 
 model Wallet {
@@ -186,8 +191,9 @@ model PaymentMethod {
   maxAmount     Float                 @default(1000000)
   createdAt     DateTime              @default(now())
   updatedAt     DateTime              @default(now())
-  orders        Order[]
-  wallets       Wallet[]
+  orders         Order[]
+  wallets        Wallet[]
+  payoutRequests PayoutRequest[]
 }
 
 model QRCode {

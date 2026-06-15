@@ -126,8 +126,9 @@ router.patch('/deposits/:id/adjust', DepositController.adjustDeposit);
 
 // Payout Requests
 router.get('/payout-requests', PayoutRequestController.getAllPayoutRequests);
+router.get('/payout-requests/stats', PayoutRequestController.getPayoutStatusCounts);
 router.patch('/payout-requests/:id/approve', PayoutRequestController.approvePayoutRequest);
 router.patch('/payout-requests/:id/reject', PayoutRequestController.rejectPayoutRequest);
-router.patch('/payout-requests/:id/mark-paid', PayoutRequestController.markPayoutPaid);
+router.patch('/payout-requests/:id/mark-paid', PayoutRequestController.upload.single('paymentProof'), PayoutRequestController.markPayoutPaid);
 
 export default router;

@@ -1,39 +1,58 @@
 import { AuthRequest } from "../middleware/auth.middleware";
 import { Response } from "express";
 import { PayoutRequestService } from "../services/payout-request.service";
+import { PaymentService } from "../services/payment.service";
 import { AuditLogService } from "../services/audit-log.service";
 import multer from "multer";
 import { getUploadDirectory, saveUploadedFile } from "../utils/uploads";
 import { paramString, queryDate, queryInt, queryString } from "../utils/request";
 
-const ALLOWED_WALLET_NETWORKS = ["ERC20", "TRC20", "BEP20", "Polygon"];
-
 const upload = multer({ dest: getUploadDirectory() });
 
 export const createPayoutRequest = async (req: AuthRequest, res: Response) => {
   try {
-    const { amount, walletAddress, walletNetwork, remarks } = req.body;
+    const { amount, paymentMethodId, uid, remarks, walletAddress, walletNetwork } = req.body;
 
-    if (!walletNetwork || !ALLOWED_WALLET_NETWORKS.includes(walletNetwork)) {
+    if (!paymentMethodId) {
+      return res.status(400).json({ success: false, message: "Payment method is required" });
+    }
+
+    if (!uid?.trim()) {
+      return res.status(400).json({ success: false, message: "UID / account ID is required" });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: "Receiving QR code image is required" });
+    }
+
+    const parsedAmount = parseFloat(amount);
+    if (!parsedAmount || parsedAmount <= 0) {
+      return res.status(400).json({ success: false, message: "Valid amount is required" });
+    }
+
+    const paymentMethod = await PaymentService.getById(paymentMethodId);
+    if (!paymentMethod || !paymentMethod.active) {
+      return res.status(400).json({ success: false, message: "Invalid or inactive payment method" });
+    }
+
+    if (parsedAmount < paymentMethod.minAmount || parsedAmount > paymentMethod.maxAmount) {
       return res.status(400).json({
         success: false,
-        message: `Invalid wallet network. Allowed: ${ALLOWED_WALLET_NETWORKS.join(", ")}`,
+        message: `Amount must be between ${paymentMethod.minAmount} and ${paymentMethod.maxAmount}`,
       });
     }
 
-    let qrCodeImage;
-
-    if (req.file) {
-      qrCodeImage = await saveUploadedFile(req.file, "payout-qrs");
-    }
+    const qrCodeImage = await saveUploadedFile(req.file, "payout-qrs");
 
     const payout = await PayoutRequestService.create({
       userId: req.user!.userId,
-      amount: parseFloat(amount),
-      walletAddress,
-      walletNetwork,
+      amount: parsedAmount,
+      paymentMethodId,
+      uid: uid.trim(),
       qrCodeImage,
-      remarks,
+      remarks: remarks?.trim() || undefined,
+      walletAddress: walletAddress?.trim() || undefined,
+      walletNetwork: walletNetwork?.trim() || undefined,
     });
 
     await AuditLogService.log({
@@ -49,6 +68,7 @@ export const createPayoutRequest = async (req: AuthRequest, res: Response) => {
 
     res.json({ success: true, payout });
   } catch (error) {
+    console.error("Create payout error:", error);
     res.status(500).json({ success: false, message: "Failed to create payout request" });
   }
 };
@@ -83,6 +103,15 @@ export const getAllPayoutRequests = async (req: AuthRequest, res: Response) => {
     res.json({ success: true, payouts: result.payouts, count: result.count });
   } catch (error) {
     res.status(500).json({ success: false, message: "Failed to get payout requests" });
+  }
+};
+
+export const getPayoutStatusCounts = async (_req: AuthRequest, res: Response) => {
+  try {
+    const counts = await PayoutRequestService.getStatusCounts();
+    res.json({ success: true, counts });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Failed to get payout counts" });
   }
 };
 
@@ -145,7 +174,19 @@ export const markPayoutPaid = async (req: AuthRequest, res: Response) => {
   try {
     const id = paramString(req.params.id);
     const { transactionHash } = req.body;
-    const payout = await PayoutRequestService.markPaid(id, req.user!.userId, transactionHash);
+
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: "Payment proof image is required" });
+    }
+
+    const paymentProofImage = await saveUploadedFile(req.file, "payout-proofs");
+
+    const payout = await PayoutRequestService.markPaid(
+      id,
+      req.user!.userId,
+      transactionHash?.trim() || "N/A",
+      paymentProofImage
+    );
 
     await AuditLogService.log({
       userId: req.user!.userId,
@@ -160,6 +201,7 @@ export const markPayoutPaid = async (req: AuthRequest, res: Response) => {
 
     res.json({ success: true, payout });
   } catch (error) {
+    console.error("Mark payout paid error:", error);
     res.status(500).json({ success: false, message: "Failed to mark payout as paid" });
   }
 };
