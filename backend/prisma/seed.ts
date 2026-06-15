@@ -590,6 +590,7 @@ async function main() {
       await prisma.payoutRequest.create({
         data: {
           userId: sample.merchant.user.id,
+          type: "MERCHANT",
           amount: sample.amount,
           walletAddress: 'TRON_PAYOUT_WALLET_SEED',
           walletNetwork: 'TRC20',
@@ -604,6 +605,29 @@ async function main() {
           paidAt: sample.status === PayoutStatus.PAID ? new Date() : null,
           transactionHash: sample.status === PayoutStatus.PAID ? '0xseedtxhash123456789abcdef' : null,
           paidBy: sample.status === PayoutStatus.PAID ? admin.id : null,
+        },
+      });
+    }
+
+    const cashApp = methodByName('Cash App');
+    const userPayoutSamples = [
+      { user: users[0], status: PayoutStatus.PENDING, amount: 75, uid: '$seeduser1' },
+      { user: users[1], status: PayoutStatus.APPROVED, amount: 120, uid: '$seeduser2' },
+    ];
+
+    for (const sample of userPayoutSamples) {
+      await prisma.payoutRequest.create({
+        data: {
+          userId: sample.user.id,
+          type: "USER",
+          paymentMethodId: cashApp.id,
+          amount: sample.amount,
+          uid: sample.uid,
+          qrCodeImage: '/uploads/seed/payout-qr.png',
+          remarks: `${SEED_MARKER} user payout request`,
+          status: sample.status,
+          approvedAt: sample.status === PayoutStatus.APPROVED ? new Date() : null,
+          approvedBy: sample.status === PayoutStatus.APPROVED ? admin.id : null,
         },
       });
     }

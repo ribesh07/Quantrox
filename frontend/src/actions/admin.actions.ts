@@ -453,12 +453,15 @@ export async function adjustDepositAction(id: string, amount: number, notes?: st
 }
 
 // Payout Request Actions
-export async function getAllPayoutRequestsAction(status?: string) {
+export async function getAllPayoutRequestsAction(status?: string, type?: string) {
   try {
     const config = await getAuthenticatedRequestConfig();
+    const params: Record<string, string> = {};
+    if (status && status !== "ALL") params.status = status;
+    if (type) params.type = type;
     const response = await api.get("/admin/payout-requests", {
       ...config,
-      params: status && status !== "ALL" ? { status } : undefined,
+      params: Object.keys(params).length ? params : undefined,
     });
     return { success: true, payouts: response.data.payouts, count: response.data.count };
   } catch (error: any) {
@@ -466,39 +469,46 @@ export async function getAllPayoutRequestsAction(status?: string) {
   }
 }
 
-export async function getPayoutStatusCountsAction() {
+export async function getPayoutStatusCountsAction(type?: string) {
   try {
     const config = await getAuthenticatedRequestConfig();
-    const response = await api.get("/admin/payout-requests/stats", config);
+    const response = await api.get("/admin/payout-requests/stats", {
+      ...config,
+      params: type ? { type } : undefined,
+    });
     return { success: true, counts: response.data.counts };
   } catch (error: any) {
     return { success: false, error: error.response?.data?.message || error.message };
   }
 }
 
-export async function approvePayoutRequestAction(id: string) {
+export async function approvePayoutRequestAction(id: string, revalidatePaths?: string[]) {
   try {
     const config = await getAuthenticatedRequestConfig();
     const response = await api.patch(`/admin/payout-requests/${id}/approve`, {}, config);
-    revalidatePath("/admin/payout-requests");
+    for (const path of revalidatePaths ?? ["/admin/payout-requests"]) {
+      revalidatePath(path);
+    }
     return { success: true, payout: response.data.payout };
   } catch (error: any) {
     return { success: false, error: error.response?.data?.message || error.message };
   }
 }
 
-export async function rejectPayoutRequestAction(id: string, rejectionReason: string) {
+export async function rejectPayoutRequestAction(id: string, rejectionReason: string, revalidatePaths?: string[]) {
   try {
     const config = await getAuthenticatedRequestConfig();
     const response = await api.patch(`/admin/payout-requests/${id}/reject`, { rejectionReason }, config);
-    revalidatePath("/admin/payout-requests");
+    for (const path of revalidatePaths ?? ["/admin/payout-requests"]) {
+      revalidatePath(path);
+    }
     return { success: true, payout: response.data.payout };
   } catch (error: any) {
     return { success: false, error: error.response?.data?.message || error.message };
   }
 }
 
-export async function markPayoutPaidAction(id: string, formData: FormData) {
+export async function markPayoutPaidAction(id: string, formData: FormData, revalidatePaths?: string[]) {
   try {
     const config = await getAuthenticatedRequestConfig();
     const response = await api.patch(`/admin/payout-requests/${id}/mark-paid`, formData, {
@@ -508,7 +518,9 @@ export async function markPayoutPaidAction(id: string, formData: FormData) {
         "Content-Type": "multipart/form-data",
       },
     });
-    revalidatePath("/admin/payout-requests");
+    for (const path of revalidatePaths ?? ["/admin/payout-requests"]) {
+      revalidatePath(path);
+    }
     return { success: true, payout: response.data.payout };
   } catch (error: any) {
     return { success: false, error: error.response?.data?.message || error.message };
