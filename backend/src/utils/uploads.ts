@@ -21,15 +21,57 @@ export const getUploadDirectory = (subdirectory?: UploadSubdirectory): string =>
   return subdirectory ? path.join(env.uploadDir, subdirectory) : env.uploadDir;
 };
 
+type SaveUploadedFileOptions = {
+  tempPath?: string;
+  path?: string;
+  originalName?: string;
+  originalname?: string;
+  subdirectory: UploadSubdirectory;
+  prefix?: string;
+};
+
+const normalizeUploadedFile = (
+  fileOrOptions:
+    | { originalname: string; path: string }
+    | SaveUploadedFileOptions,
+  subdirectory?: UploadSubdirectory,
+  prefix?: string
+): { file: { originalname: string; path: string }; subdirectory: UploadSubdirectory; prefix?: string } => {
+  if ('subdirectory' in fileOrOptions) {
+    const options = fileOrOptions;
+    return {
+      file: {
+        originalname: options.originalName ?? options.originalname ?? 'upload.bin',
+        path: options.tempPath ?? options.path ?? '',
+      },
+      subdirectory: options.subdirectory,
+      prefix: options.prefix,
+    };
+  }
+
+  return {
+    file: fileOrOptions,
+    subdirectory: subdirectory!,
+    prefix,
+  };
+};
+
 export const saveUploadedFile = async (
-  file: { originalname: string; path: string },
-  subdirectory: UploadSubdirectory,
+  fileOrOptions:
+    | { originalname: string; path: string }
+    | SaveUploadedFileOptions,
+  subdirectory?: UploadSubdirectory,
   prefix?: string
 ): Promise<string> => {
+  const { file, subdirectory: subdir, prefix: filePrefix } = normalizeUploadedFile(
+    fileOrOptions,
+    subdirectory,
+    prefix
+  );
   const safeFilename = sanitizeFilename(file.originalname || 'upload.bin');
-  const filenamePrefix = prefix ? `${prefix}-` : '';
+  const filenamePrefix = filePrefix ? `${filePrefix}-` : '';
   const filename = `${filenamePrefix}${Date.now()}-${safeFilename}`;
-  const key = `${subdirectory}/${filename}`;
+  const key = `${subdir}/${filename}`;
 
   const result = await uploadFileToStorage({ localPath: file.path, key, contentType: 'application/octet-stream' });
   return result;
