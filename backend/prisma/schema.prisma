@@ -121,6 +121,7 @@ model Deposit {
 model PayoutRequest {
   id                String         @id @default(cuid())
   userId            String
+  type              PayoutType     @default(MERCHANT)
   paymentMethodId   String?
   amount            Float
   uid               String?
@@ -148,6 +149,11 @@ model PayoutRequest {
   @@index([status])
   @@index([createdAt])
   @@index([paymentMethodId])
+}
+
+enum PayoutType {
+  MERCHANT
+  USER
 }
 
 model Wallet {
