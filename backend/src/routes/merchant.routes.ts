@@ -15,8 +15,8 @@ router.post('/info', MerchantInfoController.createMerchantInfo);
 router.get('/info', MerchantInfoController.getMyMerchantInfo);
 router.put('/info', MerchantInfoController.updateMyMerchantInfo);
 
-// Merchant QR Code
-router.get('/qr', MerchantQRCodeController.getMyMerchantQRCode);
+// Merchant QR Codes
+router.get('/qr', MerchantQRCodeController.getMyMerchantQRCodes);
 
 // Transaction Reports
 router.post('/reports', TransactionReportController.upload.single('proofImage'), TransactionReportController.createTransactionReport);

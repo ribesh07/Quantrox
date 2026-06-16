@@ -4,6 +4,14 @@ import api from "@/lib/api";
 import { revalidatePath } from "next/cache";
 import { getAuthenticatedRequestConfig } from "./_auth";
 
+export type MerchantWalletInput = {
+  walletId: string;
+  minLimit?: number;
+  maxLimit?: number;
+  dailyLimit?: number;
+  isPrimary?: boolean;
+};
+
 export async function getMyMerchantInfoAction() {
   try {
     const config = await getAuthenticatedRequestConfig();
@@ -19,6 +27,7 @@ export async function createMerchantInfoAction(data: {
   businessDescription?: string;
   preferredWalletId: string;
   expectedDailyVolume: number;
+  merchantWallets?: MerchantWalletInput[];
 }) {
   try {
     const config = await getAuthenticatedRequestConfig();
@@ -36,6 +45,7 @@ export async function updateMyMerchantInfoAction(data: Partial<{
   businessDescription?: string;
   preferredWalletId: string;
   expectedDailyVolume: number;
+  merchantWallets?: MerchantWalletInput[];
 }>) {
   try {
     const config = await getAuthenticatedRequestConfig();
@@ -48,14 +58,21 @@ export async function updateMyMerchantInfoAction(data: Partial<{
   }
 }
 
-export async function getMyQRCodeAction() {
+export async function getMyQRCodesAction() {
   try {
     const config = await getAuthenticatedRequestConfig();
     const response = await api.get("/merchant/qr", config);
-    return { success: true, qrCode: response.data.qrCode };
+    return { success: true, qrCodes: response.data.qrCodes || [] };
   } catch (error: any) {
     return { success: false, error: error.response?.data?.message || error.message };
   }
+}
+
+/** @deprecated Use getMyQRCodesAction instead */
+export async function getMyQRCodeAction() {
+  const result = await getMyQRCodesAction();
+  if (!result.success) return result;
+  return { success: true, qrCode: result.qrCodes?.[0] || null };
 }
 
 export async function createTransactionReportAction(formData: FormData) {
