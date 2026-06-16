@@ -1,26 +1,50 @@
 import { prisma } from "../shared/prisma";
 import { PayoutStatus } from "@prisma/client";
 
+const baseUrl = process.env.SERVICE_URL_BACKEND || "https://api.settlerpay.com";
+
+const withImageUrls = <T extends { qrCodeImage?: string | null; paymentProofImage?: string | null }>(
+  payout: T
+): T => ({
+  ...payout,
+  qrCodeImage: payout.qrCodeImage
+    ? payout.qrCodeImage.startsWith("http")
+      ? payout.qrCodeImage
+      : `${baseUrl}${payout.qrCodeImage}`
+    : null,
+  paymentProofImage: payout.paymentProofImage
+    ? payout.paymentProofImage.startsWith("http")
+      ? payout.paymentProofImage
+      : `${baseUrl}${payout.paymentProofImage}`
+    : null,
+});
+
 export const PayoutRequestService = {
   async create(data: {
     userId: string;
     amount: number;
-    walletAddress: string;
-    walletNetwork: string;
-    qrCodeImage?: string;
+    paymentMethodId: string;
+    uid: string;
+    qrCodeImage: string;
     remarks?: string;
+    walletAddress?: string;
+    walletNetwork?: string;
   }) {
-    return prisma.payoutRequest.create({
+    const payout = await prisma.payoutRequest.create({
       data: {
         userId: data.userId,
         amount: data.amount,
-        walletAddress: data.walletAddress,
-        walletNetwork: data.walletNetwork,
+        paymentMethodId: data.paymentMethodId,
+        uid: data.uid,
         qrCodeImage: data.qrCodeImage,
         remarks: data.remarks,
-        status: 'PENDING',
+        walletAddress: data.walletAddress,
+        walletNetwork: data.walletNetwork,
+        status: "PENDING",
       },
+      include: { paymentMethod: true },
     });
+    return withImageUrls(payout);
   },
 
   async getById(id: string) {
@@ -148,5 +172,20 @@ export const PayoutRequestService = {
         transactionHash,
       },
     });
+    return withImageUrls(payout);
+  },
+
+  async getStatusCounts() {
+    const counts = await prisma.payoutRequest.groupBy({
+      by: ["status"],
+      _count: { status: true },
+    });
+    return counts.reduce(
+      (acc, item) => {
+        acc[item.status] = item._count.status;
+        return acc;
+      },
+      {} as Record<string, number>
+    );
   },
 };

@@ -10,36 +10,65 @@ const upload = multer({ dest: getUploadDirectory() });
 
 export const createPayoutRequest = async (req: AuthRequest, res: Response) => {
   try {
-    const { amount, walletAddress, walletNetwork, remarks } = req.body;
-    let qrCodeImage;
-    
-    if (req.file) {
-      qrCodeImage = await saveUploadedFile(req.file, 'payout-qrs');
+    const { amount, paymentMethodId, uid, remarks, walletAddress, walletNetwork } = req.body;
+
+    if (!paymentMethodId) {
+      return res.status(400).json({ success: false, message: "Payment method is required" });
     }
+
+    if (!uid?.trim()) {
+      return res.status(400).json({ success: false, message: "UID / account ID is required" });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: "Receiving QR code image is required" });
+    }
+
+    const parsedAmount = parseFloat(amount);
+    if (!parsedAmount || parsedAmount <= 0) {
+      return res.status(400).json({ success: false, message: "Valid amount is required" });
+    }
+
+    const paymentMethod = await PaymentService.getById(paymentMethodId);
+    if (!paymentMethod || !paymentMethod.active) {
+      return res.status(400).json({ success: false, message: "Invalid or inactive payment method" });
+    }
+
+    if (parsedAmount < paymentMethod.minAmount || parsedAmount > paymentMethod.maxAmount) {
+      return res.status(400).json({
+        success: false,
+        message: `Amount must be between ${paymentMethod.minAmount} and ${paymentMethod.maxAmount}`,
+      });
+    }
+
+    const qrCodeImage = await saveUploadedFile(req.file, "payout-qrs");
 
     const payout = await PayoutRequestService.create({
       userId: req.user!.userId,
-      amount: parseFloat(amount),
-      walletAddress,
-      walletNetwork,
+      amount: parsedAmount,
+      paymentMethodId,
+      uid: uid.trim(),
       qrCodeImage,
-      remarks,
+      remarks: remarks?.trim() || undefined,
+      walletAddress: walletAddress?.trim() || undefined,
+      walletNetwork: walletNetwork?.trim() || undefined,
     });
 
     await AuditLogService.log({
       userId: req.user!.userId,
       userEmail: req.user!.email,
-      action: 'CREATE_PAYOUT_REQUEST',
-      resource: 'PAYOUT_REQUEST',
+      action: "CREATE_PAYOUT_REQUEST",
+      resource: "PAYOUT_REQUEST",
       resourceId: payout.id,
-      result: 'SUCCESS',
+      result: "SUCCESS",
       ipAddress: req.ip,
-      userAgent: req.get('user-agent'),
+      userAgent: req.get("user-agent"),
     });
 
-    res.json({ success: true, data: payout });
+    res.json({ success: true, payout });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Failed to create payout request' });
+    console.error("Create payout error:", error);
+    res.status(500).json({ success: false, message: "Failed to create payout request" });
   }
 };
 
@@ -53,9 +82,9 @@ export const getMyPayoutRequests = async (req: AuthRequest, res: Response) => {
       limit: queryInt(limit),
       offset: queryInt(offset),
     });
-    res.json({ success: true, data: result });
+    res.json({ success: true, payouts: result.payouts, count: result.count });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Failed to get payout requests' });
+    res.status(500).json({ success: false, message: "Failed to get payout requests" });
   }
 };
 
@@ -72,7 +101,16 @@ export const getAllPayoutRequests = async (req: AuthRequest, res: Response) => {
     });
     res.json({ success: true, data: result });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Failed to get payout requests' });
+    res.status(500).json({ success: false, message: "Failed to get payout requests" });
+  }
+};
+
+export const getPayoutStatusCounts = async (_req: AuthRequest, res: Response) => {
+  try {
+    const counts = await PayoutRequestService.getStatusCounts();
+    res.json({ success: true, counts });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Failed to get payout counts" });
   }
 };
 

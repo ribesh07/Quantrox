@@ -11,7 +11,15 @@ import { Loader2, Plus, FileText } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { getMyPayoutRequestsAction, createPayoutRequestAction } from "@/actions/merchant.actions";
+import { getPaymentMethodsAction } from "@/actions/payment.actions";
 import { PayoutStatus } from "@/lib/prisma-types";
 
 export default function MerchantPayoutsPage() {
@@ -79,8 +87,10 @@ export default function MerchantPayoutsPage() {
     <div className="space-y-8 pb-10">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Payouts</h1>
-          <p className="text-muted-foreground mt-1">Request and track your payouts</p>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Payout Requests</h1>
+          <p className="text-muted-foreground mt-1 text-sm sm:text-base">
+            Choose a payment method, upload your receiving QR, and submit a payout request
+          </p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>

@@ -371,29 +371,219 @@ async function main() {
 
     await prisma.notification.create({
       data: {
-        userId: user.id,
-        title: 'Welcome to SettlerPay',
-        message: 'Your account has been successfully created.',
-        type: NotificationType.SUCCESS,
+        userId: approvedMerchants[1].user.id,
+        imageUrl: '/uploads/seed/merchant-qr-disabled.png',
+        assignedBy: admin.id,
+        active: false,
+        disabledAt: new Date(),
       },
     });
+  });
 
-    await prisma.auditLog.create({
-      data: {
-        userId: user.id,
-        userEmail: user.email,
-        action: 'ACCOUNT_CREATED',
-        resource: 'USER',
-        resourceId: user.id,
-        result: 'SUCCESS',
-      },
+  await seedIfEmpty('Transaction reports', await prisma.transactionReport.count(), async () => {
+    const reportSamples = [
+      { merchant: seededMerchants[0], status: ReportStatus.PENDING_REVIEW, totalTransactions: 42, totalAmount: 4200 },
+      { merchant: seededMerchants[1], status: ReportStatus.APPROVED, totalTransactions: 18, totalAmount: 1800 },
+      { merchant: seededMerchants[2], status: ReportStatus.REJECTED, totalTransactions: 7, totalAmount: 700 },
+    ];
+
+    for (const sample of reportSamples) {
+      await prisma.transactionReport.create({
+        data: {
+          userId: sample.merchant.user.id,
+          transactionDate: new Date(Date.now() - 86400000),
+          totalTransactions: sample.totalTransactions,
+          totalAmount: sample.totalAmount,
+          proofImage: '/uploads/seed/transaction-report-proof.png',
+          notes: `${SEED_MARKER} daily sales report`,
+          status: sample.status,
+          reviewedAt: sample.status !== ReportStatus.PENDING_REVIEW ? new Date() : null,
+          reviewedBy: sample.status !== ReportStatus.PENDING_REVIEW ? admin.id : null,
+          rejectionReason: sample.status === ReportStatus.REJECTED ? 'Totals do not match proof' : null,
+        },
+      });
+    }
+  });
+
+  await seedIfEmpty('Deposits', await prisma.deposit.count(), async () => {
+    const depositSamples = [
+      { merchant: seededMerchants[0], type: DepositType.INITIAL, status: DepositStatus.PENDING, amount: 1000 },
+      { merchant: seededMerchants[0], type: DepositType.ADDITIONAL, status: DepositStatus.APPROVED, amount: 500 },
+      { merchant: seededMerchants[1], type: DepositType.INITIAL, status: DepositStatus.FROZEN, amount: 750 },
+      { merchant: seededMerchants[1], type: DepositType.ADJUSTMENT, status: DepositStatus.RELEASED, amount: 200 },
+      { merchant: seededMerchants[2], type: DepositType.WITHDRAWAL, status: DepositStatus.REJECTED, amount: 300 },
+    ];
+
+    for (const sample of depositSamples) {
+      await prisma.deposit.create({
+        data: {
+          userId: sample.merchant.user.id,
+          amount: sample.amount,
+          type: sample.type,
+          status: sample.status,
+          requiredDeposit: sample.type === DepositType.INITIAL ? sample.amount : 0,
+          notes: `${SEED_MARKER} ${sample.type} deposit`,
+          adjustedBy: [DepositStatus.APPROVED, DepositStatus.FROZEN, DepositStatus.RELEASED].includes(sample.status) ? admin.id : null,
+          adjustedAt: [DepositStatus.APPROVED, DepositStatus.FROZEN, DepositStatus.RELEASED].includes(sample.status) ? new Date() : null,
+          frozenAt: sample.status === DepositStatus.FROZEN ? new Date() : null,
+          frozenBy: sample.status === DepositStatus.FROZEN ? admin.id : null,
+          releasedAt: sample.status === DepositStatus.RELEASED ? new Date() : null,
+          releasedBy: sample.status === DepositStatus.RELEASED ? admin.id : null,
+        },
+      });
+    }
+  });
+
+  await seedIfEmpty('Payout requests', await prisma.payoutRequest.count(), async () => {
+    const payoutSamples = [
+      { merchant: seededMerchants[0], status: PayoutStatus.PENDING, amount: 250 },
+      { merchant: seededMerchants[0], status: PayoutStatus.UNDER_REVIEW, amount: 400 },
+      { merchant: seededMerchants[1], status: PayoutStatus.APPROVED, amount: 600 },
+      { merchant: seededMerchants[1], status: PayoutStatus.PAID, amount: 350 },
+      { merchant: seededMerchants[2], status: PayoutStatus.REJECTED, amount: 150 },
+    ];
+
+    for (const sample of payoutSamples) {
+      await prisma.payoutRequest.create({
+        data: {
+          userId: sample.merchant.user.id,
+          amount: sample.amount,
+          walletAddress: 'TRON_PAYOUT_WALLET_SEED',
+          walletNetwork: 'TRC20',
+          qrCodeImage: '/uploads/seed/payout-qr.png',
+          remarks: `${SEED_MARKER} merchant payout request`,
+          status: sample.status,
+          approvedAt: [PayoutStatus.APPROVED, PayoutStatus.PAID].includes(sample.status) ? new Date() : null,
+          approvedBy: [PayoutStatus.APPROVED, PayoutStatus.PAID].includes(sample.status) ? admin.id : null,
+          rejectedAt: sample.status === PayoutStatus.REJECTED ? new Date() : null,
+          rejectedBy: sample.status === PayoutStatus.REJECTED ? admin.id : null,
+          rejectionReason: sample.status === PayoutStatus.REJECTED ? 'Insufficient merchant balance' : null,
+          paidAt: sample.status === PayoutStatus.PAID ? new Date() : null,
+          transactionHash: sample.status === PayoutStatus.PAID ? '0xseedtxhash123456789abcdef' : null,
+          paidBy: sample.status === PayoutStatus.PAID ? admin.id : null,
+        },
+      });
+    }
+  });
+
+  await seedIfEmpty('Wallet transactions', await prisma.walletTransaction.count(), async () => {
+    for (const user of users.slice(0, 3)) {
+      const wallet = await prisma.wallet.findUnique({
+        where: {
+          userId_paymentMethodId: {
+            userId: user.id,
+            paymentMethodId: usdtTrc.id,
+          },
+        },
+      });
+      if (!wallet) continue;
+
+      const txTypes = [TransactionType.DEPOSIT, TransactionType.WITHDRAWAL, TransactionType.FEE];
+      let balance = wallet.balance;
+      for (const txType of txTypes) {
+        const amount = txType === TransactionType.DEPOSIT ? 100 : 25;
+        const signedAmount = txType === TransactionType.DEPOSIT ? amount : -amount;
+        await prisma.walletTransaction.create({
+          data: {
+            walletId: wallet.id,
+            type: txType,
+            amount: signedAmount,
+            balanceBefore: balance,
+            balanceAfter: balance + signedAmount,
+            notes: `${SEED_MARKER} ${txType}`,
+          },
+        });
+        balance += signedAmount;
+      }
+    }
+  });
+
+  await seedIfEmpty('Admin logs', await prisma.adminLog.count(), async () => {
+    await prisma.adminLog.createMany({
+      data: [
+        { adminId: admin.id, action: 'APPROVE_MERCHANT', details: 'Approved merchant1' },
+        { adminId: admin.id, action: 'REVIEW_ORDER', details: 'Reviewed pending exchange order' },
+        { adminId: staff.id, action: 'UPDATE_USER_ROLE', details: 'Updated user role to STAFF_ADMIN' },
+        { adminId: admin.id, action: 'APPROVE_DEPOSIT', details: 'Approved merchant deposit' },
+        { adminId: admin.id, action: 'MARK_PAYOUT_PAID', details: 'Marked payout as paid' },
+      ],
+    });
+  });
+
+  await seedIfEmpty('Audit logs', await prisma.auditLog.count({ where: { action: { startsWith: 'SEED_' } } }), async () => {
+    await prisma.auditLog.createMany({
+      data: [
+        { userId: admin.id, userEmail: admin.email, action: 'SEED_ADMIN_LOGIN', resource: 'USER', resourceId: admin.id, result: 'SUCCESS', ipAddress: '127.0.0.1' },
+        { userId: users[0].id, userEmail: users[0].email, action: 'SEED_CREATE_ORDER', resource: 'ORDER', result: 'SUCCESS' },
+        { userId: seededMerchants[0].user.id, userEmail: seededMerchants[0].user.email, action: 'SEED_SUBMIT_REPORT', resource: 'TRANSACTION_REPORT', result: 'SUCCESS' },
+      ],
+    });
+  });
+
+  // ---------------- USER NOTIFICATIONS & PREFERENCES ----------------
+  for (const user of [...users.slice(0, 3), seededMerchants[0].user]) {
+    await prisma.notificationPreference.upsert({
+      where: { userId: user.id },
+      update: {},
+      create: { userId: user.id },
     });
   }
 
-  console.log('✅ Seed completed');
-  console.log('👤 Admin: admin@settlerpay.com / admin123');
-  console.log('👤 Staff: staff@settlerpay.com / staff123');
-  console.log('👤 Users: user1@example.com → user5@example.com / password123');
+  await seedIfEmpty('Notifications', await prisma.notification.count(), async () => {
+    const notificationSamples = [
+      { user: users[0], title: 'Welcome to SettlerPay', message: 'Your account has been successfully created.', type: NotificationType.SUCCESS },
+      { user: users[1], title: 'Order Pending Review', message: 'Your deposit is being reviewed by an admin.', type: NotificationType.ORDER_UPDATE, referenceType: 'ORDER' },
+      { user: users[2], title: 'Exchange Approved', message: 'Your exchange request was approved.', type: NotificationType.TRANSACTION },
+      { user: seededMerchants[0].user, title: 'Merchant Approved', message: 'Your merchant account is now active.', type: NotificationType.SUCCESS, referenceType: 'MERCHANT_INFO' },
+      { user: seededMerchants[1].user, title: 'Application Pending', message: 'Your merchant application is under review.', type: NotificationType.WARNING },
+      { user: users[3], title: 'Payment Required', message: 'Please upload proof of payment to continue.', type: NotificationType.INFO },
+    ];
+
+    for (const sample of notificationSamples) {
+      await prisma.notification.create({
+        data: {
+          userId: sample.user.id,
+          title: sample.title,
+          message: sample.message,
+          type: sample.type,
+          referenceType: sample.referenceType,
+        },
+      });
+    }
+  });
+
+  await seedIfEmpty('Devices', await prisma.device.count(), async () => {
+    for (const user of users.slice(0, 2)) {
+      await prisma.device.create({
+        data: {
+          userId: user.id,
+          deviceInfo: JSON.stringify({
+            name: 'Chrome on Windows',
+            browser: 'Chrome',
+            os: 'Windows',
+            ip: '127.0.0.1',
+          }),
+        },
+      });
+    }
+  });
+
+  console.log('');
+  console.log('✅ Seed completed successfully');
+  console.log('');
+  console.log('Demo credentials:');
+  console.log('  Admin:  admin@settlerpay.com / admin123');
+  console.log('  Staff:  staff@settlerpay.com / staff123');
+  console.log('  Users:  user1@example.com - user6@example.com / password123');
+  console.log('  Merchants: merchant1@example.com - merchant3@example.com / password123');
+  console.log('');
+  console.log('Admin panel coverage:');
+  console.log('  Orders (all statuses & types), Exchange requests, Game point orders');
+  console.log('  Merchants (approved + pending), Merchant QRs, Transaction reports');
+  console.log('  Deposits (all statuses), Payout requests (all statuses)');
+  console.log('  Payment methods, Payment accounts, Exchange rates, Fee settings');
+  console.log('  Platform QR codes, Games (incl. inactive), Users (incl. suspended)');
+  console.log('  user1-user6 available for Add Merchant (no merchant profile)');
 }
 
 main()

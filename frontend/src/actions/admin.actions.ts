@@ -435,11 +435,24 @@ export async function adjustDepositAction(id: string, amount: number, notes?: st
 }
 
 // Payout Request Actions
-export async function getAllPayoutRequestsAction() {
+export async function getAllPayoutRequestsAction(status?: string) {
   try {
     const config = await getAuthenticatedRequestConfig();
-    const response = await api.get("/admin/payout-requests", config);
+    const response = await api.get("/admin/payout-requests", {
+      ...config,
+      params: status && status !== "ALL" ? { status } : undefined,
+    });
     return { success: true, payouts: response.data.payouts, count: response.data.count };
+  } catch (error: any) {
+    return { success: false, error: error.response?.data?.message || error.message };
+  }
+}
+
+export async function getPayoutStatusCountsAction() {
+  try {
+    const config = await getAuthenticatedRequestConfig();
+    const response = await api.get("/admin/payout-requests/stats", config);
+    return { success: true, counts: response.data.counts };
   } catch (error: any) {
     return { success: false, error: error.response?.data?.message || error.message };
   }
@@ -467,10 +480,16 @@ export async function rejectPayoutRequestAction(id: string, rejectionReason: str
   }
 }
 
-export async function markPayoutPaidAction(id: string, transactionHash: string) {
+export async function markPayoutPaidAction(id: string, formData: FormData) {
   try {
     const config = await getAuthenticatedRequestConfig();
-    const response = await api.patch(`/admin/payout-requests/${id}/mark-paid`, { transactionHash }, config);
+    const response = await api.patch(`/admin/payout-requests/${id}/mark-paid`, formData, {
+      ...config,
+      headers: {
+        ...config.headers,
+        "Content-Type": "multipart/form-data",
+      },
+    });
     revalidatePath("/admin/payout-requests");
     return { success: true, payout: response.data.payout };
   } catch (error: any) {
