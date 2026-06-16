@@ -7,7 +7,7 @@ import { paramString, queryInt, queryString } from "../utils/request";
 
 export const createMerchantInfo = async (req: AuthRequest, res: Response) => {
   try {
-    const { businessName, businessDescription, preferredWalletId, preferredPaymentMethodId, expectedDailyVolume } = req.body;
+    const { businessName, businessDescription, preferredWalletId, preferredPaymentMethodId, expectedDailyVolume, wallets } = req.body;
     const merchantInfo = await MerchantInfoService.create({
       userId: req.user!.userId,
       businessName,
@@ -15,7 +15,12 @@ export const createMerchantInfo = async (req: AuthRequest, res: Response) => {
       preferredWalletId,
       preferredPaymentMethodId,
       expectedDailyVolume: parseFloat(expectedDailyVolume),
+      wallets,
     });
+
+    if (!merchantInfo) {
+      return res.status(500).json({ success: false, message: 'Failed to create merchant info' });
+    }
 
     await AuditLogService.log({
       userId: req.user!.userId,
@@ -57,6 +62,19 @@ export const getAllMerchants = async (req: AuthRequest, res: Response) => {
   }
 };
 
+export const getMerchantDetail = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = paramString(req.params.userId);
+    const detail = await MerchantInfoService.getDetail(userId);
+    if (!detail) {
+      return res.status(404).json({ success: false, message: "Merchant not found" });
+    }
+    res.json({ success: true, detail });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Failed to get merchant detail" });
+  }
+};
+
 export const createMerchant = async (req: AuthRequest, res: Response) => {
   try {
     const {
@@ -77,6 +95,10 @@ export const createMerchant = async (req: AuthRequest, res: Response) => {
       autoApprove: autoApprove !== false,
       adminId: req.user!.userId,
     });
+
+    if (!merchantInfo) {
+      return res.status(500).json({ success: false, message: 'Failed to create merchant' });
+    }
 
     await AuditLogService.log({
       userId: req.user!.userId,
@@ -161,13 +183,14 @@ export const rejectMerchant = async (req: AuthRequest, res: Response) => {
 
 export const updateMyMerchantInfo = async (req: AuthRequest, res: Response) => {
   try {
-    const { businessName, businessDescription, preferredWalletId, preferredPaymentMethodId, expectedDailyVolume } = req.body;
+    const { businessName, businessDescription, preferredWalletId, preferredPaymentMethodId, expectedDailyVolume, wallets } = req.body;
     const merchantInfo = await MerchantInfoService.update(req.user!.userId, {
       businessName,
       businessDescription,
       preferredWalletId,
       preferredPaymentMethodId,
       expectedDailyVolume: expectedDailyVolume ? parseFloat(expectedDailyVolume) : undefined,
+      wallets,
     });
     res.json({ success: true, info: merchantInfo });
   } catch (error: any) {

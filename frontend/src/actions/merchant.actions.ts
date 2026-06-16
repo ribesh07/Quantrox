@@ -17,8 +17,9 @@ export async function getMyMerchantInfoAction() {
 export async function createMerchantInfoAction(data: {
   businessName: string;
   businessDescription?: string;
-  preferredPaymentMethodId: string;
+  preferredPaymentMethodId?: string;
   expectedDailyVolume: number;
+  wallets?: { paymentMethodId: string; dailyLimit: number; active?: boolean }[];
 }) {
   try {
     const config = await getAuthenticatedRequestConfig();
@@ -36,6 +37,7 @@ export async function updateMyMerchantInfoAction(data: Partial<{
   businessDescription?: string;
   preferredPaymentMethodId: string;
   expectedDailyVolume: number;
+  wallets: { paymentMethodId: string; dailyLimit: number; active?: boolean }[];
 }>) {
   try {
     const config = await getAuthenticatedRequestConfig();
@@ -52,7 +54,11 @@ export async function getMyQRCodeAction() {
   try {
     const config = await getAuthenticatedRequestConfig();
     const response = await api.get("/merchant/qr", config);
-    return { success: true, qrCode: response.data.qrCode };
+    return {
+      success: true,
+      qrCodes: response.data.qrCodes || [],
+      qrCode: response.data.qrCode,
+    };
   } catch (error: any) {
     return { success: false, error: error.response?.data?.message || error.message };
   }
