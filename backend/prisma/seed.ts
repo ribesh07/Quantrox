@@ -45,9 +45,8 @@ async function main() {
     },
   });
 
-  const users = [];
-
-  for (let i = 1; i <= 5; i++) {
+  const users: any[] = [];
+  for (let i = 1; i <= 6; i++) {
     const user = await prisma.user.upsert({
       where: {
         email: `user${i}@example.com`,
@@ -353,7 +352,144 @@ async function main() {
       },
     });
 
-    await prisma.gamePointOrder.create({
+    seededMerchants.push({ user: merchantUser, approved: profile.approved });
+  }
+
+  // ---------------- ADMIN PANEL SAMPLE DATA ----------------
+  console.log('📋 Seeding admin panel sample data...');
+
+  await seedIfEmpty('Orders & transactions', await prisma.order.count(), async () => {
+    const orderSamples = [
+      { user: users[0], type: OrderType.DEPOSIT, status: OrderStatus.PENDING_PAYMENT, amount: 200, fee: 4, total: 204, method: usdtTrc },
+      { user: users[0], type: OrderType.DEPOSIT, status: OrderStatus.PENDING_REVIEW, amount: 500, fee: 10, total: 510, method: cashApp },
+      { user: users[1], type: OrderType.DEPOSIT, status: OrderStatus.COMPLETED, amount: 1000, fee: 20, total: 1020, method: zelle },
+      { user: users[1], type: OrderType.DEPOSIT, status: OrderStatus.REJECTED, amount: 150, fee: 3, total: 153, method: cashApp },
+      { user: users[2], type: OrderType.EXCHANGE, status: OrderStatus.PENDING_PAYMENT, amount: 300, fee: 15, total: 315, method: wireTransfer },
+      { user: users[2], type: OrderType.EXCHANGE, status: OrderStatus.PENDING_REVIEW, amount: 750, fee: 37.5, total: 787.5, method: usdtTrc },
+      { user: users[3], type: OrderType.EXCHANGE, status: OrderStatus.APPROVED, amount: 400, fee: 20, total: 420, method: cashApp },
+      { user: users[3], type: OrderType.EXCHANGE, status: OrderStatus.COMPLETED, amount: 1200, fee: 60, total: 1260, method: zelle },
+      { user: users[4], type: OrderType.GAME_TOPUP, status: OrderStatus.PENDING_PAYMENT, amount: 50, fee: 2.5, total: 52.5, method: usdtTrc },
+      { user: users[4], type: OrderType.GAME_TOPUP, status: OrderStatus.PENDING_REVIEW, amount: 100, fee: 5, total: 105, method: cashApp },
+      { user: users[5], type: OrderType.GAME_TOPUP, status: OrderStatus.COMPLETED, amount: 250, fee: 12.5, total: 262.5, method: zelle },
+      { user: users[5], type: OrderType.GAME_TOPUP, status: OrderStatus.REJECTED, amount: 75, fee: 3.75, total: 78.75, method: usdtTrc },
+    ];
+
+    for (const sample of orderSamples) {
+      const order = await prisma.order.create({
+        data: {
+          userId: sample.user.id,
+          type: sample.type,
+          paymentMethodId: sample.method.id,
+          amount: sample.amount,
+          fee: sample.fee,
+          total: sample.total,
+          rate: sample.method.rate,
+          receivedAmount: sample.amount * sample.method.rate,
+          status: sample.status,
+          adminNote: SEED_MARKER,
+          gameId: sample.type === OrderType.GAME_TOPUP ? primaryGame.id : null,
+          gameUsername: sample.type === OrderType.GAME_TOPUP ? `${sample.user.username}_player` : null,
+          receiveUsername: sample.type === OrderType.EXCHANGE ? 'receiver_demo' : null,
+          receiveWalletNumber: sample.type === OrderType.EXCHANGE ? 'WALLET123456' : null,
+          transactionReference: `${SEED_MARKER}-${sample.type}-${sample.status}`,
+        },
+      });
+
+        if (
+  sample.status === OrderStatus.COMPLETED ||
+  sample.status === OrderStatus.APPROVED
+)
+        {
+        await prisma.transaction.create({
+          data: {
+            orderId: order.id,
+            userId: sample.user.id,
+            amount: order.total,
+            type: sample.type === OrderType.EXCHANGE ? TransactionType.EXCHANGE_RECEIVED : TransactionType.GAME_PURCHASE,
+            status: 'SUCCESS',
+            internalNotes: SEED_MARKER,
+          },
+        });
+      }
+
+      if (sample.status === OrderStatus.PENDING_REVIEW) {
+        await prisma.proofUpload.create({
+          data: {
+            userId: sample.user.id,
+            orderId: order.id,
+            fileUrl: '/uploads/seed/payment-proof-sample.png',
+            fileType: 'png',
+            referenceNo: `PROOF-${order.id.slice(-6)}`,
+            notes: 'Seed payment proof for admin review',
+          },
+        });
+      }
+    }
+  });
+
+  await seedIfEmpty('Exchange requests', await prisma.exchangeRequest.count(), async () => {
+    const exchangeSamples = [
+      { user: users[0], status: ExchangeStatus.PENDING_PAYMENT, amount: 200 },
+      { user: users[1], status: ExchangeStatus.PENDING_VERIFICATION, amount: 350 },
+      { user: users[2], status: ExchangeStatus.APPROVED, amount: 500 },
+      { user: users[3], status: ExchangeStatus.REJECTED, amount: 180 },
+      { user: users[4], status: ExchangeStatus.CANCELLED, amount: 90 },
+    ];
+
+    for (const sample of exchangeSamples) {
+      await prisma.exchangeRequest.create({
+        data: {
+          userId: sample.user.id,
+          amount: sample.amount,
+          fee: sample.amount * 0.05,
+          total: sample.amount * 1.05,
+          rate: 1,
+          usdtReceived: sample.amount,
+          walletAddress: 'TRON_SEED_WALLET_DEMO',
+          paymentMethodId: usdtTrc.id,
+          status: sample.status,
+          approvedAt: sample.status === ExchangeStatus.APPROVED ? new Date() : null,
+          rejectedAt: sample.status === ExchangeStatus.REJECTED ? new Date() : null,
+          rejectionReason: sample.status === ExchangeStatus.REJECTED ? 'Invalid proof of payment' : null,
+          internalNotes: SEED_MARKER,
+        },
+      });
+    }
+  });
+
+  await seedIfEmpty('Game point orders', await prisma.gamePointOrder.count(), async () => {
+    const gameOrderSamples = [
+      { user: users[0], status: GamePointOrderStatus.PENDING, points: 500 },
+      { user: users[1], status: GamePointOrderStatus.PAYMENT_RECEIVED, points: 1000 },
+      { user: users[2], status: GamePointOrderStatus.PENDING_FULFILLMENT, points: 2000 },
+      { user: users[3], status: GamePointOrderStatus.FULFILLED, points: 1500 },
+      { user: users[4], status: GamePointOrderStatus.FAILED, points: 800 },
+      { user: users[5], status: GamePointOrderStatus.CANCELLED, points: 300 },
+    ];
+
+    for (const sample of gameOrderSamples) {
+      await prisma.gamePointOrder.create({
+        data: {
+          userId: sample.user.id,
+          gameId: primaryGame.id,
+          points: sample.points,
+          pricePerPoint: 0.01,
+          totalPrice: sample.points * 0.01,
+          fee: sample.points * 0.01 * 0.1,
+          finalPrice: sample.points * 0.01 * 1.1,
+          paymentMethodId: cashApp.id,
+          gameUsername: `${sample.user.username}_player`,
+          status: sample.status,
+          fulfilledAt: sample.status === GamePointOrderStatus.FULFILLED ? new Date() : null,
+          internalNotes: SEED_MARKER,
+        },
+      });
+    }
+  });
+
+  await seedIfEmpty('Merchant QR codes', await prisma.merchantQRCode.count(), async () => {
+    const approvedMerchants = seededMerchants.filter((m) => m.approved);
+    await prisma.merchantQRCode.create({
       data: {
         userId: user.id,
         gameId: game!.id,
@@ -423,8 +559,8 @@ async function main() {
           status: sample.status,
           requiredDeposit: sample.type === DepositType.INITIAL ? sample.amount : 0,
           notes: `${SEED_MARKER} ${sample.type} deposit`,
-          adjustedBy: [DepositStatus.APPROVED, DepositStatus.FROZEN, DepositStatus.RELEASED].includes(sample.status) ? admin.id : null,
-          adjustedAt: [DepositStatus.APPROVED, DepositStatus.FROZEN, DepositStatus.RELEASED].includes(sample.status) ? new Date() : null,
+          adjustedBy: sample.status === DepositStatus.APPROVED || sample.status === DepositStatus.FROZEN || sample.status === DepositStatus.RELEASED ? admin.id : null,
+          adjustedAt: sample.status === DepositStatus.APPROVED || sample.status === DepositStatus.FROZEN || sample.status === DepositStatus.RELEASED ? new Date() : null,
           frozenAt: sample.status === DepositStatus.FROZEN ? new Date() : null,
           frozenBy: sample.status === DepositStatus.FROZEN ? admin.id : null,
           releasedAt: sample.status === DepositStatus.RELEASED ? new Date() : null,
@@ -453,8 +589,8 @@ async function main() {
           qrCodeImage: '/uploads/seed/payout-qr.png',
           remarks: `${SEED_MARKER} merchant payout request`,
           status: sample.status,
-          approvedAt: [PayoutStatus.APPROVED, PayoutStatus.PAID].includes(sample.status) ? new Date() : null,
-          approvedBy: [PayoutStatus.APPROVED, PayoutStatus.PAID].includes(sample.status) ? admin.id : null,
+          approvedAt: sample.status === PayoutStatus.APPROVED || sample.status === PayoutStatus.PAID ? new Date() : null,
+          approvedBy: sample.status === PayoutStatus.APPROVED || sample.status === PayoutStatus.PAID ? admin.id : null,
           rejectedAt: sample.status === PayoutStatus.REJECTED ? new Date() : null,
           rejectedBy: sample.status === PayoutStatus.REJECTED ? admin.id : null,
           rejectionReason: sample.status === PayoutStatus.REJECTED ? 'Insufficient merchant balance' : null,
@@ -588,8 +724,8 @@ async function main() {
 
 main()
   .catch((e) => {
-    console.error(e);
-    // process.exit(1);//
+    console.error('❌ Seed failed:', e);
+    // process.exit(1);
   })
   .finally(async () => {
     await prisma.$disconnect();

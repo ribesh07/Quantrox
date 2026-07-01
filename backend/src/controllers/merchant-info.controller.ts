@@ -7,14 +7,19 @@ import { paramString, queryInt, queryString } from "../utils/request";
 
 export const createMerchantInfo = async (req: AuthRequest, res: Response) => {
   try {
-    const { businessName, businessDescription, preferredWalletId, expectedDailyVolume } = req.body;
+    const { businessName, businessDescription, preferredWalletId, preferredPaymentMethodId, expectedDailyVolume, wallets } = req.body;
     const merchantInfo = await MerchantInfoService.create({
       userId: req.user!.userId,
       businessName,
       businessDescription,
       preferredWalletId,
       expectedDailyVolume: parseFloat(expectedDailyVolume),
+      wallets,
     });
+
+    if (!merchantInfo) {
+      return res.status(500).json({ success: false, message: 'Failed to create merchant info' });
+    }
 
     await AuditLogService.log({
       userId: req.user!.userId,
@@ -53,6 +58,61 @@ export const getAllMerchants = async (req: AuthRequest, res: Response) => {
     res.json({ success: true, data: result });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Failed to get merchants' });
+  }
+};
+
+export const getMerchantDetail = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = paramString(req.params.userId);
+    const detail = await MerchantInfoService.getDetail(userId);
+    if (!detail) {
+      return res.status(404).json({ success: false, message: "Merchant not found" });
+    }
+    res.json({ success: true, detail });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Failed to get merchant detail" });
+  }
+};
+
+export const createMerchant = async (req: AuthRequest, res: Response) => {
+  try {
+    const {
+      userId,
+      businessName,
+      businessDescription,
+      preferredPaymentMethodId,
+      expectedDailyVolume,
+      autoApprove = true,
+    } = req.body;
+
+    const merchantInfo = await MerchantInfoService.createForUser({
+      userId,
+      businessName,
+      businessDescription,
+      preferredPaymentMethodId,
+      expectedDailyVolume: parseFloat(expectedDailyVolume),
+      autoApprove: autoApprove !== false,
+      adminId: req.user!.userId,
+    });
+
+    if (!merchantInfo) {
+      return res.status(500).json({ success: false, message: 'Failed to create merchant' });
+    }
+
+    await AuditLogService.log({
+      userId: req.user!.userId,
+      userEmail: req.user!.email,
+      action: 'CREATE_MERCHANT',
+      resource: 'MERCHANT_INFO',
+      resourceId: merchantInfo.id,
+      result: 'SUCCESS',
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent'),
+    });
+
+    res.json({ success: true, merchant: merchantInfo });
+  } catch (error: any) {
+    res.status(400).json({ success: false, message: error.message || 'Failed to create merchant' });
   }
 };
 
@@ -122,12 +182,13 @@ export const rejectMerchant = async (req: AuthRequest, res: Response) => {
 
 export const updateMyMerchantInfo = async (req: AuthRequest, res: Response) => {
   try {
-    const { businessName, businessDescription, preferredWalletId, expectedDailyVolume } = req.body;
+    const { businessName, businessDescription, preferredWalletId, preferredPaymentMethodId, expectedDailyVolume, wallets } = req.body;
     const merchantInfo = await MerchantInfoService.update(req.user!.userId, {
       businessName,
       businessDescription,
       preferredWalletId,
       expectedDailyVolume: expectedDailyVolume ? parseFloat(expectedDailyVolume) : undefined,
+      wallets,
     });
     res.json({ success: true, data: merchantInfo });
   } catch (error) {
