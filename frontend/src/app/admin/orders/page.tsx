@@ -27,6 +27,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import Image from "next/image";
+import { resolveMediaUrl } from "@/lib/media";
 import { getAllOrdersAction, reviewOrderAction } from "@/actions/admin.actions";
 
 export default function AdminOrdersPage() {
@@ -203,13 +204,13 @@ export default function AdminOrdersPage() {
               <div className="space-y-2">
                 <p className="text-sm font-medium flex items-center gap-2">
                   Payment Proof
-                  <a href={selectedOrder.proofImage} target="_blank" rel="noreferrer" className="text-blue-500 hover:underline flex items-center text-xs">
+                  <a href={resolveMediaUrl(selectedOrder.proofImage)} target="_blank" rel="noreferrer" className="text-blue-500 hover:underline flex items-center text-xs">
                     <ExternalLink className="h-3 w-3 mr-1" /> View Full
                   </a>
                 </p>
                 <div className="relative aspect-video w-full overflow-hidden rounded-lg border bg-black">
                   <Image
-                    src={selectedOrder.proofImage}
+                    src={resolveMediaUrl(selectedOrder.proofImage)}
                     alt="Payment Proof"
                     fill
                     className="object-contain"
@@ -222,13 +223,13 @@ export default function AdminOrdersPage() {
               <div className="space-y-2">
                 <p className="text-sm font-medium flex items-center gap-2">
                   Receiving QR Code
-                  <a href={selectedOrder.receiveQrCode} target="_blank" rel="noreferrer" className="text-blue-500 hover:underline flex items-center text-xs">
+                  <a href={resolveMediaUrl(selectedOrder.receiveQrCode)} target="_blank" rel="noreferrer" className="text-blue-500 hover:underline flex items-center text-xs">
                     <ExternalLink className="h-3 w-3 mr-1" /> View Full
                   </a>
                 </p>
                 <div className="relative aspect-video w-full overflow-hidden rounded-lg border bg-black">
                   <Image
-                    src={selectedOrder.receiveQrCode}
+                    src={resolveMediaUrl(selectedOrder.receiveQrCode)}
                     alt="Receiving QR"
                     fill
                     className="object-contain"

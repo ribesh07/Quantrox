@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/dialog";
 import Image from "next/image";
 import { getAllQRCodesAction, updateQRCodeAction, deleteQRCodeAction, createQRCodeAction } from "@/actions/admin.actions";
+import { resolveMediaUrl } from "@/lib/media";
 
 export default function QRCodesPage() {
   const queryClient = useQueryClient();
@@ -140,7 +141,7 @@ export default function QRCodesPage() {
             <CardContent className="space-y-4">
               <div className="relative aspect-square w-full overflow-hidden rounded-md border">
                 <Image
-                  src={qr.image}
+                  src={resolveMediaUrl(qr.image)}
                   alt="QR Code"
                   fill
                   className="object-contain"

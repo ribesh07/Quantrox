@@ -7,6 +7,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { Copy, Loader2, UploadCloud, QrCode, Info, DollarSign } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { resolveMediaUrl } from '@/lib/media';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -250,7 +251,7 @@ export default function WalletExchangePage() {
                   <div className="space-y-6">
                     <div className="p-6 rounded-3xl bg-[#0B0E11] border-2 border-primary/20 flex flex-col items-center text-center space-y-4">
                       {selectedMethod?.qrCode ? (
-                        <Image src={selectedMethod.qrCode} alt="QR Code" width={200} height={200} className="rounded-xl" />
+                        <Image src={resolveMediaUrl(selectedMethod.qrCode)} alt="QR Code" width={200} height={200} className="rounded-xl" />
                       ) : (
                         <div className="p-8 bg-white rounded-xl">
                           <QrCode className="h-40 w-40 text-black" />

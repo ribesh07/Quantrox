@@ -20,6 +20,7 @@ import { PayoutStatus } from "@/lib/prisma-types";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { resolveMediaUrl } from "@/lib/media";
 
 const STATUS_TABS = [
   { value: "ALL", label: "All" },
@@ -442,13 +443,13 @@ export default function AdminPayoutRequestsPage() {
               {detailPayout.qrCodeImage && (
                 <div>
                   <p className="text-sm text-muted-foreground mb-2">User Receiving QR</p>
-                  <img src={detailPayout.qrCodeImage} alt="Receiving QR" className="h-48 w-48 object-contain rounded-lg border mx-auto" />
+                  <img src={resolveMediaUrl(detailPayout.qrCodeImage)} alt="Receiving QR" className="h-48 w-48 object-contain rounded-lg border mx-auto" />
                 </div>
               )}
               {detailPayout.paymentProofImage && (
                 <div>
                   <p className="text-sm text-muted-foreground mb-2">Payment Proof</p>
-                  <img src={detailPayout.paymentProofImage} alt="Payment proof" className="max-h-56 object-contain rounded-lg border mx-auto" />
+                  <img src={resolveMediaUrl(detailPayout.paymentProofImage)} alt="Payment proof" className="max-h-56 object-contain rounded-lg border mx-auto" />
                   {detailPayout.transactionHash && detailPayout.transactionHash !== "N/A" && (
                     <p className="text-xs font-mono mt-2 break-all text-center">Ref: {detailPayout.transactionHash}</p>
                   )}
