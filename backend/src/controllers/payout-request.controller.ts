@@ -8,7 +8,7 @@ import { getUploadDirectory, saveUploadedFile } from "../utils/uploads";
 import { paramString, queryDate, queryInt, queryString } from "../utils/request";
 import { PayoutType } from "@prisma/client";
 
-const upload = multer({ dest: getUploadDirectory() });
+const upload = multer({ dest: getUploadDirectory(), limits: { fileSize: 50 * 1024 * 1024 } });
 
 export const createMerchantPayoutRequest = async (req: AuthRequest, res: Response) => {
   try {

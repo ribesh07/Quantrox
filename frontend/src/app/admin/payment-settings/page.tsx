@@ -46,6 +46,7 @@ import {
   deletePaymentMethodAction,
 } from "@/actions/admin.actions";
 import { cn } from "@/lib/utils";
+import { resolveMediaUrl } from "@/lib/media";
 
 export default function PaymentMethodsPage() {
   const queryClient = useQueryClient();
@@ -439,11 +440,12 @@ export default function PaymentMethodsPage() {
                       {method.qrCode ? (
                         <div className="relative group">
                           <Image
-                            src={method.qrCode}
+                            src={resolveMediaUrl(method.qrCode)}
                             alt="QR"
                             width={60}
                             height={60}
                             className="rounded-lg border"
+                            unoptimized
                           />
                         </div>
                       ) : (
