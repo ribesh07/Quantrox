@@ -526,3 +526,41 @@ export async function markPayoutPaidAction(id: string, formData: FormData, reval
     return { success: false, error: error.response?.data?.message || error.message };
   }
 }
+
+// Game ID Request Actions
+export async function getAllGameIdRequestsAction(status?: string) {
+  try {
+    const config = await getAuthenticatedRequestConfig();
+    const params: Record<string, string> = {};
+    if (status && status !== "ALL") params.status = status;
+    const response = await api.get("/admin/game-id-requests", {
+      ...config,
+      params: Object.keys(params).length ? params : undefined,
+    });
+    return { success: true, requests: response.data.requests, count: response.data.count };
+  } catch (error: any) {
+    return { success: false, error: error.response?.data?.message || error.message };
+  }
+}
+
+export async function approveGameIdRequestAction(id: string, response: string) {
+  try {
+    const config = await getAuthenticatedRequestConfig();
+    const res = await api.patch(`/admin/game-id-requests/${id}/approve`, { response }, config);
+    revalidatePath("/admin/games");
+    return { success: true, request: res.data.request };
+  } catch (error: any) {
+    return { success: false, error: error.response?.data?.message || error.message };
+  }
+}
+
+export async function rejectGameIdRequestAction(id: string, response: string) {
+  try {
+    const config = await getAuthenticatedRequestConfig();
+    const res = await api.patch(`/admin/game-id-requests/${id}/reject`, { response }, config);
+    revalidatePath("/admin/games");
+    return { success: true, request: res.data.request };
+  } catch (error: any) {
+    return { success: false, error: error.response?.data?.message || error.message };
+  }
+}

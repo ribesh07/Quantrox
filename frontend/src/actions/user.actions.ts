@@ -24,3 +24,30 @@ export async function getMyUserPayoutRequestsAction() {
     return { success: false, error: error.response?.data?.message || error.message };
   }
 }
+
+export async function createGameIdRequestAction(data: {
+  gameId: string;
+  requestType: string;
+  gameUsername?: string;
+  email?: string;
+  password?: string;
+}) {
+  try {
+    const config = await getAuthenticatedRequestConfig();
+    const response = await api.post("/user/game-id-requests", data, config);
+    revalidatePath("/dashboard/games");
+    return { success: true, request: response.data.request };
+  } catch (error: any) {
+    return { success: false, error: error.response?.data?.message || error.message };
+  }
+}
+
+export async function getMyGameIdRequestsAction() {
+  try {
+    const config = await getAuthenticatedRequestConfig();
+    const response = await api.get("/user/game-id-requests", config);
+    return { success: true, requests: response.data.requests, count: response.data.count };
+  } catch (error: any) {
+    return { success: false, error: error.response?.data?.message || error.message };
+  }
+}
