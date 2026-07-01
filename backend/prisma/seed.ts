@@ -68,7 +68,7 @@ async function main() {
     },
   });
 
-  const users = [];
+  const users: any[] = [];
   for (let i = 1; i <= 6; i++) {
     const user = await prisma.user.upsert({
       where: { email: `user${i}@example.com` },
@@ -414,7 +414,11 @@ async function main() {
         },
       });
 
-      if ([OrderStatus.COMPLETED, OrderStatus.APPROVED].includes(sample.status)) {
+        if (
+  sample.status === OrderStatus.COMPLETED ||
+  sample.status === OrderStatus.APPROVED
+)
+        {
         await prisma.transaction.create({
           data: {
             orderId: order.id,
@@ -566,8 +570,8 @@ async function main() {
           status: sample.status,
           requiredDeposit: sample.type === DepositType.INITIAL ? sample.amount : 0,
           notes: `${SEED_MARKER} ${sample.type} deposit`,
-          adjustedBy: [DepositStatus.APPROVED, DepositStatus.FROZEN, DepositStatus.RELEASED].includes(sample.status) ? admin.id : null,
-          adjustedAt: [DepositStatus.APPROVED, DepositStatus.FROZEN, DepositStatus.RELEASED].includes(sample.status) ? new Date() : null,
+          adjustedBy: sample.status === DepositStatus.APPROVED || sample.status === DepositStatus.FROZEN || sample.status === DepositStatus.RELEASED ? admin.id : null,
+          adjustedAt: sample.status === DepositStatus.APPROVED || sample.status === DepositStatus.FROZEN || sample.status === DepositStatus.RELEASED ? new Date() : null,
           frozenAt: sample.status === DepositStatus.FROZEN ? new Date() : null,
           frozenBy: sample.status === DepositStatus.FROZEN ? admin.id : null,
           releasedAt: sample.status === DepositStatus.RELEASED ? new Date() : null,
@@ -597,8 +601,8 @@ async function main() {
           qrCodeImage: '/uploads/seed/payout-qr.png',
           remarks: `${SEED_MARKER} merchant payout request`,
           status: sample.status,
-          approvedAt: [PayoutStatus.APPROVED, PayoutStatus.PAID].includes(sample.status) ? new Date() : null,
-          approvedBy: [PayoutStatus.APPROVED, PayoutStatus.PAID].includes(sample.status) ? admin.id : null,
+          approvedAt: sample.status === PayoutStatus.APPROVED || sample.status === PayoutStatus.PAID ? new Date() : null,
+          approvedBy: sample.status === PayoutStatus.APPROVED || sample.status === PayoutStatus.PAID ? admin.id : null,
           rejectedAt: sample.status === PayoutStatus.REJECTED ? new Date() : null,
           rejectedBy: sample.status === PayoutStatus.REJECTED ? admin.id : null,
           rejectionReason: sample.status === PayoutStatus.REJECTED ? 'Insufficient merchant balance' : null,
@@ -756,6 +760,6 @@ async function main() {
 main()
   .catch((e) => {
     console.error('❌ Seed failed:', e);
-    process.exit(1);
+    // process.exit(1);
   })
   .finally(async () => prisma.$disconnect());

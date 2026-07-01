@@ -1,5 +1,6 @@
 import { prisma } from "../shared/prisma";
 import { WalletService } from "./wallet.service";
+import { DepositService } from "./deposit.service";
 
 export const MerchantInfoService = {
   async resolvePreferredWalletId(userId: string, preferredWalletId?: string, preferredPaymentMethodId?: string) {
@@ -15,6 +16,37 @@ export const MerchantInfoService = {
     throw new Error("Preferred payment method is required");
   },
 
+  async syncMerchantWallets(
+    merchantInfoId: string,
+    userId: string,
+    wallets: { paymentMethodId: string; dailyLimit: number; active?: boolean }[]
+  ) {
+    await prisma.merchantWallet.deleteMany({ where: { merchantInfoId } });
+
+    if (wallets.length === 0) return [];
+
+    const created = await prisma.$transaction(
+      wallets.map((w) =>
+        prisma.merchantWallet.create({
+          data: {
+            merchantInfoId,
+            paymentMethodId: w.paymentMethodId,
+            dailyLimit: w.dailyLimit,
+            active: w.active !== false,
+          },
+          include: { paymentMethod: true },
+        })
+      )
+    );
+
+    // Ensure wallet records exist for each payment method
+    for (const w of wallets) {
+      await WalletService.getOrCreateWallet(userId, w.paymentMethodId);
+    }
+
+    return created;
+  },
+
   async create(data: {
     userId: string;
     businessName: string;
@@ -24,14 +56,18 @@ export const MerchantInfoService = {
     expectedDailyVolume: number;
     approvedAt?: Date | null;
     approvedBy?: string | null;
+    wallets?: { paymentMethodId: string; dailyLimit: number; active?: boolean }[];
   }) {
+    const preferredPaymentMethodId =
+      data.preferredPaymentMethodId || data.wallets?.[0]?.paymentMethodId;
+
     const preferredWalletId = await this.resolvePreferredWalletId(
       data.userId,
       data.preferredWalletId,
-      data.preferredPaymentMethodId
+      preferredPaymentMethodId
     );
 
-    return prisma.merchantInfo.create({
+    const merchantInfo = await prisma.merchantInfo.create({
       data: {
         userId: data.userId,
         businessName: data.businessName,
@@ -41,15 +77,88 @@ export const MerchantInfoService = {
         approvedAt: data.approvedAt ?? null,
         approvedBy: data.approvedBy ?? null,
       },
-      include: { user: true, preferredWallet: { include: { paymentMethod: true } } },
+      include: {
+        user: true,
+        preferredWallet: { include: { paymentMethod: true } },
+        merchantWallets: { include: { paymentMethod: true } },
+      },
     });
+
+    if (data.wallets && data.wallets.length > 0) {
+      await this.syncMerchantWallets(merchantInfo.id, data.userId, data.wallets);
+    } else if (preferredPaymentMethodId) {
+      await this.syncMerchantWallets(merchantInfo.id, data.userId, [
+        { paymentMethodId: preferredPaymentMethodId, dailyLimit: data.expectedDailyVolume },
+      ]);
+    }
+
+    return this.getByUserId(data.userId);
   },
 
   async getByUserId(userId: string) {
     return prisma.merchantInfo.findUnique({
       where: { userId },
-      include: { user: true, preferredWallet: { include: { paymentMethod: true } } },
+      include: {
+        user: true,
+        preferredWallet: { include: { paymentMethod: true } },
+        merchantWallets: { include: { paymentMethod: true }, orderBy: { createdAt: "asc" } },
+      },
     });
+  },
+
+  async getMerchantStats(userId: string) {
+    const [totalDeposit, reportAgg, qrCount, activeQrCount, wallets] = await Promise.all([
+      DepositService.getUserTotalDeposit(userId),
+      prisma.transactionReport.aggregate({
+        where: { userId, status: "APPROVED" },
+        _sum: { totalAmount: true, totalTransactions: true },
+        _count: { id: true },
+      }),
+      prisma.merchantQRCode.count({ where: { userId } }),
+      prisma.merchantQRCode.count({ where: { userId, active: true } }),
+      prisma.wallet.findMany({
+        where: { userId },
+        include: { paymentMethod: true },
+      }),
+    ]);
+
+    const totalWalletBalance = wallets.reduce((sum, w) => sum + w.balance, 0);
+
+    return {
+      totalDeposit,
+      totalReportAmount: reportAgg._sum.totalAmount || 0,
+      totalReportTransactions: reportAgg._sum.totalTransactions || 0,
+      approvedReportsCount: reportAgg._count.id,
+      qrCount,
+      activeQrCount,
+      totalWalletBalance,
+      wallets,
+    };
+  },
+
+  async getDetail(userId: string) {
+    const merchantInfo = await this.getByUserId(userId);
+    if (!merchantInfo) return null;
+
+    const [stats, qrs, reports, deposits] = await Promise.all([
+      this.getMerchantStats(userId),
+      prisma.merchantQRCode.findMany({
+        where: { userId },
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.transactionReport.findMany({
+        where: { userId },
+        orderBy: { createdAt: "desc" },
+        take: 10,
+      }),
+      prisma.deposit.findMany({
+        where: { userId },
+        orderBy: { createdAt: "desc" },
+        take: 10,
+      }),
+    ]);
+
+    return { merchantInfo, stats, qrs, reports, deposits };
   },
 
   async getAll(filters?: {
@@ -57,7 +166,7 @@ export const MerchantInfoService = {
     limit?: number;
     offset?: number;
   }) {
-    const where: any = {};
+    const where: Record<string, unknown> = {};
 
     if (filters?.approved !== undefined) {
       where.approvedAt = filters.approved ? { not: null } : null;
@@ -66,15 +175,27 @@ export const MerchantInfoService = {
     const [merchants, count] = await Promise.all([
       prisma.merchantInfo.findMany({
         where,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         take: filters?.limit || 50,
         skip: filters?.offset || 0,
-        include: { user: true, preferredWallet: true },
+        include: {
+          user: true,
+          preferredWallet: { include: { paymentMethod: true } },
+          merchantWallets: { include: { paymentMethod: true } },
+        },
       }),
       prisma.merchantInfo.count({ where }),
     ]);
 
-    return { merchants, count };
+    const enriched = await Promise.all(
+      merchants.map(async (m) => {
+        const stats = await this.getMerchantStats(m.userId);
+        const qrCount = stats.qrCount;
+        return { ...m, stats, qrCount };
+      })
+    );
+
+    return { merchants: enriched, count };
   },
 
   async approve(userId: string, adminId: string, adminNote?: string) {
@@ -103,7 +224,11 @@ export const MerchantInfoService = {
     preferredWalletId: string;
     preferredPaymentMethodId: string;
     expectedDailyVolume: number;
+    wallets: { paymentMethodId: string; dailyLimit: number; active?: boolean }[];
   }>) {
+    const existing = await prisma.merchantInfo.findUnique({ where: { userId } });
+    if (!existing) throw new Error("Merchant profile not found");
+
     const updateData: Partial<{
       businessName: string;
       businessDescription: string;
@@ -115,7 +240,15 @@ export const MerchantInfoService = {
     if (data.businessDescription !== undefined) updateData.businessDescription = data.businessDescription;
     if (data.expectedDailyVolume !== undefined) updateData.expectedDailyVolume = data.expectedDailyVolume;
 
-    if (data.preferredPaymentMethodId || data.preferredWalletId) {
+    if (data.wallets && data.wallets.length > 0) {
+      const firstPaymentMethodId = data.wallets[0].paymentMethodId;
+      updateData.preferredWalletId = await this.resolvePreferredWalletId(
+        userId,
+        undefined,
+        firstPaymentMethodId
+      );
+      await this.syncMerchantWallets(existing.id, userId, data.wallets);
+    } else if (data.preferredPaymentMethodId || data.preferredWalletId) {
       updateData.preferredWalletId = await this.resolvePreferredWalletId(
         userId,
         data.preferredWalletId,
@@ -123,11 +256,12 @@ export const MerchantInfoService = {
       );
     }
 
-    return prisma.merchantInfo.update({
+    await prisma.merchantInfo.update({
       where: { userId },
       data: updateData,
-      include: { user: true, preferredWallet: { include: { paymentMethod: true } } },
     });
+
+    return this.getByUserId(userId);
   },
 
   async createForUser(data: {
@@ -138,6 +272,7 @@ export const MerchantInfoService = {
     expectedDailyVolume: number;
     autoApprove?: boolean;
     adminId?: string;
+    wallets?: { paymentMethodId: string; dailyLimit: number; active?: boolean }[];
   }) {
     const existing = await prisma.merchantInfo.findUnique({ where: { userId: data.userId } });
     if (existing) {
@@ -157,6 +292,7 @@ export const MerchantInfoService = {
       expectedDailyVolume: data.expectedDailyVolume,
       approvedAt: data.autoApprove ? new Date() : null,
       approvedBy: data.autoApprove ? data.adminId ?? null : null,
+      wallets: data.wallets,
     });
   },
 };

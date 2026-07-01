@@ -309,12 +309,31 @@ export async function createMerchantAction(data: {
   }
 }
 
-// Merchant QR Code Actions
-export async function getAllMerchantQRCodesAction() {
+export async function getMerchantDetailAction(userId: string) {
   try {
     const config = await getAuthenticatedRequestConfig();
-    const response = await api.get("/admin/merchant-qrs", config);
-    return { success: true, qrs: response.data.qrs, count: response.data.count };
+    const response = await api.get(`/admin/merchants/${userId}`, config);
+    return { success: true, detail: response.data.detail };
+  } catch (error: any) {
+    return { success: false, error: error.response?.data?.message || error.message };
+  }
+}
+
+// Merchant QR Code Actions
+export async function getAllMerchantQRCodesAction(filters?: { active?: boolean; userId?: string }) {
+  try {
+    const config = await getAuthenticatedRequestConfig();
+    const params = new URLSearchParams();
+    if (filters?.active !== undefined) params.set("active", String(filters.active));
+    if (filters?.userId) params.set("userId", filters.userId);
+    const query = params.toString();
+    const response = await api.get(`/admin/merchant-qrs${query ? `?${query}` : ""}`, config);
+    return {
+      success: true,
+      qrs: response.data.qrs,
+      count: response.data.count,
+      stats: response.data.stats,
+    };
   } catch (error: any) {
     return { success: false, error: error.response?.data?.message || error.message };
   }
@@ -331,10 +350,21 @@ export async function assignMerchantQRCodeAction(userId: string, formData: FormD
   }
 }
 
-export async function disableMerchantQRCodeAction(userId: string) {
+export async function assignMultipleMerchantQRCodesAction(userId: string, formData: FormData) {
   try {
     const config = await getAuthenticatedRequestConfig();
-    const response = await api.patch(`/admin/merchant-qrs/${userId}/disable`, {}, config);
+    const response = await api.post(`/admin/merchant-qrs/${userId}/bulk`, formData, config);
+    revalidatePath("/admin/merchant-qrs");
+    return { success: true, qrs: response.data.qrs, count: response.data.count };
+  } catch (error: any) {
+    return { success: false, error: error.response?.data?.message || error.message };
+  }
+}
+
+export async function replaceMerchantQRCodeAction(qrId: string, formData: FormData) {
+  try {
+    const config = await getAuthenticatedRequestConfig();
+    const response = await api.post(`/admin/merchant-qrs/item/${qrId}/replace`, formData, config);
     revalidatePath("/admin/merchant-qrs");
     return { success: true, qrCode: response.data.qrCode };
   } catch (error: any) {
@@ -342,10 +372,21 @@ export async function disableMerchantQRCodeAction(userId: string) {
   }
 }
 
-export async function enableMerchantQRCodeAction(userId: string) {
+export async function disableMerchantQRCodeAction(qrId: string) {
   try {
     const config = await getAuthenticatedRequestConfig();
-    const response = await api.patch(`/admin/merchant-qrs/${userId}/enable`, {}, config);
+    const response = await api.patch(`/admin/merchant-qrs/${qrId}/disable`, {}, config);
+    revalidatePath("/admin/merchant-qrs");
+    return { success: true, qrCode: response.data.qrCode };
+  } catch (error: any) {
+    return { success: false, error: error.response?.data?.message || error.message };
+  }
+}
+
+export async function enableMerchantQRCodeAction(qrId: string) {
+  try {
+    const config = await getAuthenticatedRequestConfig();
+    const response = await api.patch(`/admin/merchant-qrs/${qrId}/enable`, {}, config);
     revalidatePath("/admin/merchant-qrs");
     return { success: true, qrCode: response.data.qrCode };
   } catch (error: any) {

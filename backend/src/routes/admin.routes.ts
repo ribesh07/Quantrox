@@ -101,6 +101,7 @@ router.patch('/game-point-orders/:id/fail', GamePointOrderController.failGamePoi
 
 // Merchant Management
 router.get('/merchants', MerchantInfoController.getAllMerchants);
+router.get('/merchants/:userId', MerchantInfoController.getMerchantDetail);
 router.post('/merchants', MerchantInfoController.createMerchant);
 router.patch('/merchants/:userId/approve', MerchantInfoController.approveMerchant);
 router.patch('/merchants/:userId/reject', MerchantInfoController.rejectMerchant);
@@ -108,8 +109,10 @@ router.patch('/merchants/:userId/reject', MerchantInfoController.rejectMerchant)
 // Merchant QR Codes
 router.get('/merchant-qrs', MerchantQRCodeController.getAllMerchantQRCodes);
 router.post('/merchant-qrs/:userId', MerchantQRCodeController.upload.single('image'), MerchantQRCodeController.assignMerchantQRCode);
-router.patch('/merchant-qrs/:userId/disable', MerchantQRCodeController.disableMerchantQRCode);
-router.patch('/merchant-qrs/:userId/enable', MerchantQRCodeController.enableMerchantQRCode);
+router.post('/merchant-qrs/:userId/bulk', MerchantQRCodeController.bulkUpload.array('images', 10), MerchantQRCodeController.assignMultipleMerchantQRCodes);
+router.post('/merchant-qrs/item/:qrId/replace', MerchantQRCodeController.upload.single('image'), MerchantQRCodeController.replaceMerchantQRCode);
+router.patch('/merchant-qrs/:qrId/disable', MerchantQRCodeController.disableMerchantQRCode);
+router.patch('/merchant-qrs/:qrId/enable', MerchantQRCodeController.enableMerchantQRCode);
 
 // Transaction Reports
 router.get('/transaction-reports', TransactionReportController.getAllTransactionReports);
