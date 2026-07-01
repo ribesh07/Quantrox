@@ -73,6 +73,11 @@ const routes = [
     href: "/admin/games",
   },
   {
+    label: "Game Requests",
+    icon: Gamepad2,
+    href: "/admin/game-requests",
+  },
+  {
     label: "Users",
     icon: Users,
     href: "/admin/users",

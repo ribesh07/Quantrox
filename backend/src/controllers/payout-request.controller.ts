@@ -2,11 +2,12 @@ import { AuthRequest } from "../middleware/auth.middleware";
 import { Response } from "express";
 import { PayoutRequestService } from "../services/payout-request.service";
 import { AuditLogService } from "../services/audit-log.service";
+import { PaymentService } from "../services/payment.service";
 import multer from "multer";
 import { getUploadDirectory, saveUploadedFile } from "../utils/uploads";
 import { paramString, queryDate, queryInt, queryString } from "../utils/request";
 
-const upload = multer({ dest: getUploadDirectory() });
+const upload = multer({ dest: getUploadDirectory(), limits: { fileSize: 50 * 1024 * 1024 } });
 
 export const createPayoutRequest = async (req: AuthRequest, res: Response) => {
   try {

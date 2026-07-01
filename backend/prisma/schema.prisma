@@ -42,6 +42,7 @@ model User {
   merchantQRCodes       MerchantQRCode[]
   deposits              Deposit[]
   payoutRequests        PayoutRequest[]
+  gameIdRequests        GameIdRequest[]
 }
 
 model MerchantInfo {
@@ -186,14 +187,15 @@ model Wallet {
 }
 
 model Game {
-  id        String   @id @default(cuid())
+  id        String          @id @default(cuid())
   name      String
   logo      String?
-  buyRate   Float    @default(0)
-  sellRate  Float    @default(0)
-  active    Boolean  @default(true)
-  createdAt DateTime @default(now())
+  buyRate   Float           @default(0)
+  sellRate  Float           @default(0)
+  active    Boolean         @default(true)
+  createdAt DateTime        @default(now())
   orders    Order[]
+  gameIdRequests GameIdRequest[]
 }
 
 model PaymentMethod {
@@ -596,6 +598,39 @@ enum GamePointOrderStatus {
   FULFILLED
   FAILED
   CANCELLED
+}
+
+model GameIdRequest {
+  id              String              @id @default(cuid())
+  userId          String
+  gameId          String
+  requestType     GameIdRequestType   @default(EMAIL_PASSWORD)
+  gameUsername    String?
+  email           String?
+  password        String?
+  status          GameIdRequestStatus @default(PENDING)
+  response        String?
+  respondedAt     DateTime?
+  respondedBy     String?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  user            User                @relation(fields: [userId], references: [id])
+  game            Game                @relation(fields: [gameId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+enum GameIdRequestType {
+  GAME_ID
+  EMAIL_PASSWORD
+}
+
+enum GameIdRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 enum FeeType {
