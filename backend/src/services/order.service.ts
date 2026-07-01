@@ -48,6 +48,11 @@ export const OrderService = {
       if (!wallet || wallet.balance < amount) {
         throw new Error("Insufficient balance in source wallet");
       }
+    } else if (type === OrderType.GAME_TOPUP) {
+      // No fees for game top-up
+      fee = 0;
+      total = amount;
+      receivedAmount = 0;
     }
 
     const order = await prisma.order.create({

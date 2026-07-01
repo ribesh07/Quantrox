@@ -29,6 +29,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { resolveMediaUrl } from "@/lib/media";
 
 export default function AdminMerchantQRsPage() {
   const queryClient = useQueryClient();
@@ -396,7 +397,7 @@ export default function AdminMerchantQRsPage() {
                       </TableCell>
                       <TableCell>
                         {qr.imageUrl && (
-                          <img src={qr.imageUrl} alt="QR Code" className="h-16 w-16 object-contain rounded border" />
+                          <img src={resolveMediaUrl(qr.imageUrl)} alt="QR Code" className="h-16 w-16 object-contain rounded border" />
                         )}
                       </TableCell>
                       <TableCell>

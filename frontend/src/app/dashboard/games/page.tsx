@@ -46,7 +46,7 @@ export default function GamesPage() {
   const [paymentProof, setPaymentProof] = useState<File | null>(null);
   const [paymentPreview, setPaymentPreview] = useState<string | null>(null);
   const [orderId, setOrderId] = useState<string | null>(null);
-  const [requestType, setRequestType] = useState<"GAME_ID" | "EMAIL_PASSWORD">("GAME_ID");
+  const [requestNewId, setRequestNewId] = useState(false);
   const [requestEmail, setRequestEmail] = useState("");
   const [requestPassword, setRequestPassword] = useState("");
   const [showRequests, setShowRequests] = useState(false);
@@ -90,14 +90,9 @@ export default function GamesPage() {
 
   const selectedMethod = methods?.find((m: any) => m.id === selectedMethodId);
 
-  const calculateFee = () => {
-    if (!selectedMethod || !amount) return 0;
-    return (parseFloat(amount) * selectedMethod.feePercentage) / 100;
-  };
-
   const calculateTotal = () => {
     if (!amount) return 0;
-    return parseFloat(amount) + calculateFee();
+    return parseFloat(amount);
   };
 
   const calculateCredits = () => {
@@ -197,7 +192,7 @@ export default function GamesPage() {
     setPaymentProof(null);
     setPaymentPreview(null);
     setOrderId(null);
-    setRequestType("GAME_ID");
+    setRequestNewId(false);
     setRequestEmail("");
     setRequestPassword("");
   };
@@ -362,8 +357,9 @@ export default function GamesPage() {
 
       <Dialog open={!!selectedGame} onOpenChange={(open) => !open && closeDialog()}>
         <DialogContent className="bg-[#1E2329] border-2 border-[#2B3139] text-white rounded-[2rem] md:rounded-[3rem] max-w-3xl p-0 overflow-hidden shadow-2xl max-h-[90vh] overflow-y-auto">
+          <DialogTitle className="sr-only">Game Top-up</DialogTitle>
           {selectedGame && (
-            <Tabs defaultValue="topup" className="relative">
+            <div className="relative">
               <div className="h-40 bg-gradient-to-br from-primary to-primary/40 relative flex items-end px-6 md:px-10 pb-6 overflow-hidden">
                 <div className="absolute -right-10 -top-10 opacity-20">
                   <Gamepad2 className="h-40 w-40 text-[#0B0E11]" />
@@ -384,16 +380,7 @@ export default function GamesPage() {
                 </div>
               </div>
 
-              <TabsList className="w-full grid grid-cols-2 bg-[#0B0E11] border-b border-[#2B3139] p-2">
-                <TabsTrigger value="topup" className="data-[state=active]:bg-primary data-[state=active]:text-[#0B0E11] rounded-xl py-3 font-bold">
-                  Top Up
-                </TabsTrigger>
-                <TabsTrigger value="request" className="data-[state=active]:bg-primary data-[state=active]:text-[#0B0E11] rounded-xl py-3 font-bold">
-                  Request Game ID
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="topup" className="p-6 md:p-8 space-y-8">
+              <div className="p-6 md:p-8 space-y-8">
                 <form onSubmit={handleSubmit} className="space-y-8">
                   {step === 1 ? (
                     <>
@@ -407,28 +394,78 @@ export default function GamesPage() {
                             <SelectContent className="bg-[#1E2329] border-[#2B3139] text-white">
                               {methods?.map((method: any) => (
                                 <SelectItem key={method.id} value={method.id}>
-                                  {method.name} {method.feePercentage === 0 ? "(No Fee)" : `(${method.feePercentage}% fee)`}
+                                  {method.name}
                                 </SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
                         </div>
 
-                        <div className="space-y-3">
-                          <Label className="text-[#848E9C] font-black text-xs uppercase tracking-widest ml-1">Game Username / ID</Label>
-                          <div className="relative group">
-                            <div className="absolute left-5 top-1/2 -translate-y-1/2 h-6 w-6 text-[#474D57] group-focus-within:text-primary transition-colors z-10">
-                              <User className="h-full w-full" />
-                            </div>
-                            <Input
-                              placeholder="Enter your unique ID"
-                              className="pl-14 h-16 rounded-2xl border-2 border-[#2B3139] bg-[#0B0E11] text-white focus:border-primary transition-all font-bold text-lg placeholder:text-[#474D57]"
-                              value={gameUsername}
-                              onChange={(e) => setGameUsername(e.target.value)}
-                              required
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-3">
+                            <input 
+                              type="checkbox" 
+                              id="requestNewId"
+                              checked={requestNewId}
+                              onChange={(e) => setRequestNewId(e.target.checked)}
+                              className="h-5 w-5 rounded border-2 border-[#2B3139] bg-[#0B0E11] text-primary focus:ring-primary"
                             />
+                            <Label htmlFor="requestNewId" className="text-white font-bold">I need to request a new Game ID</Label>
                           </div>
                         </div>
+
+                        {!requestNewId ? (
+                          <div className="space-y-3">
+                            <Label className="text-[#848E9C] font-black text-xs uppercase tracking-widest ml-1">Game Username / ID</Label>
+                            <div className="relative group">
+                              <div className="absolute left-5 top-1/2 -translate-y-1/2 h-6 w-6 text-[#474D57] group-focus-within:text-primary transition-colors z-10">
+                                <User className="h-full w-full" />
+                              </div>
+                              <Input
+                                placeholder="Enter your unique ID"
+                                className="pl-14 h-16 rounded-2xl border-2 border-[#2B3139] bg-[#0B0E11] text-white focus:border-primary transition-all font-bold text-lg placeholder:text-[#474D57]"
+                                value={gameUsername}
+                                onChange={(e) => setGameUsername(e.target.value)}
+                                required
+                              />
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="space-y-4">
+                            <div className="space-y-3">
+                              <Label className="text-[#848E9C] font-black text-xs uppercase tracking-widest ml-1">Email</Label>
+                              <div className="relative group">
+                                <div className="absolute left-5 top-1/2 -translate-y-1/2 h-6 w-6 text-[#474D57] group-focus-within:text-primary transition-colors z-10">
+                                  <Mail className="h-full w-full" />
+                                </div>
+                                <Input
+                                  type="email"
+                                  placeholder="Enter your email"
+                                  className="pl-14 h-16 rounded-2xl border-2 border-[#2B3139] bg-[#0B0E11] text-white focus:border-primary transition-all font-bold text-lg placeholder:text-[#474D57]"
+                                  value={requestEmail}
+                                  onChange={(e) => setRequestEmail(e.target.value)}
+                                  required
+                                />
+                              </div>
+                            </div>
+                            <div className="space-y-3">
+                              <Label className="text-[#848E9C] font-black text-xs uppercase tracking-widest ml-1">Password</Label>
+                              <div className="relative group">
+                                <div className="absolute left-5 top-1/2 -translate-y-1/2 h-6 w-6 text-[#474D57] group-focus-within:text-primary transition-colors z-10">
+                                  <Lock className="h-full w-full" />
+                                </div>
+                                <Input
+                                  type="password"
+                                  placeholder="Enter your password"
+                                  className="pl-14 h-16 rounded-2xl border-2 border-[#2B3139] bg-[#0B0E11] text-white focus:border-primary transition-all font-bold text-lg placeholder:text-[#474D57]"
+                                  value={requestPassword}
+                                  onChange={(e) => setRequestPassword(e.target.value)}
+                                  required
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        )}
 
                         <div className="space-y-3">
                           <Label className="text-[#848E9C] font-black text-xs uppercase tracking-widest ml-1">Amount to Buy (USD)</Label>
@@ -464,14 +501,6 @@ export default function GamesPage() {
                           </div>
                           
                           <div className="space-y-3 border-t-2 border-dashed border-[#2B3139] pt-6">
-                            <div className="flex justify-between text-sm">
-                              <span className="text-[#848E9C]">Top-up Amount</span>
-                              <span className="text-white font-bold">${parseFloat(amount).toFixed(2)}</span>
-                            </div>
-                            <div className="flex justify-between text-sm">
-                              <span className="text-[#848E9C]">Processing Fee ({selectedMethod.feePercentage}%)</span>
-                              <span className="text-orange-500 font-bold">${calculateFee().toFixed(2)}</span>
-                            </div>
                             <div className="pt-2 border-t border-[#2B3139] flex justify-between">
                               <span className="text-white font-black">Total Payable</span>
                               <span className="text-primary font-black text-lg">${calculateTotal().toFixed(2)}</span>
@@ -489,13 +518,13 @@ export default function GamesPage() {
 
                       <div className="flex gap-4 p-5 rounded-2xl bg-primary/5 border border-primary/10 text-[10px] md:text-xs text-primary/80 font-bold leading-relaxed">
                         <Info className="h-5 w-5 shrink-0" />
-                        <p>Double check your ID. Credits will be delivered to <span className="text-white">{gameUsername || "the specified account"}</span> once your payment is confirmed.</p>
+                        <p>Double check your details. Credits will be delivered once your payment is confirmed.</p>
                       </div>
 
                       <Button 
                         type="submit" 
                         className="w-full h-20 rounded-[1.5rem] md:rounded-[2rem] bg-primary text-[#0B0E11] font-black text-2xl shadow-2xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
-                        disabled={createOrderMutation.isPending || !amount || !gameUsername || !selectedMethodId}
+                        disabled={createOrderMutation.isPending || !amount || !selectedMethodId || (!requestNewId && !gameUsername) || (requestNewId && (!requestEmail || !requestPassword))}
                       >
                         {createOrderMutation.isPending ? (
                           <div className="flex items-center gap-3">
@@ -580,117 +609,8 @@ export default function GamesPage() {
                     </div>
                   )}
                 </form>
-              </TabsContent>
-
-              <TabsContent value="request" className="p-6 md:p-8 space-y-8">
-                <form onSubmit={handleRequestSubmit} className="space-y-6">
-                  <div className="space-y-4">
-                    <Label className="text-[#848E9C] uppercase text-xs font-black tracking-widest">Request Type</Label>
-                    <div className="grid grid-cols-2 gap-4">
-                      <Button
-                        type="button"
-                        variant={requestType === "GAME_ID" ? "default" : "outline"}
-                        className={cn(
-                          "h-20 rounded-2xl border-2 font-bold text-lg",
-                          requestType === "GAME_ID" 
-                            ? "bg-primary text-[#0B0E11] border-primary"
-                            : "bg-[#0B0E11] border-[#2B3139] text-white hover:bg-[#2B3139]"
-                        )}
-                        onClick={() => setRequestType("GAME_ID")}
-                      >
-                        I have Game ID
-                      </Button>
-                      <Button
-                        type="button"
-                        variant={requestType === "EMAIL_PASSWORD" ? "default" : "outline"}
-                        className={cn(
-                          "h-20 rounded-2xl border-2 font-bold text-lg",
-                          requestType === "EMAIL_PASSWORD"
-                            ? "bg-primary text-[#0B0E11] border-primary"
-                            : "bg-[#0B0E11] border-[#2B3139] text-white hover:bg-[#2B3139]"
-                        )}
-                        onClick={() => setRequestType("EMAIL_PASSWORD")}
-                      >
-                        Need Game ID
-                      </Button>
-                    </div>
-                  </div>
-
-                  {requestType === "GAME_ID" ? (
-                    <div className="space-y-3">
-                      <Label className="text-[#848E9C] font-black text-xs uppercase tracking-widest ml-1">Your Game ID / Username</Label>
-                      <div className="relative group">
-                        <div className="absolute left-5 top-1/2 -translate-y-1/2 h-6 w-6 text-[#474D57] group-focus-within:text-primary transition-colors z-10">
-                          <User className="h-full w-full" />
-                        </div>
-                        <Input
-                          placeholder="Enter your game ID"
-                          className="pl-14 h-16 rounded-2xl border-2 border-[#2B3139] bg-[#0B0E11] text-white focus:border-primary transition-all font-bold text-lg placeholder:text-[#474D57]"
-                          value={gameUsername}
-                          onChange={(e) => setGameUsername(e.target.value)}
-                          required
-                        />
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      <div className="space-y-3">
-                        <Label className="text-[#848E9C] font-black text-xs uppercase tracking-widest ml-1">Email</Label>
-                        <div className="relative group">
-                          <div className="absolute left-5 top-1/2 -translate-y-1/2 h-6 w-6 text-[#474D57] group-focus-within:text-primary transition-colors z-10">
-                            <Mail className="h-full w-full" />
-                          </div>
-                          <Input
-                            type="email"
-                            placeholder="Enter your email"
-                            className="pl-14 h-16 rounded-2xl border-2 border-[#2B3139] bg-[#0B0E11] text-white focus:border-primary transition-all font-bold text-lg placeholder:text-[#474D57]"
-                            value={requestEmail}
-                            onChange={(e) => setRequestEmail(e.target.value)}
-                            required
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-3">
-                        <Label className="text-[#848E9C] font-black text-xs uppercase tracking-widest ml-1">Password</Label>
-                        <div className="relative group">
-                          <div className="absolute left-5 top-1/2 -translate-y-1/2 h-6 w-6 text-[#474D57] group-focus-within:text-primary transition-colors z-10">
-                            <Lock className="h-full w-full" />
-                          </div>
-                          <Input
-                            type="password"
-                            placeholder="Enter your password"
-                            className="pl-14 h-16 rounded-2xl border-2 border-[#2B3139] bg-[#0B0E11] text-white focus:border-primary transition-all font-bold text-lg placeholder:text-[#474D57]"
-                            value={requestPassword}
-                            onChange={(e) => setRequestPassword(e.target.value)}
-                            required
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="flex gap-4 p-5 rounded-2xl bg-primary/5 border border-primary/10 text-[10px] md:text-xs text-primary/80 font-bold leading-relaxed">
-                    <Info className="h-5 w-5 shrink-0" />
-                    <p>Submit your request and our admin will respond shortly.</p>
-                  </div>
-
-                  <Button 
-                    type="submit" 
-                    className="w-full h-20 rounded-[1.5rem] md:rounded-[2rem] bg-primary text-[#0B0E11] font-black text-2xl shadow-2xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
-                    disabled={createRequestMutation.isPending}
-                  >
-                    {createRequestMutation.isPending ? (
-                      <div className="flex items-center gap-3">
-                        <Loader2 className="h-7 w-7 animate-spin" />
-                        <span>Submitting...</span>
-                      </div>
-                    ) : (
-                      "Submit Request"
-                    )}
-                  </Button>
-                </form>
-              </TabsContent>
-            </Tabs>
+              </div>
+            </div>
           )}
         </DialogContent>
       </Dialog>

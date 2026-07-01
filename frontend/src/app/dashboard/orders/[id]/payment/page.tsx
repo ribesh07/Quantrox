@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { resolveMediaUrl } from "@/lib/media";
 import { getOrderByIdAction, uploadOrderProofAction } from "@/actions/order.actions";
 
 export default function OrderDetailsPage({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
@@ -135,7 +136,7 @@ export default function OrderDetailsPage({ params: paramsPromise }: { params: Pr
                   {order.paymentMethod?.qrCode ? (
                     <div className="relative aspect-square w-64 md:w-80 overflow-hidden rounded-3xl border-4 border-background bg-white shadow-2xl p-4">
                       <Image
-                        src={order.paymentMethod.qrCode}
+                        src={resolveMediaUrl(order.paymentMethod.qrCode)}
                         alt="Payment QR"
                         fill
                         className="object-contain"
@@ -169,7 +170,7 @@ export default function OrderDetailsPage({ params: paramsPromise }: { params: Pr
               <CardContent>
                 <div className="relative aspect-video w-full overflow-hidden rounded-2xl border bg-black">
                   <Image
-                    src={order.proofImage}
+                    src={resolveMediaUrl(order.proofImage)}
                     alt="Payment Proof"
                     fill
                     className="object-contain"
