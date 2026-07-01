@@ -59,7 +59,7 @@ export const getAllMerchants = async (req: AuthRequest, res: Response) => {
       limit: queryInt(limit),
       offset: queryInt(offset),
     });
-    res.json({ success: true, data: result });
+    res.json({ success: true, merchants: result.merchants, count: result.count });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Failed to get merchants' });
   }
@@ -146,7 +146,7 @@ export const approveMerchant = async (req: AuthRequest, res: Response) => {
       userAgent: req.get('user-agent'),
     });
 
-    res.json({ success: true, data: merchantInfo });
+    res.json({ success: true, merchant: merchantInfo });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Failed to approve merchant' });
   }
@@ -178,7 +178,7 @@ export const rejectMerchant = async (req: AuthRequest, res: Response) => {
       userAgent: req.get('user-agent'),
     });
 
-    res.json({ success: true, data: merchantInfo });
+    res.json({ success: true, merchant: merchantInfo });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Failed to reject merchant' });
   }
