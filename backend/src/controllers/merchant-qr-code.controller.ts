@@ -6,8 +6,8 @@ import multer from "multer";
 import { getUploadDirectory, saveUploadedFile } from "../utils/uploads";
 import { paramString, queryInt, queryString } from "../utils/request";
 
-const upload = multer({ dest: getUploadDirectory() });
-const bulkUpload = multer({ dest: getUploadDirectory() });
+const upload = multer({ dest: getUploadDirectory(), limits: { fileSize: 50 * 1024 * 1024 } });
+const bulkUpload = multer({ dest: getUploadDirectory(), limits: { fileSize: 50 * 1024 * 1024 } });
 
 export const assignMerchantQRCode = async (req: AuthRequest, res: Response) => {
   try {
