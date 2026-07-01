@@ -8,7 +8,7 @@ export async function getMyMerchantInfoAction() {
   try {
     const config = await getAuthenticatedRequestConfig();
     const response = await api.get("/merchant/info", config);
-    return { success: true, info: response.data.info };
+    return { success: true, info: response.data.data };
   } catch (error: any) {
     return { success: false, error: error.response?.data?.message || error.message };
   }
@@ -26,7 +26,7 @@ export async function createMerchantInfoAction(data: {
     const response = await api.post("/merchant/info", data, config);
     revalidatePath("/dashboard");
     revalidatePath("/dashboard/merchant");
-    return { success: true, info: response.data.info };
+    return { success: true, info: response.data.data };
   } catch (error: any) {
     return { success: false, error: error.response?.data?.message || error.message };
   }
@@ -44,7 +44,7 @@ export async function updateMyMerchantInfoAction(data: Partial<{
     const response = await api.put("/merchant/info", data, config);
     revalidatePath("/dashboard");
     revalidatePath("/dashboard/merchant");
-    return { success: true, info: response.data.info };
+    return { success: true, info: response.data.data };
   } catch (error: any) {
     return { success: false, error: error.response?.data?.message || error.message };
   }
