@@ -1,10 +1,10 @@
-"use client";
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Loader2, CheckCircle2, XCircle, Search, Plus, Eye, QrCode,
   DollarSign, Wallet, FileText, MoreHorizontal,
@@ -207,6 +207,24 @@ export default function AdminMerchantsPage() {
       const result = await getAllMerchantsAction();
       if (!result.success) throw new Error(result.error);
       return result.merchants || [];
+    },
+  });
+
+  const { data: availableUsers } = useQuery({
+    queryKey: ["admin-users"],
+    queryFn: async () => {
+      const result = await getAllUsersAction();
+      if (!result.success) throw new Error(result.error);
+      return result.users || [];
+    },
+  });
+
+  const { data: paymentMethods } = useQuery({
+    queryKey: ["admin-payment-methods"],
+    queryFn: async () => {
+      const result = await getPaymentMethodsAction();
+      if (!result.success) throw new Error(result.error);
+      return result.methods || [];
     },
   });
 
