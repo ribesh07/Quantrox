@@ -67,7 +67,7 @@ export default function GamesPage() {
     queryFn: async () => {
       const result = await getPaymentMethodsAction("BOTH");
       if (!result.success) throw new Error(result.error);
-      return result.methods;
+      return result.methods || [];
     },
   });
 
@@ -76,7 +76,7 @@ export default function GamesPage() {
     queryFn: async () => {
       const res = await getMyGameIdRequestsAction();
       if (!res.success) throw new Error(res.error);
-      return res.requests;
+      return res.requests || [];
     },
   });
 
@@ -140,47 +140,45 @@ export default function GamesPage() {
     },
   });
 
-  const createRequestMutation = useMutation({
-    mutationFn: async () => {
-      const res = await createGameIdRequestAction({
-        gameId: selectedGame.id,
-        requestType,
-        gameUsername: requestType === "GAME_ID" ? gameUsername : undefined,
-        email: requestType === "EMAIL_PASSWORD" ? requestEmail : undefined,
-        password: requestType === "EMAIL_PASSWORD" ? requestPassword : undefined,
-      });
-      if (!res.success) throw new Error(res.error);
-      return res.request;
-    },
-    onSuccess: () => {
-      toast.success("Game ID request submitted successfully!");
-      closeDialog();
-    },
-    onError: (error: any) => {
-      toast.error(error.message || "Failed to submit request");
-    },
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (step === 1) {
-      createOrderMutation.mutate({
+      // Create order first
+      const orderResult = await createOrderAction({
         type: "GAME_TOPUP",
         gameId: selectedGame.id,
-        gameUsername,
+        gameUsername: requestNewId ? undefined : gameUsername,
         paymentMethodId: selectedMethodId,
         amount: parseFloat(amount),
         rate: selectedGame.buyRate,
         total: calculateTotal(),
       });
+      
+      if (!orderResult.success) {
+        toast.error(orderResult.error || "Failed to create order");
+        return;
+      }
+
+      setOrderId(orderResult.order.id);
+
+      // If requesting new ID, create GameIdRequest
+      if (requestNewId) {
+        const gameIdRequestResult = await createGameIdRequestAction({
+          gameId: selectedGame.id,
+          requestType: "EMAIL_PASSWORD",
+          email: requestEmail,
+          password: requestPassword,
+        });
+        
+        if (!gameIdRequestResult.success) {
+          toast.error(gameIdRequestResult.error || "Failed to create game ID request");
+        }
+      }
+      
+      setStep(2);
       return;
     }
     uploadMutation.mutate();
-  };
-
-  const handleRequestSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    createRequestMutation.mutate();
   };
 
   const closeDialog = () => {

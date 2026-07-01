@@ -37,6 +37,7 @@ import {
   getMerchantDetailAction,
 } from "@/actions/admin.actions";
 import { getPaymentMethodsAction } from "@/actions/payment.actions";
+import { resolveMediaUrl } from "@/lib/media";
 
 function MerchantDetailView({ userId }: { userId: string }) {
   const { data, isLoading } = useQuery({
@@ -134,7 +135,7 @@ function MerchantDetailView({ userId }: { userId: string }) {
           <div className="flex flex-wrap gap-3">
             {qrs.map((qr: any) => (
               <div key={qr.id} className="text-center">
-                <img src={qr.imageUrl} alt={qr.label || "QR"} className="h-16 w-16 object-contain border rounded" />
+                <img src={resolveMediaUrl(qr.imageUrl)} alt={qr.label || "QR"} className="h-16 w-16 object-contain border rounded" />
                 <p className="text-xs mt-1">{qr.label || "QR"}</p>
                 <Badge variant={qr.active ? "default" : "secondary"} className="text-xs mt-1">
                   {qr.active ? "Active" : "Disabled"}
