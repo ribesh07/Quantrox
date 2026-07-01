@@ -50,6 +50,7 @@ export default function GamesPage() {
   const [requestEmail, setRequestEmail] = useState("");
   const [requestPassword, setRequestPassword] = useState("");
   const [showRequests, setShowRequests] = useState(false);
+  const [isCreatingOrder, setIsCreatingOrder] = useState(false);
 
   const { data: games, isLoading: gamesLoading } = useQuery({
     queryKey: ["games"],
@@ -107,21 +108,6 @@ export default function GamesPage() {
     setPaymentPreview(URL.createObjectURL(file));
   };
 
-  const createOrderMutation = useMutation({
-    mutationFn: async (data: any) => {
-      const res = await createOrderAction(data);
-      if (!res.success) throw new Error(res.error);
-      return res.order;
-    },
-    onSuccess: (order) => {
-      setOrderId(order.id);
-      setStep(2);
-    },
-    onError: (error: any) => {
-      toast.error(error.message || "Failed to create order");
-    },
-  });
-
   const uploadMutation = useMutation({
     mutationFn: async () => {
       if (!orderId || !paymentProof) throw new Error("Payment proof required");
@@ -143,39 +129,46 @@ export default function GamesPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (step === 1) {
-      // Create order first
-      const orderResult = await createOrderAction({
-        type: "GAME_TOPUP",
-        gameId: selectedGame.id,
-        gameUsername: requestNewId ? undefined : gameUsername,
-        paymentMethodId: selectedMethodId,
-        amount: parseFloat(amount),
-        rate: selectedGame.buyRate,
-        total: calculateTotal(),
-      });
-      
-      if (!orderResult.success) {
-        toast.error(orderResult.error || "Failed to create order");
-        return;
-      }
-
-      setOrderId(orderResult.order.id);
-
-      // If requesting new ID, create GameIdRequest
-      if (requestNewId) {
-        const gameIdRequestResult = await createGameIdRequestAction({
+      setIsCreatingOrder(true);
+      try {
+        // Create order first
+        const orderResult = await createOrderAction({
+          type: "GAME_TOPUP",
           gameId: selectedGame.id,
-          requestType: "EMAIL_PASSWORD",
-          email: requestEmail,
-          password: requestPassword,
+          gameUsername: requestNewId ? undefined : gameUsername,
+          paymentMethodId: selectedMethodId,
+          amount: parseFloat(amount),
+          rate: selectedGame.buyRate,
+          total: calculateTotal(),
         });
         
-        if (!gameIdRequestResult.success) {
-          toast.error(gameIdRequestResult.error || "Failed to create game ID request");
+        if (!orderResult.success) {
+          toast.error(orderResult.error || "Failed to create order");
+          return;
         }
+
+        setOrderId(orderResult.order.id);
+
+        // If requesting new ID, create GameIdRequest
+        if (requestNewId) {
+          const gameIdRequestResult = await createGameIdRequestAction({
+            gameId: selectedGame.id,
+            requestType: "EMAIL_PASSWORD",
+            email: requestEmail,
+            password: requestPassword,
+          });
+          
+          if (!gameIdRequestResult.success) {
+            toast.error(gameIdRequestResult.error || "Failed to create game ID request");
+          }
+        }
+        
+        setStep(2);
+      } catch (error: any) {
+        toast.error(error.message || "Failed to create order");
+      } finally {
+        setIsCreatingOrder(false);
       }
-      
-      setStep(2);
       return;
     }
     uploadMutation.mutate();
@@ -522,9 +515,9 @@ export default function GamesPage() {
                       <Button 
                         type="submit" 
                         className="w-full h-20 rounded-[1.5rem] md:rounded-[2rem] bg-primary text-[#0B0E11] font-black text-2xl shadow-2xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
-                        disabled={createOrderMutation.isPending || !amount || !selectedMethodId || (!requestNewId && !gameUsername) || (requestNewId && (!requestEmail || !requestPassword))}
+                        disabled={isCreatingOrder || !amount || !selectedMethodId || (!requestNewId && !gameUsername) || (requestNewId && (!requestEmail || !requestPassword))}
                       >
-                        {createOrderMutation.isPending ? (
+                        {isCreatingOrder ? (
                           <div className="flex items-center gap-3">
                             <Loader2 className="h-7 w-7 animate-spin" />
                             <span>Creating Order...</span>
