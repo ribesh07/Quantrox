@@ -34,10 +34,13 @@ export async function createGameIdRequestAction(data: {
 }) {
   try {
     const config = await getAuthenticatedRequestConfig();
+    console.log("createGameIdRequestAction sending data:", data);
     const response = await api.post("/user/game-id-requests", data, config);
+    console.log("createGameIdRequestAction response:", response.data);
     revalidatePath("/dashboard/games");
     return { success: true, request: response.data.request };
   } catch (error: any) {
+    console.error("createGameIdRequestAction error:", error);
     return { success: false, error: error.response?.data?.message || error.message };
   }
 }

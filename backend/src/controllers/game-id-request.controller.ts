@@ -6,6 +6,7 @@ import { paramString, queryInt, queryString } from "../utils/request";
 
 export const createGameIdRequest = async (req: AuthRequest, res: Response) => {
   try {
+    console.log("createGameIdRequest called with body:", req.body);
     const { gameId, requestType, gameUsername, email, password } = req.body;
 
     if (!gameId) {
@@ -37,6 +38,7 @@ export const createGameIdRequest = async (req: AuthRequest, res: Response) => {
       email: email?.trim(),
       password: password?.trim(),
     });
+    console.log("Created game ID request:", request);
 
     await AuditLogService.log({
       userId: req.user!.userId,
@@ -64,6 +66,7 @@ export const getMyGameIdRequests = async (req: AuthRequest, res: Response) => {
       limit: queryInt(limit),
       offset: queryInt(offset),
     });
+    console.log("getMyGameIdRequests returning:", result);
     res.json({ success: true, requests: result.requests, count: result.count });
   } catch (error) {
     res.status(500).json({ success: false, message: "Failed to get game ID requests" });
@@ -72,6 +75,7 @@ export const getMyGameIdRequests = async (req: AuthRequest, res: Response) => {
 
 export const getAllGameIdRequests = async (req: AuthRequest, res: Response) => {
   try {
+    console.log("getAllGameIdRequests called with query:", req.query);
     const { status, userId, limit, offset } = req.query;
     const result = await GameIdRequestService.getAll({
       status: status as any,
@@ -79,8 +83,10 @@ export const getAllGameIdRequests = async (req: AuthRequest, res: Response) => {
       limit: queryInt(limit),
       offset: queryInt(offset),
     });
+    console.log("getAllGameIdRequests returning:", result);
     res.json({ success: true, requests: result.requests, count: result.count });
   } catch (error) {
+    console.error("getAllGameIdRequests error:", error);
     res.status(500).json({ success: false, message: "Failed to get game ID requests" });
   }
 };
