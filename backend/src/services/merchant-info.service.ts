@@ -51,19 +51,17 @@ export const MerchantInfoService = {
     userId: string;
     businessName: string;
     businessDescription?: string;
-    preferredWalletId: string;
+    preferredWalletId?: string;
+    preferredPaymentMethodId?: string;
     expectedDailyVolume: number;
     approvedAt?: Date | null;
     approvedBy?: string | null;
     wallets?: { paymentMethodId: string; dailyLimit: number; active?: boolean }[];
   }) {
-    const preferredPaymentMethodId =
-      data.preferredPaymentMethodId || data.wallets?.[0]?.paymentMethodId;
-
     const preferredWalletId = await this.resolvePreferredWalletId(
       data.userId,
       data.preferredWalletId,
-      preferredPaymentMethodId
+      data.preferredPaymentMethodId
     );
 
     const merchantInfo = await prisma.merchantInfo.create({
@@ -71,7 +69,7 @@ export const MerchantInfoService = {
         userId: data.userId,
         businessName: data.businessName,
         businessDescription: data.businessDescription,
-        preferredWalletId: data.preferredWalletId,
+        preferredWalletId,
         expectedDailyVolume: data.expectedDailyVolume,
       },
       include: {
@@ -81,11 +79,13 @@ export const MerchantInfoService = {
       },
     });
 
+    const paymentMethodId = data.preferredPaymentMethodId || data.wallets?.[0]?.paymentMethodId;
+
     if (data.wallets && data.wallets.length > 0) {
       await this.syncMerchantWallets(merchantInfo.id, data.userId, data.wallets);
-    } else if (preferredPaymentMethodId) {
+    } else if (paymentMethodId) {
       await this.syncMerchantWallets(merchantInfo.id, data.userId, [
-        { paymentMethodId: preferredPaymentMethodId, dailyLimit: data.expectedDailyVolume },
+        { paymentMethodId, dailyLimit: data.expectedDailyVolume },
       ]);
     }
 
@@ -219,6 +219,7 @@ export const MerchantInfoService = {
     businessName: string;
     businessDescription: string;
     preferredWalletId: string;
+    preferredPaymentMethodId: string;
     expectedDailyVolume: number;
     wallets: { paymentMethodId: string; dailyLimit: number; active?: boolean }[];
   }>) {

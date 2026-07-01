@@ -163,7 +163,7 @@ export const PayoutRequestService = {
   },
 
   async markPaid(id: string, adminId: string, transactionHash: string) {
-    return prisma.payoutRequest.update({
+    const payout = await prisma.payoutRequest.update({
       where: { id },
       data: {
         status: 'PAID',
