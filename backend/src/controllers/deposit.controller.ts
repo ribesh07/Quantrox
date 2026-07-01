@@ -14,9 +14,9 @@ export const createDeposit = async (req: AuthRequest, res: Response) => {
       requiredDeposit: requiredDeposit ? parseFloat(requiredDeposit) : undefined,
       notes,
     });
-    res.json({ success: true, deposit });
+    res.json({ success: true, data: deposit });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Failed to create deposit" });
+    res.status(500).json({ success: false, message: 'Failed to create deposit' });
   }
 };
 
@@ -31,9 +31,9 @@ export const getMyDeposits = async (req: AuthRequest, res: Response) => {
       limit: queryInt(limit),
       offset: queryInt(offset),
     });
-    res.json({ success: true, deposits: result.deposits, count: result.count });
+    res.json({ success: true, data: result });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Failed to get deposits" });
+    res.status(500).json({ success: false, message: 'Failed to get deposits' });
   }
 };
 
@@ -49,9 +49,9 @@ export const getAllDeposits = async (req: AuthRequest, res: Response) => {
       limit: queryInt(limit),
       offset: queryInt(offset),
     });
-    res.json({ success: true, deposits: result.deposits, count: result.count });
+    res.json({ success: true, data: result });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Failed to get deposits" });
+    res.status(500).json({ success: false, message: 'Failed to get deposits' });
   }
 };
 
@@ -59,21 +59,21 @@ export const approveDeposit = async (req: AuthRequest, res: Response) => {
   try {
     const id = paramString(req.params.id);
     const deposit = await DepositService.approve(id, req.user!.userId);
-
+    
     await AuditLogService.log({
       userId: req.user!.userId,
       userEmail: req.user!.email,
-      action: "APPROVE_DEPOSIT",
-      resource: "DEPOSIT",
+      action: 'APPROVE_DEPOSIT',
+      resource: 'DEPOSIT',
       resourceId: id,
-      result: "SUCCESS",
+      result: 'SUCCESS',
       ipAddress: req.ip,
-      userAgent: req.get("user-agent"),
+      userAgent: req.get('user-agent'),
     });
 
-    res.json({ success: true, deposit });
+    res.json({ success: true, data: deposit });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Failed to approve deposit" });
+    res.status(500).json({ success: false, message: 'Failed to approve deposit' });
   }
 };
 
@@ -81,21 +81,21 @@ export const rejectDeposit = async (req: AuthRequest, res: Response) => {
   try {
     const id = paramString(req.params.id);
     const deposit = await DepositService.reject(id, req.user!.userId);
-
+    
     await AuditLogService.log({
       userId: req.user!.userId,
       userEmail: req.user!.email,
-      action: "REJECT_DEPOSIT",
-      resource: "DEPOSIT",
+      action: 'REJECT_DEPOSIT',
+      resource: 'DEPOSIT',
       resourceId: id,
-      result: "SUCCESS",
+      result: 'SUCCESS',
       ipAddress: req.ip,
-      userAgent: req.get("user-agent"),
+      userAgent: req.get('user-agent'),
     });
 
-    res.json({ success: true, deposit });
+    res.json({ success: true, data: deposit });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Failed to reject deposit" });
+    res.status(500).json({ success: false, message: 'Failed to reject deposit' });
   }
 };
 
@@ -103,21 +103,21 @@ export const freezeDeposit = async (req: AuthRequest, res: Response) => {
   try {
     const id = paramString(req.params.id);
     const deposit = await DepositService.freeze(id, req.user!.userId);
-
+    
     await AuditLogService.log({
       userId: req.user!.userId,
       userEmail: req.user!.email,
-      action: "FREEZE_DEPOSIT",
-      resource: "DEPOSIT",
+      action: 'FREEZE_DEPOSIT',
+      resource: 'DEPOSIT',
       resourceId: id,
-      result: "SUCCESS",
+      result: 'SUCCESS',
       ipAddress: req.ip,
-      userAgent: req.get("user-agent"),
+      userAgent: req.get('user-agent'),
     });
 
-    res.json({ success: true, deposit });
+    res.json({ success: true, data: deposit });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Failed to freeze deposit" });
+    res.status(500).json({ success: false, message: 'Failed to freeze deposit' });
   }
 };
 
@@ -125,21 +125,21 @@ export const releaseDeposit = async (req: AuthRequest, res: Response) => {
   try {
     const id = paramString(req.params.id);
     const deposit = await DepositService.release(id, req.user!.userId);
-
+    
     await AuditLogService.log({
       userId: req.user!.userId,
       userEmail: req.user!.email,
-      action: "RELEASE_DEPOSIT",
-      resource: "DEPOSIT",
+      action: 'RELEASE_DEPOSIT',
+      resource: 'DEPOSIT',
       resourceId: id,
-      result: "SUCCESS",
+      result: 'SUCCESS',
       ipAddress: req.ip,
-      userAgent: req.get("user-agent"),
+      userAgent: req.get('user-agent'),
     });
 
-    res.json({ success: true, deposit });
+    res.json({ success: true, data: deposit });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Failed to release deposit" });
+    res.status(500).json({ success: false, message: 'Failed to release deposit' });
   }
 };
 
@@ -148,29 +148,29 @@ export const adjustDeposit = async (req: AuthRequest, res: Response) => {
     const id = paramString(req.params.id);
     const { amount, notes } = req.body;
     const deposit = await DepositService.adjust(id, parseFloat(amount), req.user!.userId, notes);
-
+    
     await AuditLogService.log({
       userId: req.user!.userId,
       userEmail: req.user!.email,
-      action: "ADJUST_DEPOSIT",
-      resource: "DEPOSIT",
+      action: 'ADJUST_DEPOSIT',
+      resource: 'DEPOSIT',
       resourceId: id,
-      result: "SUCCESS",
+      result: 'SUCCESS',
       ipAddress: req.ip,
-      userAgent: req.get("user-agent"),
+      userAgent: req.get('user-agent'),
     });
 
-    res.json({ success: true, deposit });
+    res.json({ success: true, data: deposit });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Failed to adjust deposit" });
+    res.status(500).json({ success: false, message: 'Failed to adjust deposit' });
   }
 };
 
 export const getMyTotalDeposit = async (req: AuthRequest, res: Response) => {
   try {
     const total = await DepositService.getUserTotalDeposit(req.user!.userId);
-    res.json({ success: true, total });
+    res.json({ success: true, data: { total } });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Failed to get total deposit" });
+    res.status(500).json({ success: false, message: 'Failed to get total deposit' });
   }
 };

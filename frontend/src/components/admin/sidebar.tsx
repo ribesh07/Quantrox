@@ -58,14 +58,9 @@ const routes = [
     href: "/admin/deposits",
   },
   {
-    label: "Merchant Payouts",
+    label: "Payout Requests",
     icon: TrendingUp,
-    href: "/admin/merchant-payouts",
-  },
-  {
-    label: "User Payouts",
-    icon: TrendingUp,
-    href: "/admin/user-payouts",
+    href: "/admin/payout-requests",
   },
   {
     label: "Rates & Fees",

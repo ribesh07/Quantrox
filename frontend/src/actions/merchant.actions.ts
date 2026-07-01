@@ -35,7 +35,7 @@ export async function createMerchantInfoAction(data: {
 export async function updateMyMerchantInfoAction(data: Partial<{
   businessName: string;
   businessDescription?: string;
-  preferredPaymentMethodId: string;
+  preferredWalletId: string;
   expectedDailyVolume: number;
   wallets: { paymentMethodId: string; dailyLimit: number; active?: boolean }[];
 }>) {
@@ -105,18 +105,18 @@ export async function getMyTotalDepositAction() {
   }
 }
 
-export async function createMerchantPayoutRequestAction(formData: FormData) {
+export async function createPayoutRequestAction(formData: FormData) {
   try {
     const config = await getAuthenticatedRequestConfig();
     const response = await api.post("/merchant/payouts", formData, config);
-    revalidatePath("/dashboard/merchant/payouts");
+    revalidatePath("/dashboard/payouts");
     return { success: true, payout: response.data.payout };
   } catch (error: any) {
     return { success: false, error: error.response?.data?.message || error.message };
   }
 }
 
-export async function getMyMerchantPayoutRequestsAction() {
+export async function getMyPayoutRequestsAction() {
   try {
     const config = await getAuthenticatedRequestConfig();
     const response = await api.get("/merchant/payouts", config);

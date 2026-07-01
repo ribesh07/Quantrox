@@ -13,7 +13,7 @@ export const assignMerchantQRCode = async (req: AuthRequest, res: Response) => {
   try {
     const userId = paramString(req.params.userId);
     if (!req.file) {
-      return res.status(400).json({ success: false, message: "QR code image is required" });
+      return res.status(400).json({ success: false, message: 'QR code image is required' });
     }
     const imageUrl = await saveUploadedFile(req.file, "merchant-qrs");
     const label = req.body.label as string | undefined;
@@ -27,17 +27,17 @@ export const assignMerchantQRCode = async (req: AuthRequest, res: Response) => {
     await AuditLogService.log({
       userId: req.user!.userId,
       userEmail: req.user!.email,
-      action: "ASSIGN_MERCHANT_QR",
-      resource: "MERCHANT_QR_CODE",
+      action: 'ASSIGN_MERCHANT_QR',
+      resource: 'MERCHANT_QR_CODE',
       resourceId: qrCode.id,
-      result: "SUCCESS",
+      result: 'SUCCESS',
       ipAddress: req.ip,
-      userAgent: req.get("user-agent"),
+      userAgent: req.get('user-agent'),
     });
 
-    res.json({ success: true, qrCode });
+    res.json({ success: true, data: qrCode });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Failed to assign QR code" });
+    res.status(500).json({ success: false, message: 'Failed to assign QR code' });
   }
 };
 
@@ -128,7 +128,7 @@ export const getAllMerchantQRCodes = async (req: AuthRequest, res: Response) => 
     const stats = await MerchantQRCodeService.getStats();
     res.json({ success: true, qrs: result.qrs, count: result.count, stats });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Failed to get QR codes" });
+    res.status(500).json({ success: false, message: 'Failed to get QR codes' });
   }
 };
 
@@ -138,7 +138,7 @@ export const disableMerchantQRCode = async (req: AuthRequest, res: Response) => 
     const qrCode = await MerchantQRCodeService.disable(qrId);
     res.json({ success: true, qrCode });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Failed to disable QR code" });
+    res.status(500).json({ success: false, message: 'Failed to disable QR code' });
   }
 };
 
@@ -148,7 +148,7 @@ export const enableMerchantQRCode = async (req: AuthRequest, res: Response) => {
     const qrCode = await MerchantQRCodeService.enable(qrId);
     res.json({ success: true, qrCode });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Failed to enable QR code" });
+    res.status(500).json({ success: false, message: 'Failed to enable QR code' });
   }
 };
 

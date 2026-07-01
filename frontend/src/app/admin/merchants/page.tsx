@@ -10,9 +10,7 @@ import {
   DollarSign, Wallet, FileText, MoreHorizontal,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import Link from "next/link";
 import {
@@ -211,28 +209,6 @@ export default function AdminMerchantsPage() {
       return result.merchants || [];
     },
   });
-
-  const { data: users } = useQuery({
-    queryKey: ["admin-users"],
-    queryFn: async () => {
-      const result = await getAllUsersAction();
-      if (!result.success) throw new Error(result.error);
-      return result.users || [];
-    },
-  });
-
-  const { data: paymentMethods } = useQuery({
-    queryKey: ["admin-merchant-payment-methods"],
-    queryFn: async () => {
-      const result = await getPaymentMethodsAction("BOTH");
-      return result.success ? result.methods : [];
-    },
-  });
-
-  const availableUsers = useMemo(() => {
-    const merchantUserIds = new Set((data || []).map((merchant: any) => merchant.userId));
-    return (users || []).filter((user: any) => !merchantUserIds.has(user.id));
-  }, [data, users]);
 
   const approveMutation = useMutation({
     mutationFn: async (userId: string) => {

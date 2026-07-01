@@ -68,10 +68,3 @@ export const PayoutStatus = {
 } as const;
 
 export type PayoutStatus = (typeof PayoutStatus)[keyof typeof PayoutStatus];
-
-export const PayoutType = {
-  MERCHANT: "MERCHANT",
-  USER: "USER",
-} as const;
-
-export type PayoutType = (typeof PayoutType)[keyof typeof PayoutType];

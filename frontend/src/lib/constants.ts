@@ -1,3 +1,0 @@
-export const WALLET_NETWORKS = ["ERC20", "TRC20", "BEP20", "Polygon"] as const;
-
-export type WalletNetwork = (typeof WALLET_NETWORKS)[number];
