@@ -60,7 +60,7 @@ function MerchantDetailView({ userId }: { userId: string }) {
 
   if (!data) return <p className="text-muted-foreground">Merchant not found</p>;
 
-  const { merchantInfo, stats, qrs, reports, deposits } = data;
+  const { merchantInfo = {}, stats = {}, qrs = [], reports = [], deposits = [] } = data;
 
   return (
     <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-2">
@@ -68,25 +68,25 @@ function MerchantDetailView({ userId }: { userId: string }) {
         <Card>
           <CardContent className="pt-4 pb-3">
             <p className="text-xs text-muted-foreground">Total Deposits</p>
-            <p className="text-xl font-bold">${stats.totalDeposit?.toLocaleString()}</p>
+            <p className="text-xl font-bold">${stats.totalDeposit?.toLocaleString() || "0"}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4 pb-3">
             <p className="text-xs text-muted-foreground">Reported Volume</p>
-            <p className="text-xl font-bold">${stats.totalReportAmount?.toLocaleString()}</p>
+            <p className="text-xl font-bold">${stats.totalReportAmount?.toLocaleString() || "0"}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4 pb-3">
             <p className="text-xs text-muted-foreground">Wallet Balance</p>
-            <p className="text-xl font-bold">${stats.totalWalletBalance?.toLocaleString()}</p>
+            <p className="text-xl font-bold">${stats.totalWalletBalance?.toLocaleString() || "0"}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4 pb-3">
             <p className="text-xs text-muted-foreground">Active QRs</p>
-            <p className="text-xl font-bold">{stats.activeQrCount} / {stats.qrCount}</p>
+            <p className="text-xl font-bold">{stats.activeQrCount || 0} / {stats.qrCount || 0}</p>
           </CardContent>
         </Card>
       </div>
