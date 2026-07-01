@@ -11,6 +11,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { getAllTransactionReportsAction, approveTransactionReportAction, rejectTransactionReportAction } from "@/actions/admin.actions";
 import { ReportStatus } from "@/lib/prisma-types";
+import { resolveMediaUrl } from "@/lib/media";
 
 export default function AdminTransactionReportsPage() {
   const queryClient = useQueryClient();
@@ -132,7 +133,7 @@ export default function AdminTransactionReportsPage() {
                       <TableCell>
                         {report.proofImage ? (
                           <img
-                            src={report.proofImage}
+                            src={resolveMediaUrl(report.proofImage)}
                             alt="Proof"
                             className="h-20 w-20 object-cover rounded"
                           />
