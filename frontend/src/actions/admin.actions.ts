@@ -566,8 +566,10 @@ export async function getAllGameIdRequestsAction(status?: string) {
       ...config,
       params: Object.keys(params).length ? params : undefined,
     });
+    console.log("getAllGameIdRequestsAction response:", response.data);
     return { success: true, requests: response.data.requests, count: response.data.count };
   } catch (error: any) {
+    console.error("getAllGameIdRequestsAction error:", error);
     return { success: false, error: error.response?.data?.message || error.message };
   }
 }
