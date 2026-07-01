@@ -39,8 +39,8 @@ app.use(
     },
   })
 );
-app.use(express.json({ limit: '2mb' }));
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '50mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(logger);
 app.use('/uploads', express.static(getUploadDirectory()));
 
@@ -59,9 +59,6 @@ app.use('/api/user', userRoutes);
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok' });
-});
 app.use((req, res) => {
   res.status(404).json({ success: false, message: 'Route not found' });
 });
@@ -78,7 +75,6 @@ const startServer = async () => {
   await ensureUploadDirectory('reports');
   await ensureUploadDirectory('merchant-qrs');
   await ensureUploadDirectory('payout-qrs');
-  await ensureUploadDirectory('payout-proofs');
 
   // Initialize Prisma connection before starting the server
   try {

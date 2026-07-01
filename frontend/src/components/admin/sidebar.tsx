@@ -58,14 +58,9 @@ const routes = [
     href: "/admin/deposits",
   },
   {
-    label: "Merchant Payouts",
+    label: "Payout Requests",
     icon: TrendingUp,
-    href: "/admin/merchant-payouts",
-  },
-  {
-    label: "User Payouts",
-    icon: TrendingUp,
-    href: "/admin/user-payouts",
+    href: "/admin/payout-requests",
   },
   {
     label: "Rates & Fees",
@@ -76,6 +71,11 @@ const routes = [
     label: "Games",
     icon: Gamepad2,
     href: "/admin/games",
+  },
+  {
+    label: "Game Requests",
+    icon: Gamepad2,
+    href: "/admin/game-requests",
   },
   {
     label: "Users",

@@ -16,10 +16,12 @@ import * as MerchantQRCodeController from '../controllers/merchant-qr-code.contr
 import * as TransactionReportController from '../controllers/transaction-report.controller';
 import * as DepositController from '../controllers/deposit.controller';
 import * as PayoutRequestController from '../controllers/payout-request.controller';
+import * as GameIdRequestController from '../controllers/game-id-request.controller';
 import multer from 'multer';
+import { getUploadDirectory } from '../utils/uploads';
 
 const router = Router();
-const upload = multer({ dest: 'uploads/' });
+const upload = multer({ dest: getUploadDirectory(), limits: { fileSize: 50 * 1024 * 1024 } });
 
 // Apply admin middleware to all routes
 router.use(authenticate, authorize(['SUPER_ADMIN', 'STAFF_ADMIN']));
@@ -129,9 +131,13 @@ router.patch('/deposits/:id/adjust', DepositController.adjustDeposit);
 
 // Payout Requests
 router.get('/payout-requests', PayoutRequestController.getAllPayoutRequests);
-router.get('/payout-requests/stats', PayoutRequestController.getPayoutStatusCounts);
 router.patch('/payout-requests/:id/approve', PayoutRequestController.approvePayoutRequest);
 router.patch('/payout-requests/:id/reject', PayoutRequestController.rejectPayoutRequest);
-router.patch('/payout-requests/:id/mark-paid', PayoutRequestController.upload.single('paymentProof'), PayoutRequestController.markPayoutPaid);
+router.patch('/payout-requests/:id/mark-paid', PayoutRequestController.markPayoutPaid);
+
+// Game ID Requests
+router.get('/game-id-requests', GameIdRequestController.getAllGameIdRequests);
+router.patch('/game-id-requests/:id/approve', GameIdRequestController.approveGameIdRequest);
+router.patch('/game-id-requests/:id/reject', GameIdRequestController.rejectGameIdRequest);
 
 export default router;

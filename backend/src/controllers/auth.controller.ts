@@ -52,6 +52,7 @@ export const login = async (req: Request, res: Response) => {
     const { email, password } = loginSchema.parse(req.body);
 
     const user = await prisma.user.findUnique({ where: { email } });
+    console.log("user details :", user);
     if (!user || !(await bcrypt.compare(password, user.password))) {
       return res.status(401).json({ success: false, message: "Invalid email or password" });
     }
@@ -88,7 +89,7 @@ export const login = async (req: Request, res: Response) => {
       const user = await prisma.user.findUnique({ where: { id: rt.userId } });
       if (!user) return res.status(401).json({ success: false, message: 'Invalid user' });
 
-      const token = jwt.sign({ userId: user.id, role: user.role }, env.jwtSecret, { expiresIn: '1d' });
+      const token = jwt.sign({ userId: user.id, role: user.role }, env.jwtSecret, { expiresIn: '15m' });
       // optionally rotate refresh token
       await TokenService.revokeRefreshToken(refreshToken);
       const newRt = await TokenService.createRefreshToken(user.id);

@@ -51,8 +51,7 @@ export const MerchantInfoService = {
     userId: string;
     businessName: string;
     businessDescription?: string;
-    preferredWalletId?: string;
-    preferredPaymentMethodId?: string;
+    preferredWalletId: string;
     expectedDailyVolume: number;
     approvedAt?: Date | null;
     approvedBy?: string | null;
@@ -72,10 +71,8 @@ export const MerchantInfoService = {
         userId: data.userId,
         businessName: data.businessName,
         businessDescription: data.businessDescription,
-        preferredWalletId,
+        preferredWalletId: data.preferredWalletId,
         expectedDailyVolume: data.expectedDailyVolume,
-        approvedAt: data.approvedAt ?? null,
-        approvedBy: data.approvedBy ?? null,
       },
       include: {
         user: true,
@@ -222,7 +219,6 @@ export const MerchantInfoService = {
     businessName: string;
     businessDescription: string;
     preferredWalletId: string;
-    preferredPaymentMethodId: string;
     expectedDailyVolume: number;
     wallets: { paymentMethodId: string; dailyLimit: number; active?: boolean }[];
   }>) {

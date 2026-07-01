@@ -2,10 +2,10 @@ import { Router } from 'express';
 import * as OrderController from '../controllers/order.controller';
 import { authenticate } from '../middleware/auth.middleware';
 import multer from 'multer';
-import path from 'path';
+import { getUploadDirectory } from '../utils/uploads';
 
 const router = Router();
-const upload = multer({ dest: 'uploads/' });
+const upload = multer({ dest: getUploadDirectory(), limits: { fileSize: 50 * 1024 * 1024 } });
 
 router.post('/', authenticate, OrderController.createOrder);
 router.get('/', authenticate, OrderController.getUserOrders);

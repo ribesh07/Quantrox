@@ -1,5 +1,5 @@
 import { prisma } from "../shared/prisma";
-import { PayoutStatus, PayoutType } from "@prisma/client";
+import { PayoutStatus } from "@prisma/client";
 
 const baseUrl = process.env.SERVICE_URL_BACKEND || "https://api.settlerpay.com";
 
@@ -20,46 +20,26 @@ const withImageUrls = <T extends { qrCodeImage?: string | null; paymentProofImag
 });
 
 export const PayoutRequestService = {
-  async createMerchant(data: {
-    userId: string;
-    amount: number;
-    walletAddress: string;
-    walletNetwork: string;
-    qrCodeImage?: string;
-    remarks?: string;
-  }) {
-    const payout = await prisma.payoutRequest.create({
-      data: {
-        userId: data.userId,
-        type: "MERCHANT",
-        amount: data.amount,
-        walletAddress: data.walletAddress,
-        walletNetwork: data.walletNetwork,
-        qrCodeImage: data.qrCodeImage,
-        remarks: data.remarks,
-        status: "PENDING",
-      },
-    });
-    return withImageUrls(payout);
-  },
-
-  async createUser(data: {
+  async create(data: {
     userId: string;
     amount: number;
     paymentMethodId: string;
     uid: string;
     qrCodeImage: string;
     remarks?: string;
+    walletAddress?: string;
+    walletNetwork?: string;
   }) {
     const payout = await prisma.payoutRequest.create({
       data: {
         userId: data.userId,
-        type: "USER",
         amount: data.amount,
         paymentMethodId: data.paymentMethodId,
         uid: data.uid,
         qrCodeImage: data.qrCodeImage,
         remarks: data.remarks,
+        walletAddress: data.walletAddress,
+        walletNetwork: data.walletNetwork,
         status: "PENDING",
       },
       include: { paymentMethod: true },
@@ -68,15 +48,13 @@ export const PayoutRequestService = {
   },
 
   async getById(id: string) {
-    const payout = await prisma.payoutRequest.findUnique({
+    return prisma.payoutRequest.findUnique({
       where: { id },
-      include: { user: true, paymentMethod: true },
+      include: { user: true },
     });
-    return payout ? withImageUrls(payout) : null;
   },
 
   async getByUserId(userId: string, filters?: {
-    type?: PayoutType;
     status?: PayoutStatus;
     fromDate?: Date;
     toDate?: Date;
@@ -84,10 +62,6 @@ export const PayoutRequestService = {
     offset?: number;
   }) {
     const where: any = { userId };
-
-    if (filters?.type) {
-      where.type = filters.type;
-    }
 
     if (filters?.status) {
       where.status = filters.status;
@@ -106,19 +80,17 @@ export const PayoutRequestService = {
     const [payouts, count] = await Promise.all([
       prisma.payoutRequest.findMany({
         where,
-        orderBy: { createdAt: "desc" },
+        orderBy: { createdAt: 'desc' },
         take: filters?.limit || 50,
         skip: filters?.offset || 0,
-        include: { paymentMethod: true },
       }),
       prisma.payoutRequest.count({ where }),
     ]);
 
-    return { payouts: payouts.map(withImageUrls), count };
+    return { payouts, count };
   },
 
   async getAll(filters?: {
-    type?: PayoutType;
     status?: PayoutStatus;
     userId?: string;
     fromDate?: Date;
@@ -127,10 +99,6 @@ export const PayoutRequestService = {
     offset?: number;
   }) {
     const where: any = {};
-
-    if (filters?.type) {
-      where.type = filters.type;
-    }
 
     if (filters?.status) {
       where.status = filters.status;
@@ -153,72 +121,63 @@ export const PayoutRequestService = {
     const [payouts, count] = await Promise.all([
       prisma.payoutRequest.findMany({
         where,
-        orderBy: { createdAt: "desc" },
+        orderBy: { createdAt: 'desc' },
         take: filters?.limit || 50,
         skip: filters?.offset || 0,
-        include: { user: true, paymentMethod: true },
+        include: { user: true },
       }),
       prisma.payoutRequest.count({ where }),
     ]);
 
-    return { payouts: payouts.map(withImageUrls), count };
+    return { payouts, count };
   },
 
   async submitForReview(id: string) {
-    const payout = await prisma.payoutRequest.update({
+    return prisma.payoutRequest.update({
       where: { id },
-      data: { status: "UNDER_REVIEW" },
-      include: { paymentMethod: true },
+      data: { status: 'UNDER_REVIEW' },
     });
-    return withImageUrls(payout);
   },
 
   async approve(id: string, adminId: string) {
-    const payout = await prisma.payoutRequest.update({
+    return prisma.payoutRequest.update({
       where: { id },
       data: {
-        status: "APPROVED",
+        status: 'APPROVED',
         approvedAt: new Date(),
         approvedBy: adminId,
       },
-      include: { paymentMethod: true, user: true },
     });
-    return withImageUrls(payout);
   },
 
   async reject(id: string, adminId: string, rejectionReason: string) {
-    const payout = await prisma.payoutRequest.update({
+    return prisma.payoutRequest.update({
       where: { id },
       data: {
-        status: "REJECTED",
+        status: 'REJECTED',
         rejectedAt: new Date(),
         rejectedBy: adminId,
         rejectionReason,
       },
-      include: { paymentMethod: true, user: true },
     });
-    return withImageUrls(payout);
   },
 
-  async markPaid(id: string, adminId: string, transactionHash: string, paymentProofImage?: string) {
-    const payout = await prisma.payoutRequest.update({
+  async markPaid(id: string, adminId: string, transactionHash: string) {
+    return prisma.payoutRequest.update({
       where: { id },
       data: {
-        status: "PAID",
+        status: 'PAID',
         paidAt: new Date(),
         paidBy: adminId,
         transactionHash,
-        ...(paymentProofImage && { paymentProofImage }),
       },
-      include: { paymentMethod: true, user: true },
     });
     return withImageUrls(payout);
   },
 
-  async getStatusCounts(type?: PayoutType) {
+  async getStatusCounts() {
     const counts = await prisma.payoutRequest.groupBy({
       by: ["status"],
-      where: type ? { type } : undefined,
       _count: { status: true },
     });
     return counts.reduce(

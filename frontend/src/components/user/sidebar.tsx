@@ -10,7 +10,6 @@ import {
   TrendingUp,
   User,
   Menu,
-  Bell,
   QrCode,
   FileText,
   DollarSign,
@@ -57,12 +56,7 @@ const routes = [
     href: "/dashboard/deposits",
   },
   {
-    label: "Merchant Payouts",
-    icon: DollarSign,
-    href: "/dashboard/merchant/payouts",
-  },
-  {
-    label: "User Payouts",
+    label: "Payout Requests",
     icon: TrendingUp,
     href: "/dashboard/payouts",
   },
@@ -80,11 +74,6 @@ const routes = [
     label: "History",
     icon: History,
     href: "/dashboard/orders",
-  },
-  {
-    label: "Notifications",
-    icon: Bell,
-    href: "/dashboard/notifications",
   },
   {
     label: "Profile",

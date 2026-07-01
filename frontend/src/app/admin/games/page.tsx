@@ -23,6 +23,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { getAllGamesAction, createGameAction, updateGameAction, deleteGameAction, uploadGameLogoAction } from "@/actions/admin.actions";
+import { resolveMediaUrl } from "@/lib/media";
 
 export default function GamesPage() {
   const queryClient = useQueryClient();
@@ -180,7 +181,7 @@ console.log(games);
             {/* Poster Preview */}
             <div className="relative aspect-[3/2] bg-[#0B0E11] overflow-hidden border-b-2 border-[#2B3139]">
               {game.logo ? (
-                <Image src={game.logo} alt={game.name} fill className="object-cover group-hover:scale-110 transition-transform duration-700" />
+                <Image src={resolveMediaUrl(game.logo)} alt={game.name} fill className="object-cover group-hover:scale-110 transition-transform duration-700" unoptimized />
               ) : (
                 <div className="absolute inset-0 flex items-center justify-center text-[#474D57]">
                   <ImageIcon className="h-16 w-16 opacity-20" />

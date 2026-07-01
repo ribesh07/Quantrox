@@ -8,156 +8,170 @@ import {
   ExchangeStatus,
   GamePointOrderStatus,
   NotificationType,
-  UserStatus,
-  DepositType,
-  DepositStatus,
-  PayoutStatus,
-  ReportStatus,
-  TransactionType,
-  WalletStatus,
 } from '@prisma/client';
-
 import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
-const SEED_MARKER = 'seed-demo';
-
-async function seedIfEmpty(
-  modelName: string,
-  count: number,
-  seedFn: () => Promise<void>
-) {
-  if (count === 0) {
-    await seedFn();
-    console.log(`  ✓ ${modelName}`);
-  } else {
-    console.log(`  ↷ ${modelName} (skipped, already has data)`);
-  }
-}
-
 async function main() {
   console.log('🌱 Seeding database...');
+
+  // USERS
+ 
 
   const adminPassword = await bcrypt.hash('admin123', 10);
   const staffPassword = await bcrypt.hash('staff123', 10);
   const userPassword = await bcrypt.hash('password123', 10);
 
-  // ---------------- USERS ----------------
   const admin = await prisma.user.upsert({
     where: { email: 'admin@settlerpay.com' },
-    update: { status: UserStatus.ACTIVE },
+    update: {},
     create: {
       email: 'admin@settlerpay.com',
       username: 'admin',
       password: adminPassword,
       role: Role.SUPER_ADMIN,
-      status: UserStatus.ACTIVE,
     },
   });
 
   const staff = await prisma.user.upsert({
     where: { email: 'staff@settlerpay.com' },
-    update: { status: UserStatus.ACTIVE },
+    update: {},
     create: {
       email: 'staff@settlerpay.com',
       username: 'staff',
       password: staffPassword,
       role: Role.STAFF_ADMIN,
-      status: UserStatus.ACTIVE,
     },
   });
 
   const users: any[] = [];
   for (let i = 1; i <= 6; i++) {
     const user = await prisma.user.upsert({
-      where: { email: `user${i}@example.com` },
-      update: { status: UserStatus.ACTIVE },
+      where: {
+        email: `user${i}@example.com`,
+      },
+      update: {},
       create: {
         email: `user${i}@example.com`,
         username: `user${i}`,
         password: userPassword,
-        status: UserStatus.ACTIVE,
       },
     });
+
     users.push(user);
   }
 
-  const suspendedUser = await prisma.user.upsert({
-    where: { email: 'suspended@example.com' },
-    update: {},
-    create: {
-      email: 'suspended@example.com',
-      username: 'suspended_user',
-      password: userPassword,
-      status: UserStatus.SUSPENDED,
-    },
-  });
+  
+  // PAYMENT METHODS
 
-  // ---------------- PAYMENT METHODS ----------------
+
   const paymentMethods = [
-    { name: 'USDT (TRC20)', category: PaymentMethodCategory.BOTH, feePercentage: 0, rate: 1, details: 'TRON network USDT deposits and payouts' },
-    { name: 'USDT (BEP20)', category: PaymentMethodCategory.DEPOSIT, feePercentage: 0, rate: 1, details: 'BSC network USDT' },
-    { name: 'USDT (ERC20)', category: PaymentMethodCategory.DEPOSIT, feePercentage: 0, rate: 1, details: 'Ethereum network USDT' },
-    { name: 'Cash App', category: PaymentMethodCategory.BOTH, feePercentage: 5, rate: 0.95, details: '$Cashtag payments' },
-    { name: 'Zelle', category: PaymentMethodCategory.BOTH, feePercentage: 5, rate: 0.97, details: 'Bank Zelle transfers' },
-    { name: 'Venmo', category: PaymentMethodCategory.BOTH, feePercentage: 5, rate: 0.95, details: 'Venmo wallet payments' },
-    { name: 'Chime', category: PaymentMethodCategory.BOTH, feePercentage: 5, rate: 0.96, details: 'Chime pay friends' },
-    { name: 'Stripe', category: PaymentMethodCategory.DEPOSIT, feePercentage: 5, rate: 1, details: 'Card payments via Stripe' },
-    { name: 'PayPal', category: PaymentMethodCategory.BOTH, feePercentage: 5, rate: 0.92, details: 'PayPal balance or card' },
-    { name: 'Apple Pay', category: PaymentMethodCategory.DEPOSIT, feePercentage: 5, rate: 1, details: 'Apple Pay checkout' },
-    { name: 'Wire Transfer', category: PaymentMethodCategory.EXCHANGE, feePercentage: 3, rate: 1, details: 'Exchange-only bank wire' },
+    {
+      name: 'USDT (TRC20)',
+      category: PaymentMethodCategory.DEPOSIT,
+      feePercentage: 0,
+      rate: 1,
+    },
+    {
+      name: 'USDT (BEP20)',
+      category: PaymentMethodCategory.DEPOSIT,
+      feePercentage: 0,
+      rate: 1,
+    },
+    {
+      name: 'USDT (ERC20)',
+      category: PaymentMethodCategory.DEPOSIT,
+      feePercentage: 0,
+      rate: 1,
+    },
+    {
+      name: 'Cash App',
+      category: PaymentMethodCategory.BOTH,
+      feePercentage: 5,
+      rate: 0.95,
+    },
+    {
+      name: 'Zelle',
+      category: PaymentMethodCategory.BOTH,
+      feePercentage: 5,
+      rate: 0.97,
+    },
+    {
+      name: 'Venmo',
+      category: PaymentMethodCategory.BOTH,
+      feePercentage: 5,
+      rate: 0.95,
+    },
+    {
+      name: 'Chime',
+      category: PaymentMethodCategory.BOTH,
+      feePercentage: 5,
+      rate: 0.96,
+    },
+    {
+      name: 'Stripe',
+      category: PaymentMethodCategory.DEPOSIT,
+      feePercentage: 5,
+      rate: 1,
+    },
+    {
+      name: 'PayPal',
+      category: PaymentMethodCategory.BOTH,
+      feePercentage: 5,
+      rate: 0.92,
+    },
+    {
+      name: 'Apple Pay',
+      category: PaymentMethodCategory.DEPOSIT,
+      feePercentage: 5,
+      rate: 1,
+    },
   ];
 
   for (const method of paymentMethods) {
     await prisma.paymentMethod.upsert({
       where: { name: method.name },
-      update: {
-        category: method.category,
-        feePercentage: method.feePercentage,
-        rate: method.rate,
-        details: method.details,
-        active: true,
-      },
+      update: method,
       create: method,
     });
   }
 
   const paymentMethodsDb = await prisma.paymentMethod.findMany();
-  const methodByName = (name: string) => paymentMethodsDb.find((m) => m.name === name)!;
-  const usdtTrc = methodByName('USDT (TRC20)');
-  const cashApp = methodByName('Cash App');
-  const zelle = methodByName('Zelle');
-  const wireTransfer = methodByName('Wire Transfer');
 
-  // ---------------- GAMES ----------------
-  const gamesData = [
-    { id: 'juwa-online', name: 'Juwa Online', buyRate: 1, sellRate: 0.98, active: true },
-    { id: 'firekirin', name: 'Firekirin', buyRate: 1, sellRate: 0.97, active: true },
-    { id: 'orion-stars', name: 'Orion Stars', buyRate: 1.05, sellRate: 1, active: true },
-    { id: 'game-vault', name: 'Game Vault', buyRate: 1, sellRate: 0.99, active: true },
-    { id: 'panda-master', name: 'Panda Master', buyRate: 0.95, sellRate: 0.94, active: true },
-    { id: 'ultra-monster', name: 'Ultra Monster', buyRate: 1, sellRate: 1, active: true },
-    { id: 'legacy-slots', name: 'Legacy Slots', buyRate: 0.9, sellRate: 0.85, active: false },
+  // GAMES
+ 
+
+  const games = [
+    'Juwa Online',
+    'Firekirin',
+    'Orion Stars',
+    'Game Vault',
+    'Panda Master',
+    'Ultra Monster',
   ];
 
-  for (const game of gamesData) {
+  for (const gameName of games) {
     await prisma.game.upsert({
-      where: { id: game.id },
-      update: {
-        name: game.name,
-        buyRate: game.buyRate,
-        sellRate: game.sellRate,
-        active: game.active,
+      where: {
+        id: gameName.toLowerCase().replace(/\s+/g, '-'),
       },
-      create: game,
+      update: {},
+      create: {
+        id: gameName.toLowerCase().replace(/\s+/g, '-'),
+        name: gameName,
+        buyRate: 1,
+        sellRate: 1,
+        active: true,
+      },
     });
   }
 
-  const games = await prisma.game.findMany({ where: { active: true } });
-  const primaryGame = games[0];
+  const game = await prisma.game.findFirst();
 
-  // ---------------- SYSTEM SETTINGS ----------------
+  // SYSTEM SETTINGS
+
+
   if (!(await prisma.systemSettings.findFirst())) {
     await prisma.systemSettings.create({
       data: {
@@ -167,108 +181,112 @@ async function main() {
         maxGamePurchaseAmount: 10000,
         exchangeProcessTime: 300,
         requiresApprovalAmount: 5000,
-        twoFactorRequired: false,
-        maintenanceMode: false,
-        maintenanceMessage: null,
       },
     });
   }
 
-  // ---------------- FEE SETTINGS ----------------
-  const feeSettings = [
-    { feeType: FeeType.EXCHANGE_FEE, percentage: 5, description: 'Default Exchange Fee' },
-    { feeType: FeeType.DEPOSIT_FEE, percentage: 2, description: 'Default Deposit Fee' },
-    { feeType: FeeType.WITHDRAWAL_FEE, percentage: 1.5, description: 'Default Withdrawal Fee' },
-    { feeType: FeeType.TRANSFER_FEE, percentage: 0.5, description: 'Default Transfer Fee' },
-  ];
+ 
+  // FEE SETTINGS
+ 
 
-  for (const fee of feeSettings) {
-    const existing = await prisma.feeSetting.findFirst({ where: { feeType: fee.feeType } });
-    if (!existing) {
-      await prisma.feeSetting.create({ data: fee });
-    }
+  if ((await prisma.feeSetting.count()) === 0) {
+    await prisma.feeSetting.createMany({
+      data: [
+        {
+          feeType: FeeType.EXCHANGE_FEE,
+          percentage: 5,
+          description: 'Default Exchange Fee',
+        },
+        {
+          feeType: FeeType.DEPOSIT_FEE,
+          percentage: 2,
+          description: 'Default Deposit Fee',
+        },
+      ],
+    });
   }
 
-  // ---------------- EXCHANGE RATES ----------------
-  await seedIfEmpty('Exchange rates', await prisma.exchangeRate.count(), async () => {
-    for (const method of [usdtTrc, cashApp, zelle, wireTransfer]) {
-      await prisma.exchangeRate.create({
+  
+  // PAYMENT ACCOUNTS
+
+
+  for (const method of paymentMethodsDb) {
+    const existing = await prisma.paymentAccount.findFirst({
+      where: {
+        paymentMethodId: method.id,
+      },
+    });
+
+    if (!existing) {
+      await prisma.paymentAccount.create({
         data: {
           paymentMethodId: method.id,
-          baseCurrency: 'USD',
-          targetCurrency: 'USDT',
-          rate: method.rate,
-          isActive: true,
+          accountName: 'SettlerPay',
+          email:
+            method.name === 'PayPal'
+              ? 'payments@settlerpay.com'
+              : null,
+          walletAddress: method.name.includes('USDT')
+            ? 'TXXXXXXXXXXXXXXXXXXXXXXXXXXXX'
+            : null,
+          instructions: `Send payment via ${method.name}`,
         },
       });
     }
-  });
+  }
 
-  // ---------------- PAYMENT ACCOUNTS ----------------
-  for (const method of paymentMethodsDb) {
-    await prisma.paymentAccount.upsert({
-      where: { paymentMethodId: method.id },
-      update: {
-        accountName: 'SettlerPay',
-        email: method.name === 'PayPal' ? 'payments@settlerpay.com' : null,
-        walletAddress: method.name.includes('USDT') ? 'TSeedWalletAddressXXXXXXXXXXXX' : null,
-        instructions: `Send payment via ${method.name}. Reference your username in the memo.`,
-        isActive: true,
+
+  // NOTIFICATION TEMPLATES
+
+
+  const templates = [
+    {
+      code: 'ORDER_APPROVED',
+      title: 'Order Approved',
+      subject: 'Order Approved',
+      body: 'Your order {{orderId}} has been approved.',
+      type: 'EMAIL',
+    },
+    {
+      code: 'ORDER_REJECTED',
+      title: 'Order Rejected',
+      subject: 'Order Rejected',
+      body: 'Your order {{orderId}} has been rejected.',
+      type: 'EMAIL',
+    },
+  ];
+
+  for (const template of templates) {
+    await prisma.notificationTemplate.upsert({
+      where: {
+        code: template.code,
       },
+      update: {},
+      create: template,
+    });
+  }
+
+  // USER SETTINGS
+ 
+
+  for (const user of users) {
+    await prisma.notificationPreference.upsert({
+      where: {
+        userId: user.id,
+      },
+      update: {},
       create: {
-        paymentMethodId: method.id,
-        accountName: 'SettlerPay',
-        email: method.name === 'PayPal' ? 'payments@settlerpay.com' : null,
-        walletAddress: method.name.includes('USDT') ? 'TSeedWalletAddressXXXXXXXXXXXX' : null,
-        instructions: `Send payment via ${method.name}. Reference your username in the memo.`,
+        userId: user.id,
       },
     });
   }
 
-  // ---------------- PLATFORM QR CODES ----------------
-  await seedIfEmpty('Platform QR codes', await prisma.qRCode.count(), async () => {
-    await prisma.qRCode.createMany({
-      data: [
-        { image: '/uploads/seed/platform-qr-active.png', active: true },
-        { image: '/uploads/seed/platform-qr-backup.png', active: true },
-        { image: '/uploads/seed/platform-qr-inactive.png', active: false },
-      ],
-    });
-  });
+ 
+  // WALLETS
+ 
 
-  // ---------------- NOTIFICATION TEMPLATES ----------------
-  await seedIfEmpty('Notification templates', await prisma.notificationTemplate.count(), async () => {
-    await prisma.notificationTemplate.createMany({
-      data: [
-        {
-          code: 'ORDER_APPROVED',
-          title: 'Order Approved',
-          subject: 'Your order has been approved',
-          body: 'Hello {{username}}, your order {{orderId}} has been approved.',
-          type: 'IN_APP',
-        },
-        {
-          code: 'MERCHANT_APPROVED',
-          title: 'Merchant Approved',
-          subject: 'Your merchant account is active',
-          body: 'Hello {{username}}, your merchant application for {{businessName}} was approved.',
-          type: 'IN_APP',
-        },
-        {
-          code: 'PAYOUT_PAID',
-          title: 'Payout Completed',
-          subject: 'Your payout has been sent',
-          body: 'Your payout of {{amount}} was sent. TX: {{transactionHash}}',
-          type: 'EMAIL',
-        },
-      ],
-    });
-  });
-
-  // ---------------- WALLETS ----------------
-  const walletSeedTargets = [...users, suspendedUser];
-  for (const user of walletSeedTargets) {
-    for (const method of [usdtTrc, cashApp, zelle]) {
+  for (const user of users) {
+    for (const method of paymentMethodsDb) {
       await prisma.wallet.upsert({
         where: {
           userId_paymentMethodId: {
@@ -280,94 +298,57 @@ async function main() {
         create: {
           userId: user.id,
           paymentMethodId: method.id,
-          balance: user.id === suspendedUser.id ? 0 : 250 + Math.random() * 500,
-          pendingBalance: user.id === users[0].id ? 50 : 0,
-          frozenBalance: user.id === users[1].id ? 25 : 0,
-          status: user.id === suspendedUser.id ? WalletStatus.BLOCKED : WalletStatus.ACTIVE,
+          balance: Math.floor(Math.random() * 5000),
         },
       });
     }
   }
 
-  // ---------------- MERCHANT USERS & PROFILES ----------------
-  console.log('🏪 Seeding merchant demo data...');
+  
+  // SAMPLE DATA
+ 
 
-  const merchantProfiles = [
-    {
-      email: 'merchant1@example.com',
-      username: 'merchant1',
-      businessName: 'QuickPay Gaming Lounge',
-      businessDescription: 'Mobile game top-up and wallet services',
-      expectedDailyVolume: 5000,
-      approved: true,
-    },
-    {
-      email: 'merchant2@example.com',
-      username: 'merchant2',
-      businessName: 'Neon Arcade Exchange',
-      businessDescription: 'Pending merchant application for review',
-      expectedDailyVolume: 2500,
-      approved: false,
-    },
-    {
-      email: 'merchant3@example.com',
-      username: 'merchant3',
-      businessName: 'Star Points Hub',
-      businessDescription: 'Mixed transaction merchant',
-      expectedDailyVolume: 8000,
-      approved: true,
-    },
-  ];
+  for (const user of users) {
+    const method = paymentMethodsDb[0];
 
-  const seededMerchants: { user: { id: string; email: string; username: string }; approved: boolean }[] = [];
-
-  for (const profile of merchantProfiles) {
-    const merchantUser = await prisma.user.upsert({
-      where: { email: profile.email },
-      update: { status: UserStatus.ACTIVE },
-      create: {
-        email: profile.email,
-        username: profile.username,
-        password: userPassword,
-        status: UserStatus.ACTIVE,
+    const order = await prisma.order.create({
+      data: {
+        userId: user.id,
+        type: OrderType.GAME_TOPUP,
+        paymentMethodId: method.id,
+        amount: 100,
+        fee: 5,
+        total: 105,
+        rate: 1,
+        receivedAmount: 100,
+        status: OrderStatus.APPROVED,
+        gameId: game?.id,
+        gameUsername: `${user.username}_player`,
       },
     });
 
-    const merchantWallet = await prisma.wallet.upsert({
-      where: {
-        userId_paymentMethodId: {
-          userId: merchantUser.id,
-          paymentMethodId: usdtTrc.id,
-        },
-      },
-      update: {
-        balance: profile.approved ? 3500 : 500,
-      },
-      create: {
-        userId: merchantUser.id,
-        paymentMethodId: usdtTrc.id,
-        balance: profile.approved ? 3500 : 500,
+    await prisma.transaction.create({
+      data: {
+        orderId: order.id,
+        userId: user.id,
+        amount: order.total,
+        type: 'GAME_TOPUP',
+        status: 'SUCCESS',
       },
     });
 
-    await prisma.merchantInfo.upsert({
-      where: { userId: merchantUser.id },
-      update: {
-        businessName: profile.businessName,
-        businessDescription: profile.businessDescription,
-        expectedDailyVolume: profile.expectedDailyVolume,
-        preferredWalletId: merchantWallet.id,
-        approvedAt: profile.approved ? new Date() : null,
-        approvedBy: profile.approved ? admin.id : null,
-      },
-      create: {
-        userId: merchantUser.id,
-        businessName: profile.businessName,
-        businessDescription: profile.businessDescription,
-        preferredWalletId: merchantWallet.id,
-        expectedDailyVolume: profile.expectedDailyVolume,
-        approvedAt: profile.approved ? new Date() : null,
-        approvedBy: profile.approved ? admin.id : null,
+    await prisma.exchangeRequest.create({
+      data: {
+        userId: user.id,
+        amount: 500,
+        fee: 25,
+        total: 525,
+        rate: 1,
+        usdtReceived: 500,
+        walletAddress: 'TRON_WALLET_TEST',
+        paymentMethodId: method.id,
+        status: ExchangeStatus.APPROVED,
+        approvedAt: new Date(),
       },
     });
 
@@ -510,13 +491,21 @@ async function main() {
     const approvedMerchants = seededMerchants.filter((m) => m.approved);
     await prisma.merchantQRCode.create({
       data: {
-        userId: approvedMerchants[0].user.id,
-        imageUrl: '/uploads/seed/merchant-qr-active.png',
-        assignedBy: admin.id,
-        active: true,
+        userId: user.id,
+        gameId: game!.id,
+        points: 1000,
+        pricePerPoint: 0.01,
+        totalPrice: 10,
+        fee: 1,
+        finalPrice: 11,
+        paymentMethodId: method.id,
+        gameUsername: `${user.username}_player`,
+        status: GamePointOrderStatus.FULFILLED,
+        fulfilledAt: new Date(),
       },
     });
-    await prisma.merchantQRCode.create({
+
+    await prisma.notification.create({
       data: {
         userId: approvedMerchants[1].user.id,
         imageUrl: '/uploads/seed/merchant-qr-disabled.png',
@@ -594,7 +583,6 @@ async function main() {
       await prisma.payoutRequest.create({
         data: {
           userId: sample.merchant.user.id,
-          type: "MERCHANT",
           amount: sample.amount,
           walletAddress: 'TRON_PAYOUT_WALLET_SEED',
           walletNetwork: 'TRC20',
@@ -609,29 +597,6 @@ async function main() {
           paidAt: sample.status === PayoutStatus.PAID ? new Date() : null,
           transactionHash: sample.status === PayoutStatus.PAID ? '0xseedtxhash123456789abcdef' : null,
           paidBy: sample.status === PayoutStatus.PAID ? admin.id : null,
-        },
-      });
-    }
-
-    const cashApp = methodByName('Cash App');
-    const userPayoutSamples = [
-      { user: users[0], status: PayoutStatus.PENDING, amount: 75, uid: '$seeduser1' },
-      { user: users[1], status: PayoutStatus.APPROVED, amount: 120, uid: '$seeduser2' },
-    ];
-
-    for (const sample of userPayoutSamples) {
-      await prisma.payoutRequest.create({
-        data: {
-          userId: sample.user.id,
-          type: "USER",
-          paymentMethodId: cashApp.id,
-          amount: sample.amount,
-          uid: sample.uid,
-          qrCodeImage: '/uploads/seed/payout-qr.png',
-          remarks: `${SEED_MARKER} user payout request`,
-          status: sample.status,
-          approvedAt: sample.status === PayoutStatus.APPROVED ? new Date() : null,
-          approvedBy: sample.status === PayoutStatus.APPROVED ? admin.id : null,
         },
       });
     }
@@ -762,4 +727,6 @@ main()
     console.error('❌ Seed failed:', e);
     // process.exit(1);
   })
-  .finally(async () => prisma.$disconnect());
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

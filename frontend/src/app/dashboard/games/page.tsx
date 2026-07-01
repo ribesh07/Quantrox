@@ -14,8 +14,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Gamepad2, Search, Loader2, DollarSign, User, TrendingUp, Info, QrCode, UploadCloud } from "lucide-react";
+import { Gamepad2, Search, Loader2, DollarSign, User, TrendingUp, Info, QrCode, UploadCloud, Mail, Lock, MessageSquare } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -31,6 +32,8 @@ import Image from "next/image";
 import { getActiveGamesAction } from "@/actions/game.actions";
 import { createOrderAction, uploadOrderProofAction } from "@/actions/order.actions";
 import { getPaymentMethodsAction } from "@/actions/payment.actions";
+import { createGameIdRequestAction, getMyGameIdRequestsAction } from "@/actions/user.actions";
+import { resolveMediaUrl } from "@/lib/media";
 
 export default function GamesPage() {
   const router = useRouter();
@@ -43,6 +46,10 @@ export default function GamesPage() {
   const [paymentProof, setPaymentProof] = useState<File | null>(null);
   const [paymentPreview, setPaymentPreview] = useState<string | null>(null);
   const [orderId, setOrderId] = useState<string | null>(null);
+  const [requestType, setRequestType] = useState<"GAME_ID" | "EMAIL_PASSWORD">("GAME_ID");
+  const [requestEmail, setRequestEmail] = useState("");
+  const [requestPassword, setRequestPassword] = useState("");
+  const [showRequests, setShowRequests] = useState(false);
 
   const { data: games, isLoading: gamesLoading } = useQuery({
     queryKey: ["games"],
@@ -61,6 +68,15 @@ export default function GamesPage() {
       const result = await getPaymentMethodsAction("BOTH");
       if (!result.success) throw new Error(result.error);
       return result.methods;
+    },
+  });
+
+  const { data: myRequests } = useQuery({
+    queryKey: ["my-game-id-requests"],
+    queryFn: async () => {
+      const res = await getMyGameIdRequestsAction();
+      if (!res.success) throw new Error(res.error);
+      return res.requests;
     },
   });
 
@@ -129,6 +145,27 @@ export default function GamesPage() {
     },
   });
 
+  const createRequestMutation = useMutation({
+    mutationFn: async () => {
+      const res = await createGameIdRequestAction({
+        gameId: selectedGame.id,
+        requestType,
+        gameUsername: requestType === "GAME_ID" ? gameUsername : undefined,
+        email: requestType === "EMAIL_PASSWORD" ? requestEmail : undefined,
+        password: requestType === "EMAIL_PASSWORD" ? requestPassword : undefined,
+      });
+      if (!res.success) throw new Error(res.error);
+      return res.request;
+    },
+    onSuccess: () => {
+      toast.success("Game ID request submitted successfully!");
+      closeDialog();
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to submit request");
+    },
+  });
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (step === 1) {
@@ -146,6 +183,11 @@ export default function GamesPage() {
     uploadMutation.mutate();
   };
 
+  const handleRequestSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    createRequestMutation.mutate();
+  };
+
   const closeDialog = () => {
     setSelectedGame(null);
     setAmount("");
@@ -155,6 +197,9 @@ export default function GamesPage() {
     setPaymentProof(null);
     setPaymentPreview(null);
     setOrderId(null);
+    setRequestType("GAME_ID");
+    setRequestEmail("");
+    setRequestPassword("");
   };
 
   return (
@@ -168,16 +213,67 @@ export default function GamesPage() {
           <p className="text-[#848E9C] font-medium text-base md:text-xl">Instant top-ups for trending games.</p>
         </div>
         
-        <div className="relative w-full md:w-[450px] group">
-          <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-[#848E9C] group-focus-within:text-primary transition-colors" />
-          <Input 
-            placeholder="Search your favorite game..." 
-            className="pl-14 h-16 rounded-2xl border-2 border-[#2B3139] bg-[#1E2329] text-white focus:border-primary transition-all text-lg placeholder:text-[#474D57] shadow-2xl"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+        <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
+          <div className="relative w-full md:w-[450px] group">
+            <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-[#848E9C] group-focus-within:text-primary transition-colors" />
+            <Input 
+              placeholder="Search your favorite game..." 
+              className="pl-14 h-16 rounded-2xl border-2 border-[#2B3139] bg-[#1E2329] text-white focus:border-primary transition-all text-lg placeholder:text-[#474D57] shadow-2xl"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          <Button 
+            onClick={() => setShowRequests(!showRequests)}
+            className="h-16 rounded-2xl bg-[#1E2329] border-2 border-[#2B3139] hover:bg-[#2B3139] text-white font-bold"
+          >
+            <MessageSquare className="h-5 w-5 mr-2" />
+            My Requests
+          </Button>
         </div>
       </div>
+
+      {showRequests && (
+        <div className="px-4 md:px-0">
+          <Card className="bg-[#1E2329] border-2 border-[#2B3139] rounded-[2rem] overflow-hidden">
+            <CardContent className="p-6 md:p-8">
+              <h2 className="text-2xl font-black text-white mb-6">My Game ID Requests</h2>
+              {myRequests?.length === 0 ? (
+                <p className="text-[#848E9C]">No requests yet.</p>
+              ) : (
+                <div className="space-y-4">
+                  {myRequests?.map((req: any) => (
+                    <div key={req.id} className="bg-[#0B0E11] rounded-xl p-4 border border-[#2B3139]">
+                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
+                        <div>
+                          <h3 className="text-white font-bold">{req.game?.name}</h3>
+                          <p className="text-[#848E9C] text-sm">
+                            {req.requestType === "GAME_ID" ? "Game ID" : "Email/Password"} • {new Date(req.createdAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <div className={cn(
+                          "px-3 py-1 rounded-full text-sm font-bold",
+                          req.status === "PENDING" ? "bg-yellow-500/20 text-yellow-500" :
+                          req.status === "APPROVED" ? "bg-green-500/20 text-green-500" :
+                          "bg-red-500/20 text-red-500"
+                        )}>
+                          {req.status}
+                        </div>
+                      </div>
+                      {req.response && (
+                        <div className="mt-3 p-3 bg-[#1E2329] rounded-lg border border-[#2B3139]">
+                          <p className="text-[#848E9C] text-xs font-black uppercase tracking-wider mb-1">Response</p>
+                          <p className="text-white">{req.response}</p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {gamesLoading ? (
         <div className="flex flex-col items-center justify-center py-40 gap-4">
@@ -215,10 +311,11 @@ export default function GamesPage() {
               <div className="aspect-[2/3] md:aspect-[3/4] rounded-[1rem] md:rounded-[1.5rem] overflow-hidden border-2 border-[#2B3139] bg-[#1E2329] group-hover:border-primary transition-all duration-500 shadow-xl hover:shadow-primary/20 hover:-translate-y-2 relative">
                 {game.logo ? (
                   <Image 
-                    src={game.logo} 
+                    src={resolveMediaUrl(game.logo)} 
                     alt={game.name} 
                     fill 
                     className="object-cover group-hover:scale-110 transition-transform duration-700"
+                    unoptimized
                   />
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-[#1E2329] to-[#0B0E11]">
@@ -264,9 +361,9 @@ export default function GamesPage() {
       )}
 
       <Dialog open={!!selectedGame} onOpenChange={(open) => !open && closeDialog()}>
-        <DialogContent className="bg-[#1E2329] border-2 border-[#2B3139] text-white rounded-[2rem] md:rounded-[3rem] max-w-3xl p-0 overflow-hidden shadow-2xl">
+        <DialogContent className="bg-[#1E2329] border-2 border-[#2B3139] text-white rounded-[2rem] md:rounded-[3rem] max-w-3xl p-0 overflow-hidden shadow-2xl max-h-[90vh] overflow-y-auto">
           {selectedGame && (
-            <form onSubmit={handleSubmit} className="relative">
+            <Tabs defaultValue="topup" className="relative">
               <div className="h-40 bg-gradient-to-br from-primary to-primary/40 relative flex items-end px-6 md:px-10 pb-6 overflow-hidden">
                 <div className="absolute -right-10 -top-10 opacity-20">
                   <Gamepad2 className="h-40 w-40 text-[#0B0E11]" />
@@ -275,205 +372,325 @@ export default function GamesPage() {
                 <div className="absolute top-6 right-6">
                   <div className="bg-black/20 backdrop-blur-md px-4 py-1.5 rounded-full text-[10px] md:text-xs font-black uppercase tracking-widest text-white border border-white/10 flex items-center gap-2">
                     <span className="h-2 w-2 rounded-full bg-white animate-pulse" />
-                    Secure Top-up
+                    {selectedGame.name}
                   </div>
                 </div>
                 
                 <div className="space-y-1">
-                  <h2 className="text-3xl md:text-4xl font-black text-[#0B0E11] tracking-tighter line-clamp-1 leading-none">
+                  <h2 className="text-2xl md:text-4xl font-black text-[#0B0E11] tracking-tighter line-clamp-1 leading-none">
                     {selectedGame.name}
                   </h2>
                   <p className="text-[#0B0E11]/70 font-bold text-sm md:text-base">1 USD = {selectedGame.buyRate} Credits</p>
                 </div>
               </div>
 
-              <div className="p-6 md:p-10 space-y-8">
-                {step === 1 ? (
-                  <>
-                    <div className="space-y-6">
-                      <div className="space-y-2">
-                        <Label className="text-[#848E9C] uppercase text-xs font-black tracking-widest">Select Payment Method</Label>
-                        <Select value={selectedMethodId} onValueChange={setSelectedMethodId}>
-                          <SelectTrigger className="h-14 bg-[#0B0E11] border-[#2B3139] text-white rounded-xl">
-                            <SelectValue placeholder="Choose a payment method" />
-                          </SelectTrigger>
-                          <SelectContent className="bg-[#1E2329] border-[#2B3139] text-white">
-                            {methods?.map((method: any) => (
-                              <SelectItem key={method.id} value={method.id}>
-                                {method.name} {method.feePercentage === 0 ? "(No Fee)" : `(${method.feePercentage}% fee)`}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+              <TabsList className="w-full grid grid-cols-2 bg-[#0B0E11] border-b border-[#2B3139] p-2">
+                <TabsTrigger value="topup" className="data-[state=active]:bg-primary data-[state=active]:text-[#0B0E11] rounded-xl py-3 font-bold">
+                  Top Up
+                </TabsTrigger>
+                <TabsTrigger value="request" className="data-[state=active]:bg-primary data-[state=active]:text-[#0B0E11] rounded-xl py-3 font-bold">
+                  Request Game ID
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="topup" className="p-6 md:p-8 space-y-8">
+                <form onSubmit={handleSubmit} className="space-y-8">
+                  {step === 1 ? (
+                    <>
+                      <div className="space-y-6">
+                        <div className="space-y-2">
+                          <Label className="text-[#848E9C] uppercase text-xs font-black tracking-widest">Select Payment Method</Label>
+                          <Select value={selectedMethodId} onValueChange={setSelectedMethodId}>
+                            <SelectTrigger className="h-14 bg-[#0B0E11] border-[#2B3139] text-white rounded-xl">
+                              <SelectValue placeholder="Choose a payment method" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-[#1E2329] border-[#2B3139] text-white">
+                              {methods?.map((method: any) => (
+                                <SelectItem key={method.id} value={method.id}>
+                                  {method.name} {method.feePercentage === 0 ? "(No Fee)" : `(${method.feePercentage}% fee)`}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-3">
+                          <Label className="text-[#848E9C] font-black text-xs uppercase tracking-widest ml-1">Game Username / ID</Label>
+                          <div className="relative group">
+                            <div className="absolute left-5 top-1/2 -translate-y-1/2 h-6 w-6 text-[#474D57] group-focus-within:text-primary transition-colors z-10">
+                              <User className="h-full w-full" />
+                            </div>
+                            <Input
+                              placeholder="Enter your unique ID"
+                              className="pl-14 h-16 rounded-2xl border-2 border-[#2B3139] bg-[#0B0E11] text-white focus:border-primary transition-all font-bold text-lg placeholder:text-[#474D57]"
+                              value={gameUsername}
+                              onChange={(e) => setGameUsername(e.target.value)}
+                              required
+                            />
+                          </div>
+                        </div>
+
+                        <div className="space-y-3">
+                          <Label className="text-[#848E9C] font-black text-xs uppercase tracking-widest ml-1">Amount to Buy (USD)</Label>
+                          <div className="relative group">
+                            <div className="absolute left-5 top-1/2 -translate-y-1/2 h-6 w-6 text-[#474D57] group-focus-within:text-primary transition-colors z-10">
+                              <DollarSign className="h-full w-full" />
+                            </div>
+                            <Input
+                              type="number"
+                              placeholder="0.00"
+                              className="pl-14 h-16 rounded-2xl border-2 border-[#2B3139] bg-[#0B0E11] text-white focus:border-primary transition-all font-black text-2xl placeholder:text-[#474D57]"
+                              value={amount}
+                              onChange={(e) => setAmount(e.target.value)}
+                              required
+                              min="1"
+                              step="0.01"
+                            />
+                          </div>
+                        </div>
                       </div>
 
-                      <div className="space-y-3">
-                        <Label className="text-[#848E9C] font-black text-xs uppercase tracking-widest ml-1">Game Username / ID</Label>
-                        <div className="relative group">
-                          <div className="absolute left-5 top-1/2 -translate-y-1/2 h-6 w-6 text-[#474D57] group-focus-within:text-primary transition-colors z-10">
-                            <User className="h-full w-full" />
+                      {selectedMethod && amount && (
+                        <div className="bg-[#0B0E11] rounded-[2.5rem] p-8 border-2 border-[#2B3139] space-y-6 relative overflow-hidden group/card">
+                          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover/card:opacity-20 transition-opacity">
+                            <TrendingUp className="h-20 w-20 text-primary" />
                           </div>
-                          <Input
-                            placeholder="Enter your unique ID"
-                            className="pl-14 h-16 rounded-2xl border-2 border-[#2B3139] bg-[#0B0E11] text-white focus:border-primary transition-all font-bold text-lg placeholder:text-[#474D57]"
-                            value={gameUsername}
-                            onChange={(e) => setGameUsername(e.target.value)}
-                            required
-                          />
-                        </div>
-                      </div>
-
-                      <div className="space-y-3">
-                        <Label className="text-[#848E9C] font-black text-xs uppercase tracking-widest ml-1">Amount to Buy (USD)</Label>
-                        <div className="relative group">
-                          <div className="absolute left-5 top-1/2 -translate-y-1/2 h-6 w-6 text-[#474D57] group-focus-within:text-primary transition-colors z-10">
-                            <DollarSign className="h-full w-full" />
+                          
+                          <div className="flex justify-between items-center text-sm">
+                            <span className="text-[#848E9C] font-bold uppercase tracking-wider">Exchange Value</span>
+                            <span className="text-white font-bold px-3 py-1 bg-[#1E2329] rounded-lg border border-[#2B3139]">
+                              Rate: {selectedGame.buyRate}
+                            </span>
                           </div>
-                          <Input
-                            type="number"
-                            placeholder="0.00"
-                            className="pl-14 h-16 rounded-2xl border-2 border-[#2B3139] bg-[#0B0E11] text-white focus:border-primary transition-all font-black text-2xl placeholder:text-[#474D57]"
-                            value={amount}
-                            onChange={(e) => setAmount(e.target.value)}
-                            required
-                            min="1"
-                            step="0.01"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    {selectedMethod && amount && (
-                      <div className="bg-[#0B0E11] rounded-[2.5rem] p-8 border-2 border-[#2B3139] space-y-6 relative overflow-hidden group/card">
-                        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover/card:opacity-20 transition-opacity">
-                          <TrendingUp className="h-20 w-20 text-primary" />
-                        </div>
-                        
-                        <div className="flex justify-between items-center text-sm">
-                          <span className="text-[#848E9C] font-bold uppercase tracking-wider">Exchange Value</span>
-                          <span className="text-white font-black px-3 py-1 bg-[#1E2329] rounded-lg border border-[#2B3139]">
-                            Rate: {selectedGame.buyRate}
-                          </span>
-                        </div>
-                        
-                        <div className="space-y-3 border-t-2 border-dashed border-[#2B3139] pt-6">
-                          <div className="flex justify-between text-sm">
-                            <span className="text-[#848E9C]">Top-up Amount</span>
-                            <span className="text-white font-bold">${parseFloat(amount).toFixed(2)}</span>
+                          
+                          <div className="space-y-3 border-t-2 border-dashed border-[#2B3139] pt-6">
+                            <div className="flex justify-between text-sm">
+                              <span className="text-[#848E9C]">Top-up Amount</span>
+                              <span className="text-white font-bold">${parseFloat(amount).toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                              <span className="text-[#848E9C]">Processing Fee ({selectedMethod.feePercentage}%)</span>
+                              <span className="text-orange-500 font-bold">${calculateFee().toFixed(2)}</span>
+                            </div>
+                            <div className="pt-2 border-t border-[#2B3139] flex justify-between">
+                              <span className="text-white font-black">Total Payable</span>
+                              <span className="text-primary font-black text-lg">${calculateTotal().toFixed(2)}</span>
+                            </div>
                           </div>
-                          <div className="flex justify-between text-sm">
-                            <span className="text-[#848E9C]">Processing Fee ({selectedMethod.feePercentage}%)</span>
-                            <span className="text-orange-500 font-bold">${calculateFee().toFixed(2)}</span>
+
+                          <div className="pt-4 flex justify-between items-center bg-primary/5 p-3 rounded-lg">
+                            <span className="text-primary text-xs font-black uppercase">You will receive</span>
+                            <span className="text-primary font-black text-xl">
+                              {calculateCredits().toFixed(2)} Credits
+                            </span>
                           </div>
-                          <div className="pt-2 border-t border-[#2B3139] flex justify-between">
-                            <span className="text-white font-black">Total Payable</span>
-                            <span className="text-primary font-black text-lg">${calculateTotal().toFixed(2)}</span>
-                          </div>
-                        </div>
-
-                        <div className="pt-4 flex justify-between items-center bg-primary/5 p-3 rounded-lg">
-                          <span className="text-primary text-xs font-black uppercase">You will receive</span>
-                          <span className="text-primary font-black text-xl">
-                            {calculateCredits().toFixed(2)} Credits
-                          </span>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="flex gap-4 p-5 rounded-2xl bg-primary/5 border border-primary/10 text-[10px] md:text-xs text-primary/80 font-bold leading-relaxed">
-                      <Info className="h-5 w-5 shrink-0" />
-                      <p>Double check your ID. Credits will be delivered to <span className="text-white">{gameUsername || "the specified account"}</span> once your payment is confirmed.</p>
-                    </div>
-
-                    <Button 
-                      type="submit" 
-                      className="w-full h-20 rounded-[1.5rem] md:rounded-[2rem] bg-primary text-[#0B0E11] font-black text-2xl shadow-2xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
-                      disabled={createOrderMutation.isPending || !amount || !gameUsername || !selectedMethodId}
-                    >
-                      {createOrderMutation.isPending ? (
-                        <div className="flex items-center gap-3">
-                          <Loader2 className="h-7 w-7 animate-spin" />
-                          <span>Creating Order...</span>
-                        </div>
-                      ) : (
-                        "Next Step"
-                      )}
-                    </Button>
-                  </>
-                ) : (
-                  <div className="space-y-6">
-                    <div className="p-6 rounded-3xl bg-[#0B0E11] border-2 border-primary/20 flex flex-col items-center text-center space-y-4">
-                      {selectedMethod?.qrCode ? (
-                        <Image src={selectedMethod.qrCode} alt="QR Code" width={200} height={200} className="rounded-xl" />
-                      ) : (
-                        <div className="p-8 bg-white rounded-xl">
-                          <QrCode className="h-40 w-40 text-black" />
                         </div>
                       )}
-                      <div>
-                        <p className="text-[#848E9C] text-sm uppercase font-black tracking-widest">Pay to this account</p>
-                        <p className="text-white font-bold text-lg mt-1">{selectedMethod?.details || "Contact Admin for Details"}</p>
-                      </div>
-                      <div className="w-full pt-4 border-t border-[#2B3139]">
-                        <p className="text-primary font-black text-2xl">${calculateTotal().toFixed(2)}</p>
-                        <p className="text-[#848E9C] text-xs">Exact amount to be paid</p>
-                      </div>
-                    </div>
 
-                    <div className="space-y-3">
-                      <Label className="text-[#848E9C] uppercase text-xs font-black tracking-widest">Upload Payment Proof</Label>
-                      <div 
-                        className={cn(
-                          "relative border-2 border-dashed border-[#2B3139] rounded-3xl p-8 flex flex-col items-center justify-center transition-all hover:border-primary/50 cursor-pointer overflow-hidden",
-                          paymentPreview ? "aspect-video" : "h-40"
-                        )}
-                        onClick={() => document.getElementById('payment-proof-game')?.click()}
+                      <div className="flex gap-4 p-5 rounded-2xl bg-primary/5 border border-primary/10 text-[10px] md:text-xs text-primary/80 font-bold leading-relaxed">
+                        <Info className="h-5 w-5 shrink-0" />
+                        <p>Double check your ID. Credits will be delivered to <span className="text-white">{gameUsername || "the specified account"}</span> once your payment is confirmed.</p>
+                      </div>
+
+                      <Button 
+                        type="submit" 
+                        className="w-full h-20 rounded-[1.5rem] md:rounded-[2rem] bg-primary text-[#0B0E11] font-black text-2xl shadow-2xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                        disabled={createOrderMutation.isPending || !amount || !gameUsername || !selectedMethodId}
                       >
-                        {paymentPreview ? (
-                          <Image src={paymentPreview} alt="Preview" fill className="object-contain" unoptimized />
+                        {createOrderMutation.isPending ? (
+                          <div className="flex items-center gap-3">
+                            <Loader2 className="h-7 w-7 animate-spin" />
+                            <span>Creating Order...</span>
+                          </div>
                         ) : (
-                          <>
-                            <UploadCloud className="h-10 w-10 text-[#848E9C] mb-2" />
-                            <p className="text-[#848E9C] text-sm font-medium">Click to upload screenshot</p>
-                          </>
+                          "Next Step"
                         )}
-                        <input 
-                          type="file" 
-                          id="payment-proof-game" 
-                          className="hidden" 
-                          accept="image/*"
-                          onChange={handleProofUpload}
+                      </Button>
+                    </>
+                  ) : (
+                    <div className="space-y-6">
+                      <div className="p-6 rounded-3xl bg-[#0B0E11] border-2 border-primary/20 flex flex-col items-center text-center space-y-4">
+                        {selectedMethod?.qrCode ? (
+                          <Image src={resolveMediaUrl(selectedMethod.qrCode)} alt="QR Code" width={200} height={200} className="rounded-xl" unoptimized />
+                        ) : (
+                          <div className="p-8 bg-white rounded-xl">
+                            <QrCode className="h-40 w-40 text-black" />
+                          </div>
+                        )}
+                        <div>
+                          <p className="text-[#848E9C] text-sm uppercase font-black tracking-widest">Pay to this account</p>
+                          <p className="text-white font-bold text-lg mt-1">{selectedMethod?.details || "Contact Admin for Details"}</p>
+                        </div>
+                        <div className="w-full pt-4 border-t border-[#2B3139]">
+                          <p className="text-primary font-black text-2xl">${calculateTotal().toFixed(2)}</p>
+                          <p className="text-[#848E9C] text-xs">Exact amount to be paid</p>
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <Label className="text-[#848E9C] uppercase text-xs font-black tracking-widest">Upload Payment Proof</Label>
+                        <div 
+                          className={cn(
+                            "relative border-2 border-dashed border-[#2B3139] rounded-3xl p-8 flex flex-col items-center justify-center transition-all hover:border-primary/50 cursor-pointer overflow-hidden",
+                            paymentPreview ? "aspect-video" : "h-40"
+                          )}
+                          onClick={() => document.getElementById('payment-proof-game')?.click()}
+                        >
+                          {paymentPreview ? (
+                            <Image src={paymentPreview} alt="Preview" fill className="object-contain" unoptimized />
+                          ) : (
+                            <>
+                              <UploadCloud className="h-10 w-10 text-[#848E9C] mb-2" />
+                              <p className="text-[#848E9C] text-sm font-medium">Click to upload screenshot</p>
+                            </>
+                          )}
+                          <input 
+                            type="file" 
+                            id="payment-proof-game" 
+                            className="hidden" 
+                            accept="image/*"
+                            onChange={handleProofUpload}
+                          />
+                        </div>
+                      </div>
+
+                      <Button 
+                        type="submit" 
+                        className="w-full h-20 rounded-[1.5rem] md:rounded-[2rem] bg-primary text-[#0B0E11] font-black text-2xl shadow-2xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                        disabled={uploadMutation.isPending || !paymentProof}
+                      >
+                        {uploadMutation.isPending ? (
+                          <div className="flex items-center gap-3">
+                            <Loader2 className="h-7 w-7 animate-spin" />
+                            <span>Submitting...</span>
+                          </div>
+                        ) : (
+                          "Submit Top-up Request"
+                        )}
+                      </Button>
+
+                      <Button 
+                        variant="ghost" 
+                        className="w-full text-[#848E9C] hover:text-white"
+                        type="button"
+                        onClick={() => setStep(1)}
+                      >
+                        Go Back
+                      </Button>
+                    </div>
+                  )}
+                </form>
+              </TabsContent>
+
+              <TabsContent value="request" className="p-6 md:p-8 space-y-8">
+                <form onSubmit={handleRequestSubmit} className="space-y-6">
+                  <div className="space-y-4">
+                    <Label className="text-[#848E9C] uppercase text-xs font-black tracking-widest">Request Type</Label>
+                    <div className="grid grid-cols-2 gap-4">
+                      <Button
+                        type="button"
+                        variant={requestType === "GAME_ID" ? "default" : "outline"}
+                        className={cn(
+                          "h-20 rounded-2xl border-2 font-bold text-lg",
+                          requestType === "GAME_ID" 
+                            ? "bg-primary text-[#0B0E11] border-primary"
+                            : "bg-[#0B0E11] border-[#2B3139] text-white hover:bg-[#2B3139]"
+                        )}
+                        onClick={() => setRequestType("GAME_ID")}
+                      >
+                        I have Game ID
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={requestType === "EMAIL_PASSWORD" ? "default" : "outline"}
+                        className={cn(
+                          "h-20 rounded-2xl border-2 font-bold text-lg",
+                          requestType === "EMAIL_PASSWORD"
+                            ? "bg-primary text-[#0B0E11] border-primary"
+                            : "bg-[#0B0E11] border-[#2B3139] text-white hover:bg-[#2B3139]"
+                        )}
+                        onClick={() => setRequestType("EMAIL_PASSWORD")}
+                      >
+                        Need Game ID
+                      </Button>
+                    </div>
+                  </div>
+
+                  {requestType === "GAME_ID" ? (
+                    <div className="space-y-3">
+                      <Label className="text-[#848E9C] font-black text-xs uppercase tracking-widest ml-1">Your Game ID / Username</Label>
+                      <div className="relative group">
+                        <div className="absolute left-5 top-1/2 -translate-y-1/2 h-6 w-6 text-[#474D57] group-focus-within:text-primary transition-colors z-10">
+                          <User className="h-full w-full" />
+                        </div>
+                        <Input
+                          placeholder="Enter your game ID"
+                          className="pl-14 h-16 rounded-2xl border-2 border-[#2B3139] bg-[#0B0E11] text-white focus:border-primary transition-all font-bold text-lg placeholder:text-[#474D57]"
+                          value={gameUsername}
+                          onChange={(e) => setGameUsername(e.target.value)}
+                          required
                         />
                       </div>
                     </div>
-
-                    <Button 
-                      type="submit" 
-                      className="w-full h-20 rounded-[1.5rem] md:rounded-[2rem] bg-primary text-[#0B0E11] font-black text-2xl shadow-2xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
-                      disabled={uploadMutation.isPending || !paymentProof}
-                    >
-                      {uploadMutation.isPending ? (
-                        <div className="flex items-center gap-3">
-                          <Loader2 className="h-7 w-7 animate-spin" />
-                          <span>Submitting...</span>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="space-y-3">
+                        <Label className="text-[#848E9C] font-black text-xs uppercase tracking-widest ml-1">Email</Label>
+                        <div className="relative group">
+                          <div className="absolute left-5 top-1/2 -translate-y-1/2 h-6 w-6 text-[#474D57] group-focus-within:text-primary transition-colors z-10">
+                            <Mail className="h-full w-full" />
+                          </div>
+                          <Input
+                            type="email"
+                            placeholder="Enter your email"
+                            className="pl-14 h-16 rounded-2xl border-2 border-[#2B3139] bg-[#0B0E11] text-white focus:border-primary transition-all font-bold text-lg placeholder:text-[#474D57]"
+                            value={requestEmail}
+                            onChange={(e) => setRequestEmail(e.target.value)}
+                            required
+                          />
                         </div>
-                      ) : (
-                        "Submit Top-up Request"
-                      )}
-                    </Button>
+                      </div>
+                      <div className="space-y-3">
+                        <Label className="text-[#848E9C] font-black text-xs uppercase tracking-widest ml-1">Password</Label>
+                        <div className="relative group">
+                          <div className="absolute left-5 top-1/2 -translate-y-1/2 h-6 w-6 text-[#474D57] group-focus-within:text-primary transition-colors z-10">
+                            <Lock className="h-full w-full" />
+                          </div>
+                          <Input
+                            type="password"
+                            placeholder="Enter your password"
+                            className="pl-14 h-16 rounded-2xl border-2 border-[#2B3139] bg-[#0B0E11] text-white focus:border-primary transition-all font-bold text-lg placeholder:text-[#474D57]"
+                            value={requestPassword}
+                            onChange={(e) => setRequestPassword(e.target.value)}
+                            required
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
-                    <Button 
-                      variant="ghost" 
-                      className="w-full text-[#848E9C] hover:text-white"
-                      type="button"
-                      onClick={() => setStep(1)}
-                    >
-                      Go Back
-                    </Button>
+                  <div className="flex gap-4 p-5 rounded-2xl bg-primary/5 border border-primary/10 text-[10px] md:text-xs text-primary/80 font-bold leading-relaxed">
+                    <Info className="h-5 w-5 shrink-0" />
+                    <p>Submit your request and our admin will respond shortly.</p>
                   </div>
-                )}
-              </div>
-            </form>
+
+                  <Button 
+                    type="submit" 
+                    className="w-full h-20 rounded-[1.5rem] md:rounded-[2rem] bg-primary text-[#0B0E11] font-black text-2xl shadow-2xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                    disabled={createRequestMutation.isPending}
+                  >
+                    {createRequestMutation.isPending ? (
+                      <div className="flex items-center gap-3">
+                        <Loader2 className="h-7 w-7 animate-spin" />
+                        <span>Submitting...</span>
+                      </div>
+                    ) : (
+                      "Submit Request"
+                    )}
+                  </Button>
+                </form>
+              </TabsContent>
+            </Tabs>
           )}
         </DialogContent>
       </Dialog>
