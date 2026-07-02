@@ -362,30 +362,32 @@ export default function AdminSettingsPage() {
               <form onSubmit={handleRolePermissionsSubmit} className="space-y-6">
                 <div className="grid gap-6 md:grid-cols-2">
                   {permissionGroups.map((group) => (
-                    <div key={group.title} className="bg-[#0B0E11] rounded-2xl p-4 border border-[#2B3139]">
-                      <h4 className="text-white font-bold mb-4">{group.title}</h4>
-                      <div className="space-y-3">
+                    <div key={group.title} className="bg-[#0B0E11] rounded-2xl p-6 border border-[#2B3139]">
+                      <h4 className="text-white font-bold mb-6">{group.title}</h4>
+                      <div className="space-y-4">
                         {group.permissions.map((permission) => (
-                          <div key={permission} className="flex items-center justify-between">
-                            <Label className="text-[#848E9C] font-medium">{permission}</Label>
-                            <button
-                              type="button"
-                              onClick={() => togglePermission(permission)}
-                              className={`w-10 h-6 rounded-full flex items-center transition-colors ${
-                                selectedPermissions.includes(permission)
-                                  ? 'bg-primary'
-                                  : 'bg-[#2B3139]'
-                              }`}
-                            >
-                              <div
-                                className={`w-4 h-4 bg-white rounded-full transition-transform ${
-                                  selectedPermissions.includes(permission)
-                                    ? 'ml-5'
-                                    : 'ml-1'
-                                }`}
+                          <label key={permission} className="flex items-center cursor-pointer group">
+                            <div className="relative">
+                              <input
+                                type="checkbox"
+                                className="sr-only"
+                                checked={selectedPermissions.includes(permission)}
+                                onChange={() => togglePermission(permission)}
                               />
-                            </button>
-                          </div>
+                              <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${
+                                selectedPermissions.includes(permission)
+                                  ? 'bg-primary border-primary'
+                                  : 'bg-[#1E2329] border-[#2B3139]'
+                              }`}>
+                                {selectedPermissions.includes(permission) && (
+                                  <CheckCircle2 className="h-4 w-4 text-white" />
+                                )}
+                              </div>
+                            </div>
+                            <span className="ml-4 text-[#848E9C] font-medium group-hover:text-white transition-colors">
+                              {permission}
+                            </span>
+                          </label>
                         ))}
                       </div>
                     </div>

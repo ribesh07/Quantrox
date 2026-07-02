@@ -418,7 +418,6 @@ export default function GamesPage() {
                                 className="pl-14 h-16 rounded-2xl border-2 border-[#2B3139] bg-[#0B0E11] text-white focus:border-primary transition-all font-bold text-lg placeholder:text-[#474D57]"
                                 value={gameUsername}
                                 onChange={(e) => setGameUsername(e.target.value)}
-                                required
                               />
                             </div>
                           </div>
