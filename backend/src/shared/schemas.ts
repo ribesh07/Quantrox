@@ -40,13 +40,7 @@ export const createOrderSchema = z
           path: ["gameId"],
         });
       }
-      if (!data.gameUsername?.trim()) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Game username/ID is required for top-up",
-          path: ["gameUsername"],
-        });
-      }
+      // gameUsername is optional - user might be requesting a new Game ID
     }
   });
 
