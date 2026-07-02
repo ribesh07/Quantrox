@@ -13,21 +13,23 @@ const formatValidationError = (error: ZodError) =>
 export const createGameIdRequest = async (req: AuthRequest, res: Response) => {
   try {
     console.log("createGameIdRequest called with body:", req.body);
-    const { gameId, requestType, gameUsername, email, password } = req.body;
+    // const { gameId, requestType, gameUsername, email, password } = req.body;
+     const validated = createGameIdRequestSchema.parse(req.body);
 
-    if (!gameId) {
-      return res.status(400).json({ success: false, message: "Game ID is required" });
+     
+     if (!validated.gameId) {
+       return res.status(400).json({ success: false, message: "Game ID is required" });
+      }
+
+      if (!validated.requestType) {
+        return res.status(400).json({ success: false, message: "Request type is required" });
     }
 
-    if (!requestType) {
-      return res.status(400).json({ success: false, message: "Request type is required" });
-    }
-
-    const game = await GameService.getById(validated.gameId);
+      
+      const game = await GameService.getById(validated.gameId);
     if (!game || !game.active) {
       return res.status(400).json({ success: false, message: "Invalid or inactive game" });
     }
-
     const request = await GameIdRequestService.create({
       userId: req.user!.userId,
       gameId: validated.gameId,
