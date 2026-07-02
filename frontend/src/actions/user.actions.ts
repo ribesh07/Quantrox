@@ -27,7 +27,7 @@ export async function getMyUserPayoutRequestsAction() {
 
 export async function createGameIdRequestAction(data: {
   gameId: string;
-  requestType: string;
+  requestType: "GAME_ID" | "EMAIL_PASSWORD";
   gameUsername?: string;
   email?: string;
   password?: string;
@@ -36,6 +36,7 @@ export async function createGameIdRequestAction(data: {
     const config = await getAuthenticatedRequestConfig();
     const response = await api.post("/user/game-id-requests", data, config);
     revalidatePath("/dashboard/games");
+    revalidatePath("/admin/game-requests");
     return { success: true, request: response.data.request };
   } catch (error: any) {
     return { success: false, error: error.response?.data?.message || error.message };

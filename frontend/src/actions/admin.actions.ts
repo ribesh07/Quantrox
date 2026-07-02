@@ -576,7 +576,7 @@ export async function approveGameIdRequestAction(id: string, response: string) {
   try {
     const config = await getAuthenticatedRequestConfig();
     const res = await api.patch(`/admin/game-id-requests/${id}/approve`, { response }, config);
-    revalidatePath("/admin/games");
+    revalidatePath("/admin/game-requests");
     return { success: true, request: res.data.request };
   } catch (error: any) {
     return { success: false, error: error.response?.data?.message || error.message };
@@ -587,7 +587,7 @@ export async function rejectGameIdRequestAction(id: string, response: string) {
   try {
     const config = await getAuthenticatedRequestConfig();
     const res = await api.patch(`/admin/game-id-requests/${id}/reject`, { response }, config);
-    revalidatePath("/admin/games");
+    revalidatePath("/admin/game-requests");
     return { success: true, request: res.data.request };
   } catch (error: any) {
     return { success: false, error: error.response?.data?.message || error.message };

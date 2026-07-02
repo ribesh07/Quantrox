@@ -358,6 +358,13 @@ async function main() {
   // ---------------- ADMIN PANEL SAMPLE DATA ----------------
   console.log('📋 Seeding admin panel sample data...');
 
+  const primaryGame = game!;
+  const usdtTrc = paymentMethodsDb.find((m) => m.name.includes('USDT')) ?? paymentMethodsDb[0];
+  const cashApp = paymentMethodsDb.find((m) => m.name.includes('Cash App')) ?? paymentMethodsDb[0];
+  const zelle = paymentMethodsDb.find((m) => m.name.includes('Zelle')) ?? paymentMethodsDb[0];
+  const wireTransfer = paymentMethodsDb.find((m) => m.name.includes('Wire')) ?? paymentMethodsDb[0];
+  const SEED_MARKER = 'SEED_DATA';
+
   await seedIfEmpty('Orders & transactions', await prisma.order.count(), async () => {
     const orderSamples = [
       { user: users[0], type: OrderType.DEPOSIT, status: OrderStatus.PENDING_PAYMENT, amount: 200, fee: 4, total: 204, method: usdtTrc },
@@ -485,6 +492,43 @@ async function main() {
         },
       });
     }
+  });
+
+  await seedIfEmpty('Game ID requests', await prisma.gameIdRequest.count(), async () => {
+    await prisma.gameIdRequest.create({
+      data: {
+        userId: users[0].id,
+        gameId: primaryGame.id,
+        requestType: 'EMAIL_PASSWORD',
+        email: 'user1@example.com',
+        password: 'seed-demo-password',
+        status: 'PENDING',
+      },
+    });
+
+    await prisma.gameIdRequest.create({
+      data: {
+        userId: users[1].id,
+        gameId: primaryGame.id,
+        requestType: 'GAME_ID',
+        gameUsername: 'player_seed_123',
+        status: 'PENDING',
+      },
+    });
+
+    await prisma.gameIdRequest.create({
+      data: {
+        userId: users[2].id,
+        gameId: primaryGame.id,
+        requestType: 'EMAIL_PASSWORD',
+        email: 'user3@example.com',
+        password: 'seed-demo-password',
+        status: 'APPROVED',
+        response: 'Your Game ID is: SEED12345',
+        respondedAt: new Date(),
+        respondedBy: admin.id,
+      },
+    });
   });
 
   await seedIfEmpty('Merchant QR codes', await prisma.merchantQRCode.count(), async () => {
