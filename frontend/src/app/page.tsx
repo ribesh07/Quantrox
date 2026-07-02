@@ -4,7 +4,7 @@ import Link from "next/link";
 
 export default function Home() {
   return (
-    <div className="flex flex-col min-h-screen bg-[#0B0E11] text-[#EAECEF]">
+    <div className="flex min-h-screen flex-col overflow-x-hidden bg-[#0B0E11] text-[#EAECEF]">
       {/* Navbar */}
       <header className="fixed top-0 w-full z-50 px-4 lg:px-6 h-20 flex items-center bg-[#0B0E11]/80 backdrop-blur-md border-b border-[#2B3139]">
         <div className="container mx-auto flex items-center justify-between">
