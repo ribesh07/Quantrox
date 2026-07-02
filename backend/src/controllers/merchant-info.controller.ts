@@ -8,11 +8,14 @@ import { paramString, queryInt, queryString } from "../utils/request";
 export const createMerchantInfo = async (req: AuthRequest, res: Response) => {
   try {
     const { businessName, businessDescription, preferredWalletId, preferredPaymentMethodId, expectedDailyVolume, wallets } = req.body;
+    console.log('[createMerchantInfo] Creating merchant info for user:', req.user!.userId);
+    console.log('[createMerchantInfo] Request body:', req.body);
     const merchantInfo = await MerchantInfoService.create({
       userId: req.user!.userId,
       businessName,
       businessDescription,
       preferredWalletId,
+      preferredPaymentMethodId,
       expectedDailyVolume: parseFloat(expectedDailyVolume),
       wallets,
     });
@@ -33,8 +36,9 @@ export const createMerchantInfo = async (req: AuthRequest, res: Response) => {
     });
 
     res.json({ success: true, data: merchantInfo });
-  } catch (error) {
-    res.status(500).json({ success: false, message: 'Failed to create merchant info' });
+  } catch (error: any) {
+    console.error('[createMerchantInfo] Error:', error);
+    res.status(500).json({ success: false, message: error.message || 'Failed to create merchant info' });
   }
 };
 
@@ -55,7 +59,7 @@ export const getAllMerchants = async (req: AuthRequest, res: Response) => {
       limit: queryInt(limit),
       offset: queryInt(offset),
     });
-    res.json({ success: true, data: result });
+    res.json({ success: true, merchants: result.merchants, count: result.count });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Failed to get merchants' });
   }
@@ -142,7 +146,7 @@ export const approveMerchant = async (req: AuthRequest, res: Response) => {
       userAgent: req.get('user-agent'),
     });
 
-    res.json({ success: true, data: merchantInfo });
+    res.json({ success: true, merchant: merchantInfo });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Failed to approve merchant' });
   }
@@ -174,7 +178,7 @@ export const rejectMerchant = async (req: AuthRequest, res: Response) => {
       userAgent: req.get('user-agent'),
     });
 
-    res.json({ success: true, data: merchantInfo });
+    res.json({ success: true, merchant: merchantInfo });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Failed to reject merchant' });
   }
@@ -182,6 +186,8 @@ export const rejectMerchant = async (req: AuthRequest, res: Response) => {
 
 export const updateMyMerchantInfo = async (req: AuthRequest, res: Response) => {
   try {
+    console.log('[updateMyMerchantInfo] Updating merchant info for user:', req.user!.userId);
+    console.log('[updateMyMerchantInfo] Request body:', req.body);
     const { businessName, businessDescription, preferredWalletId, preferredPaymentMethodId, expectedDailyVolume, wallets } = req.body;
     const merchantInfo = await MerchantInfoService.update(req.user!.userId, {
       businessName,
@@ -191,7 +197,8 @@ export const updateMyMerchantInfo = async (req: AuthRequest, res: Response) => {
       wallets,
     });
     res.json({ success: true, data: merchantInfo });
-  } catch (error) {
-    res.status(500).json({ success: false, message: 'Failed to update merchant info' });
+  } catch (error: any) {
+    console.error('[updateMyMerchantInfo] Error:', error);
+    res.status(500).json({ success: false, message: error.message || 'Failed to update merchant info' });
   }
 };

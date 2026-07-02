@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Loader2, AlertCircle, QrCode } from "lucide-react";
 import { getMyQRCodeAction } from "@/actions/merchant.actions";
+import { resolveMediaUrl } from "@/lib/media";
 
 export default function MerchantQRPage() {
   const { data, isLoading } = useQuery({
@@ -58,7 +59,7 @@ export default function MerchantQRPage() {
               </CardHeader>
               <CardContent className="flex flex-col items-center gap-4">
                 <img
-                  src={qr.imageUrl}
+                  src={resolveMediaUrl(qr.imageUrl)}
                   alt={qr.label || "Deposit QR Code"}
                   className="w-48 h-48 object-contain border rounded-lg"
                 />

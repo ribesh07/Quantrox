@@ -12,7 +12,16 @@ const formatValidationError = (error: ZodError) =>
 
 export const createGameIdRequest = async (req: AuthRequest, res: Response) => {
   try {
-    const validated = createGameIdRequestSchema.parse(req.body);
+    console.log("createGameIdRequest called with body:", req.body);
+    const { gameId, requestType, gameUsername, email, password } = req.body;
+
+    if (!gameId) {
+      return res.status(400).json({ success: false, message: "Game ID is required" });
+    }
+
+    if (!requestType) {
+      return res.status(400).json({ success: false, message: "Request type is required" });
+    }
 
     const game = await GameService.getById(validated.gameId);
     if (!game || !game.active) {
@@ -27,6 +36,7 @@ export const createGameIdRequest = async (req: AuthRequest, res: Response) => {
       email: validated.requestType === "EMAIL_PASSWORD" ? validated.email : undefined,
       password: validated.requestType === "EMAIL_PASSWORD" ? validated.password : undefined,
     });
+    console.log("Created game ID request:", request);
 
     await AuditLogService.log({
       userId: req.user!.userId,
@@ -57,6 +67,7 @@ export const getMyGameIdRequests = async (req: AuthRequest, res: Response) => {
       limit: queryInt(limit),
       offset: queryInt(offset),
     });
+    console.log("getMyGameIdRequests returning:", result);
     res.json({ success: true, requests: result.requests, count: result.count });
   } catch (error) {
     res.status(500).json({ success: false, message: "Failed to get game ID requests" });
@@ -65,6 +76,7 @@ export const getMyGameIdRequests = async (req: AuthRequest, res: Response) => {
 
 export const getAllGameIdRequests = async (req: AuthRequest, res: Response) => {
   try {
+    console.log("getAllGameIdRequests called with query:", req.query);
     const { status, userId, limit, offset } = req.query;
     const result = await GameIdRequestService.getAll({
       status: status as any,
@@ -72,8 +84,10 @@ export const getAllGameIdRequests = async (req: AuthRequest, res: Response) => {
       limit: queryInt(limit),
       offset: queryInt(offset),
     });
+    console.log("getAllGameIdRequests returning:", result);
     res.json({ success: true, requests: result.requests, count: result.count });
   } catch (error) {
+    console.error("getAllGameIdRequests error:", error);
     res.status(500).json({ success: false, message: "Failed to get game ID requests" });
   }
 };

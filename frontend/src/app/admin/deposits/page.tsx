@@ -160,9 +160,9 @@ export default function AdminDepositsPage() {
                           <p className="text-sm text-muted-foreground">{deposit.user?.email}</p>
                         </div>
                       </TableCell>
-                      <TableCell>${deposit.amount.toLocaleString()}</TableCell>
+                      <TableCell>${deposit.amount?.toLocaleString() || "0"}</TableCell>
                       <TableCell>{getTypeBadge(deposit.type)}</TableCell>
-                      <TableCell>${deposit.requiredDeposit?.toLocaleString() || 0}</TableCell>
+                      <TableCell>${deposit.requiredDeposit?.toLocaleString() || "0"}</TableCell>
                       <TableCell>{getStatusBadge(deposit.status)}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
@@ -212,7 +212,7 @@ export default function AdminDepositsPage() {
                                 size="sm" variant="outline" className="rounded-full"
                                 onClick={() => {
                                   setAdjustDepositId(deposit.id);
-                                  setAdjustAmount(deposit.amount.toString());
+                                  setAdjustAmount(deposit.amount?.toString() || "");
                                 }}
                               >
                                 <Edit2 className="mr-2 h-4 w-4" />

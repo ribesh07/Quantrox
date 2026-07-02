@@ -21,6 +21,7 @@ import {
 import { getMyPayoutRequestsAction, createPayoutRequestAction } from "@/actions/merchant.actions";
 import { getPaymentMethodsAction } from "@/actions/payment.actions";
 import { PayoutStatus } from "@/lib/prisma-types";
+import { resolveMediaUrl } from "@/lib/media";
 
 export default function MerchantPayoutsPage() {
   const queryClient = useQueryClient();
@@ -192,7 +193,7 @@ export default function MerchantPayoutsPage() {
                     <TableCell>{payout.walletNetwork}</TableCell>
                     <TableCell>
                       {payout.qrCodeImage ? (
-                        <img src={payout.qrCodeImage} alt="QR" className="h-10 w-10 object-contain" />
+                        <img src={resolveMediaUrl(payout.qrCodeImage)} alt="QR" className="h-10 w-10 object-contain" />
                       ) : (
                         <FileText className="h-5 w-5 text-muted-foreground" />
                       )}

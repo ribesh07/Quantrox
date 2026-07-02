@@ -50,19 +50,10 @@ export const OrderService = {
         throw new Error("Insufficient balance in source wallet");
       }
     } else if (type === OrderType.GAME_TOPUP) {
-      if (!gameId) {
-        throw new Error("Game is required for top-up");
-      }
-
-      const game = await prisma.game.findUnique({ where: { id: gameId } });
-      if (!game || !game.active) {
-        throw new Error("Invalid or inactive game");
-      }
-
-      fee = (amount * paymentMethod.feePercentage) / 100;
-      total = amount + fee;
-      orderRate = game.buyRate;
-      receivedAmount = amount * game.buyRate;
+      // No fees for game top-up
+      fee = 0;
+      total = amount;
+      receivedAmount = 0;
     }
 
     const order = await prisma.order.create({

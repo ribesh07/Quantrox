@@ -8,7 +8,7 @@ export async function getMyMerchantInfoAction() {
   try {
     const config = await getAuthenticatedRequestConfig();
     const response = await api.get("/merchant/info", config);
-    return { success: true, info: response.data.info };
+    return { success: true, info: response.data.data };
   } catch (error: any) {
     return { success: false, error: error.response?.data?.message || error.message };
   }
@@ -26,7 +26,7 @@ export async function createMerchantInfoAction(data: {
     const response = await api.post("/merchant/info", data, config);
     revalidatePath("/dashboard");
     revalidatePath("/dashboard/merchant");
-    return { success: true, info: response.data.info };
+    return { success: true, info: response.data.data };
   } catch (error: any) {
     return { success: false, error: error.response?.data?.message || error.message };
   }
@@ -44,7 +44,7 @@ export async function updateMyMerchantInfoAction(data: Partial<{
     const response = await api.put("/merchant/info", data, config);
     revalidatePath("/dashboard");
     revalidatePath("/dashboard/merchant");
-    return { success: true, info: response.data.info };
+    return { success: true, info: response.data.data };
   } catch (error: any) {
     return { success: false, error: error.response?.data?.message || error.message };
   }
@@ -69,7 +69,7 @@ export async function createTransactionReportAction(formData: FormData) {
     const config = await getAuthenticatedRequestConfig();
     const response = await api.post("/merchant/reports", formData, config);
     revalidatePath("/dashboard/reports");
-    return { success: true, report: response.data.report };
+    return { success: true, report: response.data.data };
   } catch (error: any) {
     return { success: false, error: error.response?.data?.message || error.message };
   }
@@ -79,7 +79,7 @@ export async function getMyTransactionReportsAction() {
   try {
     const config = await getAuthenticatedRequestConfig();
     const response = await api.get("/merchant/reports", config);
-    return { success: true, reports: response.data.reports, count: response.data.count };
+    return { success: true, reports: response.data.data.reports, count: response.data.data.count };
   } catch (error: any) {
     return { success: false, error: error.response?.data?.message || error.message };
   }
@@ -89,7 +89,7 @@ export async function getMyDepositsAction() {
   try {
     const config = await getAuthenticatedRequestConfig();
     const response = await api.get("/merchant/deposits", config);
-    return { success: true, deposits: response.data.deposits, count: response.data.count };
+    return { success: true, deposits: response.data.data.deposits, count: response.data.data.count };
   } catch (error: any) {
     return { success: false, error: error.response?.data?.message || error.message };
   }
@@ -99,7 +99,7 @@ export async function getMyTotalDepositAction() {
   try {
     const config = await getAuthenticatedRequestConfig();
     const response = await api.get("/merchant/deposits/total", config);
-    return { success: true, total: response.data.total };
+    return { success: true, total: response.data.data.total };
   } catch (error: any) {
     return { success: false, error: error.response?.data?.message || error.message };
   }
