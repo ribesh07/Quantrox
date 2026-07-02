@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Gamepad2, Search, Loader2, DollarSign, User, TrendingUp, Info, QrCode, UploadCloud, Mail, Lock, MessageSquare } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
@@ -37,6 +37,7 @@ import { resolveMediaUrl } from "@/lib/media";
 
 export default function GamesPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [selectedGame, setSelectedGame] = useState<any>(null);
   const [amount, setAmount] = useState("");

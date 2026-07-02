@@ -26,6 +26,7 @@ export const OrderService = {
     let fee = 0;
     let total = amount;
     let receivedAmount = 0;
+    let orderRate = paymentMethod.rate;
 
     if (type === OrderType.DEPOSIT) {
       fee = (amount * paymentMethod.feePercentage) / 100;
@@ -63,12 +64,15 @@ export const OrderService = {
         amount,
         fee,
         total,
-        rate: paymentMethod.rate,
+        rate: orderRate,
         receivedAmount,
         gameId: gameId || null,
-        gameUsername: gameUsername || null,
+        gameUsername: gameUsername?.trim() || null,
         walletAddress: walletAddress || null,
-        status: type === OrderType.DEPOSIT ? OrderStatus.PENDING_PAYMENT : OrderStatus.PENDING_REVIEW,
+        status:
+          type === OrderType.DEPOSIT || type === OrderType.GAME_TOPUP
+            ? OrderStatus.PENDING_PAYMENT
+            : OrderStatus.PENDING_REVIEW,
       },
     });
 
