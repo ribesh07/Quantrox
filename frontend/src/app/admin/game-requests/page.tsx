@@ -30,7 +30,7 @@ export default function GameRequestsPage() {
   const [responseText, setResponseText] = useState("");
   const [actionType, setActionType] = useState<"approve" | "reject" | null>(null);
 
-  const { data: gameIdRequests, isLoading: requestsLoading } = useQuery({
+  const { data: gameIdRequests, isLoading: requestsLoading, isError, error } = useQuery({
     queryKey: ["gameIdRequests"],
     queryFn: async () => {
       const result = await getAllGameIdRequestsAction();
@@ -75,6 +75,15 @@ export default function GameRequestsPage() {
     }
   });
 
+  if (isError) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+        <p className="text-red-500 font-bold">Failed to load game ID requests</p>
+        <p className="text-[#848E9C]">{(error as Error).message}</p>
+      </div>
+    );
+  }
+
   if (requestsLoading) return (
     <div className="flex items-center justify-center min-h-[400px]">
       <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-primary" />
@@ -111,6 +120,9 @@ export default function GameRequestsPage() {
                     </div>
                     <p className="text-[#848E9C] text-sm">
                       Requested by: {request.user?.username} ({request.user?.email})
+                    </p>
+                    <p className="text-[#848E9C] text-sm">
+                      Submitted: {new Date(request.createdAt).toLocaleString()}
                     </p>
                     <p className="text-[#848E9C] text-sm">
                       Type: {request.requestType === "GAME_ID" ? "Game ID" : "Email/Password"}

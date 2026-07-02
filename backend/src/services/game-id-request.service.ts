@@ -1,5 +1,6 @@
 import { prisma } from "../shared/prisma";
 import { GameIdRequest, GameIdRequestStatus, GameIdRequestType } from "@prisma/client";
+import { NotificationService } from "./notification.service";
 
 export interface CreateGameIdRequestData {
   userId: string;
@@ -15,6 +16,32 @@ export interface GameIdRequestFilters {
   userId?: string;
   limit?: number;
   offset?: number;
+}
+
+async function getPendingRequest(id: string) {
+  const request = await prisma.gameIdRequest.findUnique({
+    where: { id },
+    include: {
+      game: true,
+      user: {
+        select: {
+          id: true,
+          username: true,
+          email: true,
+        },
+      },
+    },
+  });
+
+  if (!request) {
+    throw new Error("Game ID request not found");
+  }
+
+  if (request.status !== "PENDING") {
+    throw new Error(`This request has already been ${request.status.toLowerCase()}`);
+  }
+
+  return request;
 }
 
 export const GameIdRequestService = {
@@ -105,7 +132,9 @@ export const GameIdRequestService = {
   },
 
   async approve(id: string, adminId: string, response: string): Promise<GameIdRequest> {
-    return await prisma.gameIdRequest.update({
+    const existing = await getPendingRequest(id);
+
+    const request = await prisma.gameIdRequest.update({
       where: { id },
       data: {
         status: "APPROVED",
@@ -124,10 +153,23 @@ export const GameIdRequestService = {
         },
       },
     });
+
+    await NotificationService.send({
+      userId: existing.userId,
+      title: "Game ID Request Approved",
+      message: `Your ${existing.game.name} game ID request has been approved. ${response}`,
+      type: "SUCCESS",
+      referenceType: "GAME_ID_REQUEST",
+      referenceId: id,
+    });
+
+    return request;
   },
 
   async reject(id: string, adminId: string, response: string): Promise<GameIdRequest> {
-    return await prisma.gameIdRequest.update({
+    const existing = await getPendingRequest(id);
+
+    const request = await prisma.gameIdRequest.update({
       where: { id },
       data: {
         status: "REJECTED",
@@ -146,5 +188,16 @@ export const GameIdRequestService = {
         },
       },
     });
+
+    await NotificationService.send({
+      userId: existing.userId,
+      title: "Game ID Request Rejected",
+      message: `Your ${existing.game.name} game ID request was rejected. Reason: ${response}`,
+      type: "ERROR",
+      referenceType: "GAME_ID_REQUEST",
+      referenceId: id,
+    });
+
+    return request;
   },
 };
