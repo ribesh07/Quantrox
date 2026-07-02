@@ -522,8 +522,58 @@ model GamePointOrder {
 
 enum Role {
   USER
+  VENDOR
   STAFF_ADMIN
+  SUB_ADMIN
   SUPER_ADMIN
+}
+
+model RolePermission {
+  id              String              @id @default(cuid())
+  role            Role
+  permission      Permission
+  createdAt       DateTime            @default(now())
+  
+  @@unique([role, permission])
+  @@index([role])
+}
+
+enum Permission {
+  // Orders
+  VIEW_ORDERS
+  MANAGE_ORDERS
+  
+  // Users
+  VIEW_USERS
+  MANAGE_USERS
+  
+  // Games
+  VIEW_GAMES
+  MANAGE_GAMES
+  
+  // Merchants
+  VIEW_MERCHANTS
+  MANAGE_MERCHANTS
+  
+  // Payments
+  VIEW_PAYMENT_METHODS
+  MANAGE_PAYMENT_METHODS
+  
+  // Deposits
+  VIEW_DEPOSITS
+  MANAGE_DEPOSITS
+  
+  // Payouts
+  VIEW_PAYOUTS
+  MANAGE_PAYOUTS
+  
+  // Settings
+  VIEW_SETTINGS
+  MANAGE_SETTINGS
+  
+  // Game ID Requests
+  VIEW_GAME_ID_REQUESTS
+  MANAGE_GAME_ID_REQUESTS
 }
 
 enum OrderStatus {

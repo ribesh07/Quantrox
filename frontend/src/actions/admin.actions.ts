@@ -595,3 +595,35 @@ export async function rejectGameIdRequestAction(id: string, response: string) {
     return { success: false, error: error.response?.data?.message || error.message };
   }
 }
+
+// Role Permission Actions
+export async function getAllRolePermissionsAction() {
+  try {
+    const config = await getAuthenticatedRequestConfig();
+    const res = await api.get("/admin/role-permissions", config);
+    return { success: true, rolePermissions: res.data.rolePermissions };
+  } catch (error: any) {
+    return { success: false, error: error.response?.data?.message || error.message };
+  }
+}
+
+export async function getPermissionsByRoleAction(role: string) {
+  try {
+    const config = await getAuthenticatedRequestConfig();
+    const res = await api.get(`/admin/role-permissions/${role}`, config);
+    return { success: true, permissions: res.data.permissions, role: res.data.role };
+  } catch (error: any) {
+    return { success: false, error: error.response?.data?.message || error.message };
+  }
+}
+
+export async function setRolePermissionsAction(role: string, permissions: string[]) {
+  try {
+    const config = await getAuthenticatedRequestConfig();
+    const res = await api.patch(`/admin/role-permissions/${role}`, { permissions }, config);
+    revalidatePath("/admin/settings");
+    return { success: true, rolePermissions: res.data.rolePermissions };
+  } catch (error: any) {
+    return { success: false, error: error.response?.data?.message || error.message };
+  }
+}
