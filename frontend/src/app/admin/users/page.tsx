@@ -119,8 +119,12 @@ export default function AdminUsersPage() {
     switch (role) {
       case "SUPER_ADMIN":
         return <Badge className="bg-red-500/10 text-red-600 border-red-500/20 rounded-full px-3">Super Admin</Badge>;
+      case "SUB_ADMIN":
+        return <Badge className="bg-orange-500/10 text-orange-600 border-orange-500/20 rounded-full px-3">Sub Admin</Badge>;
       case "STAFF_ADMIN":
         return <Badge className="bg-purple-500/10 text-purple-600 border-purple-500/20 rounded-full px-3">Staff Admin</Badge>;
+      case "VENDOR":
+        return <Badge className="bg-green-500/10 text-green-600 border-green-500/20 rounded-full px-3">Vendor</Badge>;
       default:
         return <Badge variant="secondary" className="rounded-full px-3">User</Badge>;
     }
@@ -187,10 +191,12 @@ export default function AdminUsersPage() {
                     <SelectValue placeholder="Select role" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="USER">User</SelectItem>
-                    <SelectItem value="STAFF_ADMIN">Staff Admin</SelectItem>
-                    <SelectItem value="SUPER_ADMIN">Super Admin</SelectItem>
-                  </SelectContent>
+                              <SelectItem value="USER">User</SelectItem>
+                              <SelectItem value="VENDOR">Vendor</SelectItem>
+                              <SelectItem value="STAFF_ADMIN">Staff Admin</SelectItem>
+                              <SelectItem value="SUB_ADMIN">Sub Admin</SelectItem>
+                              <SelectItem value="SUPER_ADMIN">Super Admin</SelectItem>
+                            </SelectContent>
                 </Select>
               </div>
               <div className="flex justify-end gap-3">

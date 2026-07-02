@@ -17,6 +17,7 @@ import * as TransactionReportController from '../controllers/transaction-report.
 import * as DepositController from '../controllers/deposit.controller';
 import * as PayoutRequestController from '../controllers/payout-request.controller';
 import * as GameIdRequestController from '../controllers/game-id-request.controller';
+import * as RolePermissionController from '../controllers/role-permission.controller';
 import multer from 'multer';
 import { getUploadDirectory } from '../utils/uploads';
 
@@ -24,7 +25,7 @@ const router = Router();
 const upload = multer({ dest: getUploadDirectory(), limits: { fileSize: 50 * 1024 * 1024 } });
 
 // Apply admin middleware to all routes
-router.use(authenticate, authorize(['SUPER_ADMIN', 'STAFF_ADMIN']));
+router.use(authenticate, authorize(['SUPER_ADMIN', 'STAFF_ADMIN', 'SUB_ADMIN']));
 
 // Orders
 router.get('/orders', OrderController.getAllOrders);
@@ -139,5 +140,12 @@ router.patch('/payout-requests/:id/mark-paid', PayoutRequestController.markPayou
 router.get('/game-id-requests', GameIdRequestController.getAllGameIdRequests);
 router.patch('/game-id-requests/:id/approve', GameIdRequestController.approveGameIdRequest);
 router.patch('/game-id-requests/:id/reject', GameIdRequestController.rejectGameIdRequest);
+
+// Role Permissions
+router.get('/role-permissions', RolePermissionController.getAllRolePermissions);
+router.get('/role-permissions/:role', RolePermissionController.getPermissionsByRole);
+router.patch('/role-permissions/:role', RolePermissionController.setRolePermissions);
+router.post('/role-permissions/:role/add', RolePermissionController.addRolePermission);
+router.post('/role-permissions/:role/remove', RolePermissionController.removeRolePermission);
 
 export default router;
