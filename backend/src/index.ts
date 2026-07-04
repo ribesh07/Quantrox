@@ -9,7 +9,6 @@ import gameRoutes from './routes/game.routes';
 import exchangeRoutes from './routes/exchange.routes';
 import gamePointOrderRoutes from './routes/game-point-order.routes';
 import notificationRoutes from './routes/notification.routes';
-import twoFactorRoutes from './routes/two-factor.routes';
 import merchantRoutes from './routes/merchant.routes';
 import userRoutes from './routes/user.routes';
 import { logger } from './middleware/logger.middleware';
@@ -40,7 +39,7 @@ app.use(
   })
 );
 app.use(express.json({ limit: '50mb' }));
-  app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(logger);
 app.use('/uploads', express.static(getUploadDirectory()));
 
@@ -53,7 +52,6 @@ app.use('/api/games', gameRoutes);
 app.use('/api/exchanges', exchangeRoutes);
 app.use('/api/game-point-orders', gamePointOrderRoutes);
 app.use('/api/notifications', notificationRoutes);
-app.use('/api/2fa', twoFactorRoutes);
 app.use('/api/merchant', merchantRoutes);
 app.use('/api/user', userRoutes);
 app.get('/health', (req, res) => {

@@ -32,8 +32,38 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
+        temporaryToken: { label: "Temporary Token", type: "text" },
+        code: { label: "Code", type: "text" },
       },
       async authorize(credentials) {
+        // Case 1: 2FA verification step
+        if (credentials?.temporaryToken && credentials?.code) {
+          try {
+            const response = await axios.post(`${SERVER_API_URL}/auth/2fa/verify`, {
+              temporaryToken: credentials.temporaryToken,
+              code: credentials.code,
+            });
+
+            const data = response.data;
+
+            if (data.success && data.user) {
+              return {
+                ...data.user,
+                accessToken: data.token,
+              };
+            }
+            return null;
+          } catch (error: any) {
+            if (error.response?.status === 401 || error.response?.status === 400) {
+              return null;
+            }
+            throw new Error(
+              error.response?.data?.message || "Authentication service is unavailable. Please try again."
+            );
+          }
+        }
+
+        // Case 2: Regular password login step
         if (!credentials?.email || !credentials?.password) {
           throw new Error("Invalid credentials");
         }
@@ -46,6 +76,17 @@ export const authOptions: NextAuthOptions = {
 
           const data = response.data;
 
+          // If 2FA is required, return a special user object with requiresTwoFactor
+          if (data.success && data.requiresTwoFactor) {
+            return {
+              id: "temp", // Dummy ID for NextAuth
+              requiresTwoFactor: true,
+              temporaryToken: data.temporaryToken,
+              email: credentials.email,
+            } as any;
+          }
+
+          // If no 2FA, return regular user
           if (data.success && data.user) {
             return {
               ...data.user,
@@ -67,10 +108,17 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.role = (user as any).role;
-        token.username = (user as any).username;
-        token.id = user.id;
-        token.accessToken = (user as any).accessToken;
+        const userAny = user as any;
+        if (userAny.requiresTwoFactor) {
+          token.requiresTwoFactor = true;
+          token.temporaryToken = userAny.temporaryToken;
+          token.email = userAny.email;
+        } else {
+          token.role = userAny.role;
+          token.username = userAny.username;
+          token.id = userAny.id;
+          token.accessToken = userAny.accessToken;
+        }
       }
       return token;
     },
@@ -80,6 +128,8 @@ export const authOptions: NextAuthOptions = {
         (session.user as any).username = token.username;
         (session.user as any).id = token.id;
         (session.user as any).accessToken = token.accessToken;
+        (session.user as any).requiresTwoFactor = token.requiresTwoFactor;
+        (session.user as any).temporaryToken = token.temporaryToken;
       }
       return session;
     },
