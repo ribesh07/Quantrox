@@ -1,6 +1,7 @@
 import { UserSidebar, MobileUserNav } from "@/components/user/sidebar";
 import { authOptions } from "@/lib/auth";
 import { getServerSession } from "next-auth";
+import "./globals.css";
 import { redirect } from "next/navigation";
 import NotificationClient from "@/components/notification-client";
 
