@@ -301,7 +301,7 @@ export default function GamesPage() {
                     src={resolveMediaUrl(game.logo)} 
                     alt={game.name} 
                     fill 
-                    className="object-contain group-hover:scale-110 transition-transform duration-700"
+                    className="object-contain group-hover:scale-110 -mt-4 transition-transform duration-700"
                     unoptimized
                   />
                 ) : (
