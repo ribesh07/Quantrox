@@ -93,21 +93,20 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="hidden w-64 flex-col border-r border-border bg-[#0B0E11] md:flex h-screen sticky top-0">
-      <div className="flex h-16 items-center border-b border-border px-6">
-        <Link href="/admin" className="flex items-center gap-2 font-bold text-xl">
-          {/* <div className="bg-primary p-1.5 rounded-lg">
-            <TrendingUp className="h-5 w-5 text-primary-foreground" />
-          </div> */}
-             <img
-                    src="/icons/logo.png"
-                    alt="SettlerPay"
-                    className="h-8 sm:h-10 md:h-11 lg:h-12 w-auto object-contain"
-                  />
-          {/* <span className="text-white">Settlerpay</span> */}
+    <aside className="hidden md:flex md:w-64 md:shrink-0 md:flex-col border-r border-border bg-[#0B0E11] h-dvh sticky top-0">
+      {/* Logo */}
+      <div className="flex h-16 items-center border-b border-border px-6 shrink-0">
+        <Link href="/admin" className="flex items-center">
+          <img
+            src="/icons/logo.png"
+            alt="SettlerPay"
+            className="h-10 w-auto object-contain"
+          />
         </Link>
       </div>
-      <nav className="flex-1 space-y-1 p-4">
+
+      {/* Navigation */}
+      <nav className="flex-1 overflow-y-auto p-4 space-y-1">
         {routes.map((route) => (
           <Link
             key={route.href}
@@ -124,10 +123,12 @@ export function Sidebar() {
           </Link>
         ))}
       </nav>
-      <div className="p-4 border-t border-border">
+
+      {/* Logout */}
+      <div className="border-t border-border p-4 shrink-0">
         <Button
           variant="ghost"
-          className="w-full justify-start gap-3 rounded-xl text-[#848E9C] hover:text-destructive hover:bg-destructive/10"
+          className="w-full justify-start gap-3 rounded-xl text-[#848E9C] hover:bg-destructive/10 hover:text-destructive"
           onClick={() => signOut({ callbackUrl: "/login" })}
         >
           <LogOut className="h-4 w-4" />
@@ -143,23 +144,26 @@ export function MobileAdminNav() {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="flex h-16 items-center border-b border-border bg-[#0B0E11] px-4 md:hidden sticky top-0 z-50">
+    <div className="sticky top-0 z-50 flex h-16 items-center border-b border-border bg-[#0B0E11] px-4 md:hidden">
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetTrigger asChild>
           <Button variant="ghost" size="icon" className="mr-2 text-white">
             <Menu className="h-5 w-5" />
           </Button>
         </SheetTrigger>
-        <SheetContent side="left" className="w-72 p-0 bg-[#0B0E11] border-r border-border">
-          <SheetHeader className="p-6 text-left border-b border-border">
-            <SheetTitle className="flex items-center gap-2 font-bold text-xl text-white">
-              <div className="bg-primary p-1.5 rounded-lg">
-                <TrendingUp className="h-5 w-5 text-primary-foreground" />
-              </div>
+
+        <SheetContent
+          side="left"
+          className="w-72 border-r border-border bg-[#0B0E11] p-0"
+        >
+          <SheetHeader className="border-b border-border p-6 text-left">
+            <SheetTitle className="flex items-center gap-2 text-xl font-bold text-white">
+              <TrendingUp className="h-5 w-5 text-primary" />
               <span>Settlerpay Admin</span>
             </SheetTitle>
           </SheetHeader>
-          <nav className="flex-1 space-y-1 p-4">
+
+          <nav className="space-y-1 p-4">
             {routes.map((route) => (
               <Link
                 key={route.href}
@@ -176,10 +180,12 @@ export function MobileAdminNav() {
                 {route.label}
               </Link>
             ))}
+
             <Separator className="my-4 opacity-10" />
+
             <Button
               variant="ghost"
-              className="w-full justify-start gap-3 rounded-xl text-[#848E9C] hover:text-destructive hover:bg-destructive/10"
+              className="w-full justify-start gap-3 rounded-xl text-[#848E9C] hover:bg-destructive/10 hover:text-destructive"
               onClick={() => signOut({ callbackUrl: "/login" })}
             >
               <LogOut className="h-4 w-4" />
@@ -188,7 +194,11 @@ export function MobileAdminNav() {
           </nav>
         </SheetContent>
       </Sheet>
-      <Link href="/admin" className="flex items-center gap-2 font-bold text-lg text-white">
+
+      <Link
+        href="/admin"
+        className="flex items-center gap-2 text-lg font-bold text-white"
+      >
         <TrendingUp className="h-5 w-5 text-primary" />
         <span>Settlerpay</span>
       </Link>
