@@ -12,7 +12,7 @@ import {
   Users,
   Menu,
 } from "lucide-react";
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -25,75 +25,104 @@ import {
 } from "@/components/ui/sheet";
 import { useState } from "react";
 import { Separator } from "@/components/ui/separator";
+import { Permission } from "@/lib/permissions";
 
-const routes = [
+// Define route configurations with required permissions
+interface RouteConfig {
+  label: string;
+  icon: React.ElementType;
+  href: string;
+  requiredPermission?: Permission;
+}
+
+const routes: RouteConfig[] = [
   {
     label: "Dashboard",
     icon: LayoutDashboard,
     href: "/admin",
+    // Dashboard is accessible to all admin roles
   },
   {
     label: "Transactions",
     icon: TrendingUp,
     href: "/admin/orders",
+    requiredPermission: "VIEW_ORDERS",
   },
   {
     label: "Merchants",
     icon: Users,
     href: "/admin/merchants",
+    requiredPermission: "VIEW_MERCHANTS",
   },
   {
     label: "Merchant QRs",
     icon: QrCode,
     href: "/admin/merchant-qrs",
+    requiredPermission: "MANAGE_MERCHANTS",
   },
   {
     label: "Transaction Reports",
     icon: BarChart3,
     href: "/admin/transaction-reports",
+    requiredPermission: "VIEW_ORDERS",
   },
   {
     label: "Deposits",
     icon: TrendingUp,
     href: "/admin/deposits",
+    requiredPermission: "VIEW_DEPOSITS",
   },
   {
     label: "Payout Requests",
     icon: TrendingUp,
     href: "/admin/payout-requests",
+    requiredPermission: "VIEW_PAYOUTS",
   },
   {
     label: "Rates & Fees",
     icon: BarChart3,
     href: "/admin/payment-settings",
+    requiredPermission: "MANAGE_PAYMENT_METHODS",
   },
   {
     label: "Games",
     icon: Gamepad2,
     href: "/admin/games",
+    requiredPermission: "VIEW_GAMES",
   },
   {
     label: "Game Requests",
     icon: Gamepad2,
     href: "/admin/game-requests",
+    requiredPermission: "VIEW_GAME_ID_REQUESTS",
   },
   {
     label: "Users",
     icon: Users,
     href: "/admin/users",
+    requiredPermission: "VIEW_USERS",
   },
   {
     label: "Settings",
     icon: Settings,
     href: "/admin/settings",
+    requiredPermission: "VIEW_SETTINGS",
   },
 ];
 
 export function Sidebar() {
+  const { data: session } = useSession();
   const pathname = usePathname();
+  const userPermissions = (session?.user as any)?.permissions || [];
+
+  // Filter routes based on user permissions
+  const filteredRoutes = routes.filter((route) => {
+    if (!route.requiredPermission) return true;
+    return userPermissions.includes(route.requiredPermission);
+  });
 
   return (
-    <aside className="hidden md:flex md:w-64 md:shrink-0 md:flex-col border-r border-border bg-[#0B0E11] h-dvh sticky top-0">
+    <aside className="hidden md:flex md:w-64 md:shrink-0 md:flex-col border-r border-border bg-[#0B0E11] h-dvh sticky top-0 z-30">
       {/* Logo */}
       <div className="flex h-16 items-center border-b border-border px-6 shrink-0">
         <Link href="/admin" className="flex items-center">
@@ -107,7 +136,7 @@ export function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto p-4 space-y-1">
-        {routes.map((route) => (
+        {filteredRoutes.map((route) => (
           <Link
             key={route.href}
             href={route.href}
@@ -140,8 +169,16 @@ export function Sidebar() {
 }
 
 export function MobileAdminNav() {
+  const { data: session } = useSession();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const userPermissions = (session?.user as any)?.permissions || [];
+
+  // Filter routes based on user permissions
+  const filteredRoutes = routes.filter((route) => {
+    if (!route.requiredPermission) return true;
+    return userPermissions.includes(route.requiredPermission);
+  });
 
   return (
     <div className="sticky top-0 z-50 flex h-16 items-center border-b border-border bg-[#0B0E11] px-4 md:hidden">
@@ -164,7 +201,7 @@ export function MobileAdminNav() {
           </SheetHeader>
 
           <nav className="space-y-1 p-4">
-            {routes.map((route) => (
+            {filteredRoutes.map((route) => (
               <Link
                 key={route.href}
                 href={route.href}

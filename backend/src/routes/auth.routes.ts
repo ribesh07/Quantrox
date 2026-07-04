@@ -1,8 +1,12 @@
 import { Router } from 'express';
 import * as AuthController from '../controllers/auth.controller';
 import { authenticate } from '../middleware/auth.middleware';
+import twoFARoutes from './auth/2fa.routes';
 
 const router = Router();
+
+// Mount 2FA routes
+router.use('/2fa', twoFARoutes);
 
 router.post('/register', AuthController.register);
 router.post('/login', AuthController.login);

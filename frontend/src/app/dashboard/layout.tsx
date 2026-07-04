@@ -15,6 +15,13 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
+  const userRole = (session.user as any)?.role;
+
+  // If user's role is NOT USER, redirect to login
+  if (userRole !== "USER") {
+    redirect("/login");
+  }
+
   return (
     <div className="min-h-screen bg-muted/30">
       {/* Fixed Desktop Sidebar */}

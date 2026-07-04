@@ -8,6 +8,7 @@ import { env } from '../config/env';
 import { TokenService } from '../services/token.service';
 import { EmailService } from '../services/email.service';
 import { v4 as uuidv4 } from 'uuid';
+import { TwoFAService } from '../services/auth/2fa.service';
 
 export const register = async (req: Request, res: Response) => {
   try {
@@ -52,26 +53,36 @@ export const login = async (req: Request, res: Response) => {
     const { email, password } = loginSchema.parse(req.body);
 
     const user = await prisma.user.findUnique({ where: { email } });
-    console.log("user details :", user);
     if (!user || !(await bcrypt.compare(password, user.password))) {
       return res.status(401).json({ success: false, message: "Invalid email or password" });
     }
+
+    // Check if 2FA is enabled
+    if (user.twoFactorEnabled) {
+      const temporaryToken = TwoFAService.generateTemporaryToken(user.id);
+      return res.json({
+        success: true,
+        requiresTwoFactor: true,
+        temporaryToken,
+      });
+    }
+
     const jwtSecret = env.jwtSecret || process.env.JWT_SECRET;
 
     if (!jwtSecret) {
       throw new Error("JWT_SECRET is not configured");
     }
 
-        const token = jwt.sign({ userId: user.id, role: user.role }, jwtSecret, { expiresIn: '1d' });
+    const token = jwt.sign({ userId: user.id, role: user.role }, jwtSecret, { expiresIn: '1d' });
 
-      // create refresh token and return it
-      const rt = await TokenService.createRefreshToken(user.id);
+    // create refresh token and return it
+    const rt = await TokenService.createRefreshToken(user.id);
 
     res.json({ 
       success: true, 
       token, 
-        refreshToken: rt.token,
-        user: { id: user.id, username: user.username, role: user.role } 
+      refreshToken: rt.token,
+      user: { id: user.id, username: user.username, role: user.role } 
     });
   } catch (error: any) {
     res.status(400).json({ success: false, message: error.message || "Login failed" });
@@ -157,26 +168,36 @@ export const login = async (req: Request, res: Response) => {
   };
 
   export const getCurrentUser = async (req: AuthRequest, res: Response) => {
-    try {
-      const user = await prisma.user.findUnique({
-        where: { id: req.user!.userId },
-        select: {
-          id: true,
-          username: true,
-          email: true,
-          role: true,
-          status: true,
-          createdAt: true,
-        },
-      });
-      if (!user) {
-        return res.status(404).json({ success: false, message: 'User not found' });
-      }
-      res.json({ success: true, user });
-    } catch (error: any) {
-      res.status(500).json({ success: false, message: error.message });
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user!.userId },
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        role: true,
+        status: true,
+        createdAt: true,
+        twoFactorEnabled: true,
+      },
+    });
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
     }
-  };
+
+    // Fetch user's permissions
+    const rolePermissions = await prisma.rolePermission.findMany({
+      where: { role: user.role },
+      select: { permission: true },
+    });
+
+    const permissions = rolePermissions.map(rp => rp.permission);
+
+    res.json({ success: true, user: { ...user, permissions } });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
 
 
 

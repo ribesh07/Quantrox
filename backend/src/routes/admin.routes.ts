@@ -25,7 +25,7 @@ const router = Router();
 const upload = multer({ dest: getUploadDirectory(), limits: { fileSize: 50 * 1024 * 1024 } });
 
 // Apply admin middleware to all routes
-router.use(authenticate, authorize(['SUPER_ADMIN', 'STAFF_ADMIN', 'SUB_ADMIN']));
+router.use(authenticate, authorize(['SUPER_ADMIN', 'STAFF_ADMIN', 'SUB_ADMIN','VENDOR']));
 
 // Orders
 router.get('/orders', OrderController.getAllOrders);

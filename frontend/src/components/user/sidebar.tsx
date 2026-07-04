@@ -14,6 +14,7 @@ import {
   FileText,
   DollarSign,
   Wallet,
+  Shield,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import Link from "next/link";
@@ -80,6 +81,11 @@ const routes = [
     icon: User,
     href: "/dashboard/profile",
   },
+  // {
+  //   label: "2FA Settings",
+  //   icon: Shield,
+  //   href: "/dashboard/settings/2fa",
+  // },
 ];
 
 export function UserSidebar() {
