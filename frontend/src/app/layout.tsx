@@ -1,35 +1,32 @@
-import { UserSidebar, MobileUserNav } from "@/components/user/sidebar";
-import { authOptions } from "@/lib/auth";
-import { getServerSession } from "next-auth";
-import { redirect } from "next/navigation";
-import NotificationClient from "@/components/notification-client";
+import { useEffect } from 'react';
+import { initSocket } from '@/lib/ws';
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import "./globals.css";
+import { Providers } from "./providers";
+import { Toaster } from "@/components/ui/sonner";
 
-export default async function DashboardLayout({
+const inter = Inter({ subsets: ["latin"] });
+
+export const metadata: Metadata = {
+  title: "SettlerPay - Coin Exchange & Gaming Topup",
+  description: "Modern fintech platform for exchange and gaming topups",
+};
+
+export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
-  const session = await getServerSession(authOptions);
-
-  if (!session) {
-    redirect("/login");
-  }
-
+}>) {
+  // Socket initialization moved to dashboard layout (authenticated pages)
   return (
-    <div className="min-h-screen bg-muted/30">
-      <UserSidebar />
-
-      <div className="flex min-h-screen flex-col md:ml-64">
-        <MobileUserNav />
-
-        <main className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 lg:p-8">
+    <html lang="en" className="dark" suppressHydrationWarning>
+      <body className={inter.className}>
+        <Providers>
           {children}
-        </main>
-
-        {(session.user as any)?.id && (
-          <NotificationClient userId={(session.user as any).id} />
-        )}
-      </div>
-    </div>
+          <Toaster />
+        </Providers>
+      </body>
+    </html>
   );
 }
