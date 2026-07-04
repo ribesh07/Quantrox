@@ -57,6 +57,8 @@ function LoginPageContent() {
 
       if (
         role === "SUPER_ADMIN" ||
+        role === "VENDOR" ||
+        role === "SUB_ADMIN" ||
         role === "STAFF_ADMIN"
       ) {
         router.push("/admin");

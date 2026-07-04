@@ -7,7 +7,7 @@ export default withAuth(
     const path = req.nextUrl.pathname;
 
     // Admin routes protection
-    if (path.startsWith("/admin") && token?.role !== "SUPER_ADMIN" && token?.role !== "STAFF_ADMIN") {
+    if (path.startsWith("/admin") && token?.role !== "SUPER_ADMIN" && token?.role !== "STAFF_ADMIN" && token?.role !== "VENDOR" && token?.role !== "SUB_ADMIN") {
       return NextResponse.redirect(new URL("/dashboard", req.url));
     }
 
@@ -16,7 +16,7 @@ export default withAuth(
   // Redirect admins from dashboard to admin panel
     if (
       path === "/dashboard" &&
-      (token?.role === "SUPER_ADMIN" || token?.role === "STAFF_ADMIN")
+      (token?.role === "SUPER_ADMIN" || token?.role === "STAFF_ADMIN" || token?.role === "VENDOR" || token?.role === "SUB_ADMIN")
     ) {
       return NextResponse.redirect(new URL("/admin", req.url));
     }
@@ -25,7 +25,9 @@ export default withAuth(
   if (
     path.startsWith("/admin") &&
     token?.role !== "SUPER_ADMIN" &&
-    token?.role !== "STAFF_ADMIN"
+    token?.role !== "STAFF_ADMIN" &&
+    token?.role !== "VENDOR" &&
+    token?.role !== "SUB_ADMIN"
   ) {
     return NextResponse.redirect(new URL("/dashboard", req.url));
   }
