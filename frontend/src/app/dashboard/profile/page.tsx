@@ -1,6 +1,7 @@
 "use client";
 
 import { useSession } from "next-auth/react";
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,11 +17,9 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState<any>(null);
 
-  // console.log("Session Data:", session);
   const handleUpdateProfile = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
-    // In a real app, you'd call an API here
     setTimeout(() => {
       setLoading(false);
       toast.success("Profile updated successfully!");
@@ -31,18 +30,16 @@ export default function ProfilePage() {
     if (session) {
       try {
         const res = await getCurrentUserAction();
-        // console.log("Current User Response:", res);
         if (res.success) {
           setUser(res.user);
-          // update({ ...session, user: res.user });
         }
       } catch (err: any) {
         console.error("Error fetching user data:", err);
       }
     }
-  }
+  };
 
-  useEffect( () => {
+  useEffect(() => {
     if (session) {
       fetchuserdetails();
     }
@@ -135,16 +132,16 @@ export default function ProfilePage() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-3">
-                <Label htmlFor="current_password text-sm font-semibold">Current Password</Label>
+                <Label htmlFor="current_password" className="text-sm font-semibold">Current Password</Label>
                 <Input id="current_password" type="password" className="h-12 rounded-xl border-2" />
               </div>
               <div className="grid gap-6 sm:grid-cols-2">
                 <div className="space-y-3">
-                  <Label htmlFor="new_password text-sm font-semibold">New Password</Label>
+                  <Label htmlFor="new_password" className="text-sm font-semibold">New Password</Label>
                   <Input id="new_password" type="password" className="h-12 rounded-xl border-2" />
                 </div>
                 <div className="space-y-3">
-                  <Label htmlFor="confirm_password text-sm font-semibold">Confirm New Password</Label>
+                  <Label htmlFor="confirm_password" className="text-sm font-semibold">Confirm New Password</Label>
                   <Input id="confirm_password" type="password" className="h-12 rounded-xl border-2" />
                 </div>
               </div>
@@ -154,6 +151,24 @@ export default function ProfilePage() {
                 <Key className="mr-2 h-4 w-4" /> Update Password
               </Button>
             </CardFooter>
+          </Card>
+
+          {/* 2FA Section */}
+          <Card className="border-none shadow-xl bg-card/50 backdrop-blur-sm">
+            <CardHeader>
+              <CardTitle>Two-Factor Authentication</CardTitle>
+              <CardDescription>Add an extra layer of security to your account.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-4">
+                Protect your account with 2FA using Google Authenticator, Microsoft Authenticator, or similar apps.
+              </p>
+              <Button asChild>
+                <Link href="/dashboard/settings/2fa">
+                  <Shield className="mr-2 h-4 w-4" /> Manage 2FA
+                </Link>
+              </Button>
+            </CardContent>
           </Card>
         </div>
       </div>
