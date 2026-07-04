@@ -13,7 +13,11 @@ export interface BackupCodeHash {
 export const TwoFAService = {
   // Generate secret for setup
   async generateSetupSecret(userId: string, userEmail: string) {
+    console.log('[2FA_SERVICE] generateSetupSecret called:', { userId, userEmail });
+    
     const { base32, otpauthUrl } = totpUtils.generateSecret('SettlerPay', userEmail);
+    console.log('[2FA_SERVICE] Generated secret:', { base32, otpauthUrl });
+    
     const qrCode = await totpUtils.generateQRCode(otpauthUrl);
     return {
       secret: base32,
@@ -23,6 +27,13 @@ export const TwoFAService = {
 
   // Enable 2FA
   async enable2FA(userId: string, secret: string, code: string, currentPassword: string) {
+    console.log('[2FA_SERVICE] enable2FA called with:', {
+      userId,
+      secret,
+      code,
+      currentPassword: currentPassword ? '[REDACTED]' : 'missing'
+    });
+    
     // Verify current password
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new Error('Invalid credentials');
@@ -31,7 +42,7 @@ export const TwoFAService = {
     if (!passwordValid) throw new Error('Invalid credentials');
 
     // Verify TOTP code
-    const codeValid = totpUtils.verifyToken(secret, code, 1);
+    const codeValid = totpUtils.verifyToken(secret, code, 2);
     if (!codeValid) throw new Error('Invalid authentication code');
 
     // Encrypt secret

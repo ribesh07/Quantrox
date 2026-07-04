@@ -21,13 +21,31 @@ export const generateQRCode = async (otpauthUrl: string): Promise<string> => {
 };
 
 // Verify a TOTP token
-export const verifyToken = (secretBase32: string, token: string, window: number = 1): boolean => {
-  return speakeasy.totp.verify({
+export const verifyToken = (secretBase32: string, token: string, window: number = 2): boolean => {
+  console.log('[TOTP_VERIFY] Verifying token:', {
+    secretBase32Length: secretBase32.length,
+    token,
+    tokenLength: token.length,
+    window
+  });
+  
+  // Generate expected tokens for debugging
+  const expected = speakeasy.totp({
+    secret: secretBase32,
+    encoding: 'base32',
+    step: 30,
+  });
+  console.log('[TOTP_VERIFY] Current expected token:', expected);
+  
+  const result = speakeasy.totp.verify({
     secret: secretBase32,
     encoding: 'base32',
     token,
-    window, // Allow ±1 window (30 seconds before or after)
+    window, // Allow ±2 window (1 minute tolerance)
   });
+  
+  console.log('[TOTP_VERIFY] Verification result:', result);
+  return result;
 };
 
 // Generate a random backup code
