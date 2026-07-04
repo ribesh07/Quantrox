@@ -194,10 +194,26 @@ function LoginPageContent() {
                 </div>
               </CardContent>
               <CardFooter className="flex flex-col space-y-5 px-5 pb-8 sm:space-y-6 sm:px-6 sm:pb-10">
-                <Button className="w-full h-12 sm:h-14 rounded-2xl text-base sm:text-lg font-bold shadow-lg shadow-primary/20 hover:scale-[1.01] active:scale-[0.99] transition-all" type="submit" disabled={loading}>
-                  {loading ? "Logging in..." : "Login"}
-                </Button>
-              </CardFooter>
+  <Button
+    className="w-full h-12 sm:h-14 rounded-2xl text-base sm:text-lg font-bold shadow-lg shadow-primary/20 hover:scale-[1.01] active:scale-[0.99] transition-all"
+    type="submit"
+    disabled={loading}
+  >
+    {loading ? "Logging in..." : "Login"}
+  </Button>
+
+  <p className="text-center text-sm text-[#848E9C]">
+    Don't have an account?{" "}
+    <a
+      href="https://t.me/nist_ieo"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="font-semibold text-primary hover:underline"
+    >
+      Click here
+    </a>
+  </p>
+</CardFooter>
             </form>
           </>
         ) : (
