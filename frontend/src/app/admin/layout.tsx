@@ -16,12 +16,15 @@ export default async function AdminLayout({
 
   return (
     <div className="flex min-h-dvh bg-muted/30">
+      {/* Desktop Sidebar - Sticky */}
       <Sidebar />
 
       <div className="flex min-w-0 flex-1 flex-col">
+        {/* Mobile Header - Sticky */}
         <MobileAdminNav />
 
-        <main className="flex-1 overflow-x-hidden p-3 sm:p-4 md:p-6 lg:p-8">
+        {/* Main Content - Added padding-top for mobile */}
+        <main className="flex-1 overflow-x-hidden p-3 sm:p-4 md:p-6 lg:p-8 pt-20 md:pt-6">
           {children}
         </main>
       </div>

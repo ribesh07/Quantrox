@@ -25,28 +25,9 @@ import {
 } from "@/components/ui/sheet";
 import { useState } from "react";
 import { Separator } from "@/components/ui/separator";
+import { Permission } from "@/lib/permissions";
 
 // Define route configurations with required permissions
-type Permission =
-  | "VIEW_ORDERS"
-  | "MANAGE_ORDERS"
-  | "VIEW_USERS"
-  | "MANAGE_USERS"
-  | "VIEW_GAMES"
-  | "MANAGE_GAMES"
-  | "VIEW_MERCHANTS"
-  | "MANAGE_MERCHANTS"
-  | "VIEW_PAYMENT_METHODS"
-  | "MANAGE_PAYMENT_METHODS"
-  | "VIEW_DEPOSITS"
-  | "MANAGE_DEPOSITS"
-  | "VIEW_PAYOUTS"
-  | "MANAGE_PAYOUTS"
-  | "VIEW_SETTINGS"
-  | "MANAGE_SETTINGS"
-  | "VIEW_GAME_ID_REQUESTS"
-  | "MANAGE_GAME_ID_REQUESTS";
-
 interface RouteConfig {
   label: string;
   icon: React.ElementType;
@@ -141,7 +122,7 @@ export function Sidebar() {
   });
 
   return (
-    <aside className="hidden md:flex md:w-64 md:shrink-0 md:flex-col border-r border-border bg-[#0B0E11] h-dvh sticky top-0">
+    <aside className="hidden md:flex md:w-64 md:shrink-0 md:flex-col border-r border-border bg-[#0B0E11] h-dvh sticky top-0 z-30">
       {/* Logo */}
       <div className="flex h-16 items-center border-b border-border px-6 shrink-0">
         <Link href="/admin" className="flex items-center">
