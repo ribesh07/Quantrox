@@ -139,9 +139,9 @@ export default function TwoFactorPage() {
                 </div>
               )}
               {secret && (
-                <div className="p-3 bg-[#2B3139] rounded-lg">
+                <div className="p-3 bg-[#2B3139] rounded-lg overflow-hidden">
                   <p className="text-xs text-[#848E9C] mb-1">Manual entry code:</p>
-                  <p className="text-white font-mono">{secret}</p>
+                  <p className="text-white font-mono text-sm break-all overflow-x-auto whitespace-pre-wrap">{secret}</p>
                 </div>
               )}
               <div className="space-y-2">

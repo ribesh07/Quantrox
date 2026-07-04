@@ -81,11 +81,11 @@ const routes = [
     icon: User,
     href: "/dashboard/profile",
   },
-  {
-    label: "2FA Settings",
-    icon: Shield,
-    href: "/dashboard/settings/2fa",
-  },
+  // {
+  //   label: "2FA Settings",
+  //   icon: Shield,
+  //   href: "/dashboard/settings/2fa",
+  // },
 ];
 
 export function UserSidebar() {

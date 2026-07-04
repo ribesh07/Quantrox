@@ -67,9 +67,17 @@ export default function ProfilePage() {
             </Avatar>
             <div className="text-center">
               <h3 className="font-bold text-lg">{user?.username}</h3>
-              <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold mt-1">
-                {(user?.role || "").replace("_", " ")}
-              </p>
+              <div className="flex items-center justify-center gap-2 mt-1">
+                <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold">
+                  {(user?.role || "").replace("_", " ")}
+                </p>
+                {user?.twoFactorEnabled && (
+                  <div className="flex items-center gap-1 bg-green-500/10 text-green-500 px-2 py-0.5 rounded-full">
+                    <Shield className="h-3 w-3" />
+                    <span className="text-[10px] font-bold">2FA</span>
+                  </div>
+                )}
+              </div>
             </div>
             <div className="w-full space-y-2 pt-4">
               <div className="flex items-center gap-3 text-sm p-3 rounded-xl bg-muted/50 border">
