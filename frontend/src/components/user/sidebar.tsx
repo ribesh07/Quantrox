@@ -86,7 +86,7 @@ export function UserSidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="fixed left-0 top-0 z-40 hidden h-screen w-64 flex-col border-r border-border bg-[#0B0E11] md:flex">
+    <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-border bg-[#0B0E11] md:flex">
       {/* Logo */}
       <div className="flex h-16 items-center border-b border-border px-6 flex-shrink-0">
         <Link href="/dashboard" className="flex items-center">

@@ -16,13 +16,24 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="flex min-h-screen bg-muted/30">
+    <div className="min-h-screen bg-muted/30">
+      {/* Fixed Desktop Sidebar */}
       <UserSidebar />
-      <div className="flex flex-col flex-1">
+
+      {/* Main Content */}
+      <div className="flex min-h-screen flex-col md:ml-64">
+        {/* Mobile Navigation */}
         <MobileUserNav />
-        <main className="flex-1 p-3 sm:p-4 md:p-6 lg:p-8">{children}</main>
-        {/* Notification client initialized with session user id */}
-        {(session.user as any)?.id && <NotificationClient userId={(session.user as any).id} />}
+
+        {/* Page Content */}
+        <main className="flex-1 overflow-x-hidden p-3 sm:p-4 md:p-6 lg:p-8">
+          {children}
+        </main>
+
+        {/* Notification Client */}
+        {(session.user as any)?.id && (
+          <NotificationClient userId={(session.user as any).id} />
+        )}
       </div>
     </div>
   );
