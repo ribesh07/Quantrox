@@ -288,63 +288,90 @@ export default function GamesPage() {
           </Button>
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-5 px-4 md:px-0">
-          {filteredGames.map((game: any) => (
-            <div 
-              key={game.id}
-              onClick={() => setSelectedGame(game)}
-              className="group relative cursor-pointer"
-            >
-              <div className="aspect-[2/3] md:aspect-[3/4] rounded-[1rem] md:rounded-[1.5rem] overflow-hidden border-2 border-[#2B3139] bg-[#1E2329] group-hover:border-primary transition-all duration-500 shadow-xl hover:shadow-primary/20 hover:-translate-y-2 relative">
-                {game.logo ? (
-                  <Image 
-                    src={resolveMediaUrl(game.logo)} 
-                    alt={game.name} 
-                    fill 
-                    className="object-contain group-hover:scale-110 -mt-4 transition-transform duration-700"
-                    unoptimized
-                  />
-                ) : (
-                  <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-[#1E2329] to-[#0B0E11]">
-                    <Gamepad2 className="h-16 w-16 text-[#2B3139] group-hover:scale-110 transition-transform duration-500" />
-                  </div>
-                )}
+       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
+  {filteredGames.map((game: any) => (
+    <div
+      key={game.id}
+      onClick={() => setSelectedGame(game)}
+      className="group cursor-pointer"
+    >
+      <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-[#181A20] transition-all duration-500 hover:-translate-y-2 hover:border-primary/70 hover:shadow-[0_20px_50px_rgba(255,184,0,0.25)]">
 
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent opacity-80 group-hover:opacity-90 transition-opacity duration-300" />
-                
-                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 z-30">
-                  <div className="h-14 w-14 rounded-full bg-primary flex items-center justify-center shadow-2xl scale-50 group-hover:scale-100 transition-transform duration-300">
-                    <TrendingUp className="h-7 w-7 text-primary-foreground" />
-                  </div>
-                </div>
+        {/* Image */}
+        <div className="relative aspect-[3/4] overflow-hidden bg-gradient-to-br from-[#222531] to-[#111318]">
+          {game.logo ? (
+            <Image
+              src={resolveMediaUrl(game.logo)}
+              alt={game.name}
+              fill
+              unoptimized
+              className="object-contain p-5 transition-transform duration-700 group-hover:scale-110 group-hover:rotate-2"
+            />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Gamepad2 className="h-16 w-16 text-gray-600" />
+            </div>
+          )}
 
-                <div className="absolute inset-x-0 bottom-0 p-3 md:p-5 z-20 space-y-1 md:space-y-2">
-                  <h3 className="text-white font-black text-sm md:text-lg leading-tight line-clamp-2 group-hover:text-primary transition-colors">
-                    {game.name}
-                  </h3>
-                  
-                  <div className="flex items-center gap-2">
-                    <div className="bg-primary/10 backdrop-blur-sm px-2 py-0.5 md:px-3 md:py-1 rounded-lg border border-primary/20">
-                      <span className="text-primary font-black text-[10px] md:text-sm whitespace-nowrap">
-                        ${game.buyRate.toFixed(2)}
-                      </span>
-                    </div>
-                    <span className="text-[#848E9C] font-bold text-[8px] md:text-[10px] uppercase tracking-tighter">Rate</span>
-                  </div>
-                </div>
+          {/* Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
 
-                <div className="absolute top-3 left-3 z-20 flex flex-col gap-2">
-                  {game.active && (
-                    <div className="bg-[#0ECB81] text-[#0B0E11] text-[8px] md:text-[10px] font-black px-2 py-0.5 md:px-3 md:py-1 rounded-lg uppercase tracking-tighter shadow-xl flex items-center gap-1">
-                      <span className="h-1.5 w-1.5 rounded-full bg-[#0B0E11] animate-pulse" />
-                      Popular
-                    </div>
-                  )}
-                </div>
+          {/* Hover Overlay */}
+          <div className="absolute inset-0 bg-primary/20 opacity-0 transition-all duration-500 group-hover:opacity-100" />
+
+          {/* Play Button */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="scale-75 opacity-0 transition-all duration-500 group-hover:scale-100 group-hover:opacity-100">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary text-black shadow-2xl">
+                <TrendingUp className="h-8 w-8" />
               </div>
             </div>
-          ))}
+          </div>
+
+          {/* Popular Badge */}
+          {game.active && (
+            <div className="absolute left-3 top-3">
+              <div className="flex items-center gap-1 rounded-full bg-green-500 px-3 py-1 text-[11px] font-bold text-black shadow-lg">
+                <span className="h-2 w-2 animate-pulse rounded-full bg-black" />
+                Popular
+              </div>
+            </div>
+          )}
         </div>
+
+        {/* Bottom */}
+        <div className="space-y-3 p-4">
+
+          <h3 className="line-clamp-2 text-lg font-bold text-white transition-colors duration-300 group-hover:text-primary">
+            {game.name}
+          </h3>
+
+          <div className="flex items-center justify-between">
+
+            <div className="rounded-xl bg-primary/10 px-3 py-2 ring-1 ring-primary/30">
+              <p className="text-xs text-primary/70">
+                Buy Rate
+              </p>
+
+              <p className="text-lg font-bold text-primary">
+                ${game.buyRate.toFixed(2)}
+              </p>
+            </div>
+
+            <div className="rounded-full bg-[#2A2F38] p-3 transition-all duration-300 group-hover:bg-primary group-hover:text-black">
+              <TrendingUp className="h-5 w-5" />
+            </div>
+
+          </div>
+        </div>
+
+        {/* Animated Bottom Line */}
+        <div className="absolute bottom-0 left-0 h-1 w-0 bg-primary transition-all duration-500 group-hover:w-full" />
+
+      </div>
+    </div>
+  ))}
+</div>
       )}
 
       <Dialog open={!!selectedGame} onOpenChange={(open) => !open && closeDialog()}>
