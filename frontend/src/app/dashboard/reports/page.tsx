@@ -176,7 +176,7 @@ export default function MerchantReportsPage() {
                     <TableCell>${report.totalAmount.toLocaleString()}</TableCell>
                     <TableCell>
                       {report.proofImage ? (
-                        <img src={report.proofImage} alt="Proof" className="h-12 w-12 object-cover rounded" />
+                        <img src={report.proofImage} alt="Proof" className="h-12 w-12 object-contain rounded" />
                       ) : (
                         <FileText className="h-6 w-6 text-muted-foreground" />
                       )}

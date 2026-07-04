@@ -135,7 +135,7 @@ export default function AdminTransactionReportsPage() {
                           <img
                             src={resolveMediaUrl(report.proofImage)}
                             alt="Proof"
-                            className="h-20 w-20 object-cover rounded"
+                            className="h-20 w-20 object-contain rounded"
                           />
                         ) : (
                           <FileText className="h-8 w-8 text-muted-foreground" />
