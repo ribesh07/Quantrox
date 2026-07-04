@@ -71,14 +71,13 @@ function LoginPageContent() {
       // No 2FA, proceed
       const role = sessionUser?.role;
       if (
-        role === "SUPER_ADMIN" ||
-        role === "VENDOR" ||
-        role === "SUB_ADMIN" ||
-        role === "STAFF_ADMIN"
+        role === "USER" 
       ) {
-        router.push("/admin");
-      } else {
         router.push("/dashboard");
+      } else {
+        setError("Unauthorized access");
+        router.replace("/login");
+        return;
       }
 
       router.refresh();
@@ -119,15 +118,14 @@ function LoginPageContent() {
 
       const session = await getSession();
       const role = (session?.user as any)?.role;
-      if (
-        role === "SUPER_ADMIN" ||
-        role === "VENDOR" ||
-        role === "SUB_ADMIN" ||
-        role === "STAFF_ADMIN"
+     if (
+        role === "USER" 
       ) {
-        router.push("/admin");
-      } else {
         router.push("/dashboard");
+      } else {
+        setError("Unauthorized access");
+        router.replace("/login");
+        return;
       }
 
       router.refresh();

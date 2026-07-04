@@ -67,6 +67,11 @@ export const authOptions: NextAuthOptions = {
             const data = response.data;
 
             if (data.success && data.user) {
+              // Check if user role is USER
+              if (data.user.role !== "USER") {
+                return null;
+              }
+
               // Fetch full user with permissions
               const userWithPermissions = await fetchUserWithPermissions(data.token);
               if (userWithPermissions) {
@@ -114,8 +119,12 @@ export const authOptions: NextAuthOptions = {
             } as any;
           }
 
-          // If no 2FA, return regular user with permissions
+          // If no 2FA, return regular user only if role is USER
           if (data.success && data.user) {
+            if (data.user.role !== "USER") {
+              return null;
+            }
+
             const userWithPermissions = await fetchUserWithPermissions(data.token);
             if (userWithPermissions) {
               return {

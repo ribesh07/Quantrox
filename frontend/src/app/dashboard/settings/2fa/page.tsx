@@ -25,7 +25,7 @@ export default function TwoFactorPage() {
     if (!token) {
       await signOut();
       router.push("/login");
-      return {};
+      return null;
     }
     return {
       "Authorization": `Bearer ${token}`,
@@ -36,7 +36,7 @@ export default function TwoFactorPage() {
   useEffect(() => {
     const checkStatus = async () => {
       const headers = await getAuthHeaders();
-      if (!headers.Authorization) return;
+      if (!headers) return;
 
       // We don't have a status endpoint anymore, but we can just start with status step
       setStep("status");
@@ -48,6 +48,8 @@ export default function TwoFactorPage() {
     setLoading(true);
     try {
       const headers = await getAuthHeaders();
+      if (!headers) return;
+
       const res = await fetch("/api/auth/2fa/setup", {
         method: "POST",
         headers,
@@ -77,6 +79,8 @@ export default function TwoFactorPage() {
     setLoading(true);
     try {
       const headers = await getAuthHeaders();
+      if (!headers) return;
+
       const res = await fetch("/api/auth/2fa/enable", {
         method: "POST",
         headers,
@@ -106,6 +110,8 @@ export default function TwoFactorPage() {
     setLoading(true);
     try {
       const headers = await getAuthHeaders();
+      if (!headers) return;
+
       const res = await fetch("/api/auth/2fa/disable", {
         method: "POST",
         headers,
