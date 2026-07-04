@@ -15,11 +15,15 @@ export default async function AdminLayout({
   }
 
   return (
-    <div className="flex min-h-screen bg-muted/30">
+    <div className="flex min-h-dvh bg-muted/30">
       <Sidebar />
-      <div className="flex flex-col flex-1">
+
+      <div className="flex min-w-0 flex-1 flex-col">
         <MobileAdminNav />
-        <main className="flex-1 p-3 sm:p-4 md:p-6 lg:p-8">{children}</main>
+
+        <main className="flex-1 overflow-x-hidden p-3 sm:p-4 md:p-6 lg:p-8">
+          {children}
+        </main>
       </div>
     </div>
   );
