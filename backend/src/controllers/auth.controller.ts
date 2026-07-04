@@ -178,6 +178,7 @@ export const login = async (req: Request, res: Response) => {
         role: true,
         status: true,
         createdAt: true,
+        twoFactorEnabled: true,
       },
     });
     if (!user) {

@@ -8,6 +8,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { getSession, signOut } from "next-auth/react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { setup2FAAction, enable2FAAction, disable2FAAction, getCurrentUserAction } from "@/actions/auth.actions";
+import { toast } from "sonner";
 
 export default function TwoFactorPage() {
   const router = useRouter();
@@ -19,27 +21,14 @@ export default function TwoFactorPage() {
   const [backupCodes, setBackupCodes] = useState<string[] | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const getAuthHeaders = async () => {
-    const session = await getSession();
-    const token = (session?.user as any)?.accessToken;
-    if (!token) {
-      await signOut();
-      router.push("/login");
-      return null;
-    }
-    return {
-      "Authorization": `Bearer ${token}`,
-      "Content-Type": "application/json",
-    };
-  };
-
   useEffect(() => {
     const checkStatus = async () => {
-      const headers = await getAuthHeaders();
-      if (!headers) return;
-
-      // We don't have a status endpoint anymore, but we can just start with status step
-      setStep("status");
+      const result = await getCurrentUserAction();
+      if (result.success && result.user?.twoFactorEnabled) {
+        setStep("enabled");
+      } else {
+        setStep("status");
+      }
     };
     checkStatus();
   }, []);
@@ -47,25 +36,17 @@ export default function TwoFactorPage() {
   const handleStartSetup = async () => {
     setLoading(true);
     try {
-      const headers = await getAuthHeaders();
-      if (!headers) return;
-
-      const res = await fetch("/api/auth/2fa/setup", {
-        method: "POST",
-        headers,
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        alert(data.message || "Failed to setup 2FA");
-        return;
+      const result = await setup2FAAction();
+      if (result.success) {
+        setSecret(result.secret);
+        setQrCode(result.qrCode);
+        setStep("setup");
+      } else {
+        toast.error(result.error || "Failed to setup 2FA");
       }
-      const data = await res.json();
-      setSecret(data.secret);
-      setQrCode(data.qrCode);
-      setStep("setup");
     } catch (err) {
       console.error(err);
-      alert("Failed to setup 2FA");
+      toast.error("Failed to setup 2FA");
     } finally {
       setLoading(false);
     }
@@ -73,30 +54,22 @@ export default function TwoFactorPage() {
 
   const handleEnable = async () => {
     if (!secret || !code || !password) {
-      alert("Please enter all fields");
+      toast.error("Please enter all fields");
       return;
     }
     setLoading(true);
     try {
-      const headers = await getAuthHeaders();
-      if (!headers) return;
-
-      const res = await fetch("/api/auth/2fa/enable", {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ secret, code, password }),
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        alert(data.message || "Verification failed");
-        return;
+      const result = await enable2FAAction({ secret, code, password });
+      if (result.success) {
+        setBackupCodes(result.backupCodes);
+        setStep("enabled");
+        toast.success("2FA enabled successfully!");
+      } else {
+        toast.error(result.error || "Verification failed");
       }
-      const data = await res.json();
-      setBackupCodes(data.backupCodes);
-      setStep("enabled");
     } catch (err) {
       console.error(err);
-      alert("Failed to enable 2FA");
+      toast.error("Failed to enable 2FA");
     } finally {
       setLoading(false);
     }
@@ -104,31 +77,24 @@ export default function TwoFactorPage() {
 
   const handleDisable = async () => {
     if (!code || !password) {
-      alert("Please enter your password and 2FA code");
+      toast.error("Please enter your password and 2FA code");
       return;
     }
     setLoading(true);
     try {
-      const headers = await getAuthHeaders();
-      if (!headers) return;
-
-      const res = await fetch("/api/auth/2fa/disable", {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ password, code }),
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        alert(data.message || "Failed to disable 2FA");
-        return;
+      const result = await disable2FAAction({ code, password });
+      if (result.success) {
+        setStep("status");
+        setSecret(null);
+        setQrCode(null);
+        setBackupCodes(null);
+        toast.success("2FA disabled successfully!");
+      } else {
+        toast.error(result.error || "Failed to disable 2FA");
       }
-      setStep("status");
-      setSecret(null);
-      setQrCode(null);
-      setBackupCodes(null);
     } catch (err) {
       console.error(err);
-      alert("Failed to disable 2FA");
+      toast.error("Failed to disable 2FA");
     } finally {
       setLoading(false);
     }
