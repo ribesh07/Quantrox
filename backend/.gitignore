@@ -25,7 +25,6 @@ build/
 *.tsbuildinfo
 
 # compiled JavaScript
-*.js
 !src/**/*.js
 !scripts/**/*.js
 
