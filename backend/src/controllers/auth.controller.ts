@@ -168,26 +168,35 @@ export const login = async (req: Request, res: Response) => {
   };
 
   export const getCurrentUser = async (req: AuthRequest, res: Response) => {
-    try {
-      const user = await prisma.user.findUnique({
-        where: { id: req.user!.userId },
-        select: {
-          id: true,
-          username: true,
-          email: true,
-          role: true,
-          status: true,
-          createdAt: true,
-        },
-      });
-      if (!user) {
-        return res.status(404).json({ success: false, message: 'User not found' });
-      }
-      res.json({ success: true, user });
-    } catch (error: any) {
-      res.status(500).json({ success: false, message: error.message });
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user!.userId },
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        role: true,
+        status: true,
+        createdAt: true,
+      },
+    });
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
     }
-  };
+
+    // Fetch user's permissions
+    const rolePermissions = await prisma.rolePermission.findMany({
+      where: { role: user.role },
+      select: { permission: true },
+    });
+
+    const permissions = rolePermissions.map(rp => rp.permission);
+
+    res.json({ success: true, user: { ...user, permissions } });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
 
 
 
