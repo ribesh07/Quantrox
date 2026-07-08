@@ -121,6 +121,9 @@ model Deposit {
   type                    DepositType
   status                  DepositStatus       @default(PENDING)
   requiredDeposit         Float               @default(0)
+  paymentMethodId         String?
+  paymentMethodName       String?
+  proofImage              String?
   notes                   String?
   adjustedBy              String?
   adjustedAt              DateTime?

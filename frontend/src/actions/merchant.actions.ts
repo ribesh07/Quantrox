@@ -105,6 +105,17 @@ export async function createDepositAction(data: {
   }
 }
 
+export async function uploadDepositProofAction(depositId: string, formData: FormData) {
+  try {
+    const config = await getAuthenticatedRequestConfig();
+    const response = await api.post(`/merchant/deposits/${depositId}/proof`, formData, config);
+    revalidatePath("/dashboard/deposits");
+    return { success: true, deposit: response.data.data };
+  } catch (error: any) {
+    return { success: false, error: error.response?.data?.message || error.message };
+  }
+}
+
 export async function getMyDepositsAction() {
   try {
     const config = await getAuthenticatedRequestConfig();

@@ -1,8 +1,12 @@
 import { AuthRequest } from "../middleware/auth.middleware";
 import { Response } from "express";
+import multer from "multer";
 import { DepositService } from "../services/deposit.service";
 import { AuditLogService } from "../services/audit-log.service";
+import { getUploadDirectory, saveUploadedFile } from "../utils/uploads";
 import { paramString, queryDate, queryInt, queryString } from "../utils/request";
+
+export const upload = multer({ dest: getUploadDirectory(), limits: { fileSize: 50 * 1024 * 1024 } });
 
 export const createDeposit = async (req: AuthRequest, res: Response) => {
   try {
@@ -20,6 +24,29 @@ export const createDeposit = async (req: AuthRequest, res: Response) => {
     res.json({ success: true, data: deposit });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message || 'Failed to create deposit' });
+  }
+};
+
+export const uploadProof = async (req: AuthRequest, res: Response) => {
+  try {
+    const id = paramString(req.params.id);
+    const file = req.file;
+
+    if (!file) {
+      return res.status(400).json({ success: false, message: "Proof image is required" });
+    }
+
+    const imageUrl = await saveUploadedFile({
+      tempPath: file.path,
+      originalName: file.originalname,
+      prefix: id,
+      subdirectory: "proofs",
+    });
+
+    const deposit = await DepositService.uploadProof(id, req.user!.userId, imageUrl);
+    res.json({ success: true, data: deposit });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message || "Failed to upload deposit proof" });
   }
 };
 
