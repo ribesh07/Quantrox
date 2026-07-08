@@ -577,6 +577,10 @@ enum Permission {
   // Game ID Requests
   VIEW_GAME_ID_REQUESTS
   MANAGE_GAME_ID_REQUESTS
+
+  // Quick_Deposits
+  VIEW_QUICK_DEPOSITS
+  MANAGE_QUICK_DEPOSITS
 }
 
 enum OrderStatus {
