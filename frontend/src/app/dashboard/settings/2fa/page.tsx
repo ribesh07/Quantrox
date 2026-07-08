@@ -16,6 +16,7 @@ export default function TwoFactorPage() {
   const [step, setStep] = useState<"status" | "setup" | "enabled">("status");
   const [secret, setSecret] = useState<string | null>(null);
   const [qrCode, setQrCode] = useState<string | null>(null);
+  const [user, setUser] = useState<any>(null);
   const [code, setCode] = useState("");
   const [password, setPassword] = useState("");
   const [backupCodes, setBackupCodes] = useState<string[] | null>(null);
@@ -24,6 +25,8 @@ export default function TwoFactorPage() {
   useEffect(() => {
     const checkStatus = async () => {
       const result = await getCurrentUserAction();
+      console.log("Current user:", result);
+      setUser(result.user);
       if (result.success && result.user?.twoFactorEnabled) {
         setStep("enabled");
       } else {
@@ -218,6 +221,30 @@ export default function TwoFactorPage() {
                 </Button>
               </div>
             </div>
+          )}
+          { user?.twoFactorEnabled && step === "enabled" && (
+                <div className="border-t border-[#2B3139] pt-4 space-y-2">
+                <h4 className="text-white font-semibold">Disable 2FA</h4>
+                <p className="text-[#848E9C] text-sm">If you need to disable 2FA, enter your password and a code below.</p>
+                <div className="space-y-2">
+                  <Input
+                    type="password"
+                    placeholder="Confirm your password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="bg-[#2B3139] border-[#2B3139] text-white"
+                  />
+                  <Input
+                    placeholder="Enter 2FA code or backup code"
+                    value={code}
+                    onChange={(e) => setCode(e.target.value)}
+                    className="bg-[#2B3139] border-[#2B3139] text-white"
+                  />
+                </div>
+                <Button onClick={handleDisable} disabled={loading} variant="destructive">
+                  {loading ? "Disabling..." : "Disable 2FA"}
+                </Button>
+              </div>
           )}
         </CardContent>
       </Card>
