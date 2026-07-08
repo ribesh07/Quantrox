@@ -17,8 +17,8 @@ export default function MerchantQRPage() {
     },
   });
 
-  const qrCodes = data?.qrCodes || [];
-  const activeQRs = qrCodes.filter((qr: any) => qr.active);
+  const qrCodes = Array.isArray(data?.qrCodes) ? data.qrCodes : [];
+  const activeQRs = qrCodes.filter((qr: any) => qr?.active);
 
   if (isLoading) {
     return (
@@ -43,24 +43,24 @@ export default function MerchantQRPage() {
       {activeQRs.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {qrCodes.map((qr: any) => (
-            <Card key={qr.id} className={!qr.active ? "opacity-60" : ""}>
+            <Card key={qr?.id || Math.random()} className={!qr?.active ? "opacity-60" : ""}>
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-base">{qr.label || "Deposit QR"}</CardTitle>
-                  {qr.active ? (
+                  <CardTitle className="text-base">{qr?.label || "Deposit QR"}</CardTitle>
+                  {qr?.active ? (
                     <Badge className="bg-green-500/10 text-green-600 border-green-500/20">Active</Badge>
                   ) : (
                     <Badge variant="secondary">Disabled</Badge>
                   )}
                 </div>
                 <CardDescription>
-                  Assigned on {new Date(qr.assignedAt).toLocaleDateString()}
+                  Assigned on {qr?.assignedAt ? new Date(qr.assignedAt).toLocaleDateString() : "N/A"}
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex flex-col items-center gap-4">
                 <img
-                  src={resolveMediaUrl(qr.imageUrl)}
-                  alt={qr.label || "Deposit QR Code"}
+                  src={resolveMediaUrl(qr?.imageUrl)}
+                  alt={qr?.label || "Deposit QR Code"}
                   className="w-48 h-48 object-contain border rounded-lg"
                 />
               </CardContent>
