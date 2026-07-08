@@ -6,6 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Loader2, CheckCircle2, AlertCircle, Wallet, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -251,23 +258,25 @@ export default function MerchantPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div className="space-y-2">
                       <Label>Payment Method</Label>
-                      <select
-                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                        value={config.paymentMethodId}
-                        onChange={(e) => updateWallet(index, "paymentMethodId", e.target.value)}
-                        required
+                      <Select
+                        value={config.paymentMethodId || undefined}
+                        onValueChange={(value) => updateWallet(index, "paymentMethodId", value)}
                       >
-                        <option value="">Select payment method</option>
-                        {paymentMethods?.map((method: any) => (
-                          <option
-                            key={method.id}
-                            value={method.id}
-                            disabled={usedMethodIds.includes(method.id) && config.paymentMethodId !== method.id}
-                          >
-                            {method.name}
-                          </option>
-                        ))}
-                      </select>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Choose preferred payment method" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {paymentMethods?.map((method: any) => (
+                            <SelectItem
+                              key={method.id}
+                              value={method.id}
+                              disabled={usedMethodIds.includes(method.id) && config.paymentMethodId !== method.id}
+                            >
+                              {method.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="space-y-2">
                       <Label>Daily Limit (USD)</Label>
