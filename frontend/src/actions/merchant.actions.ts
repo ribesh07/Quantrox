@@ -86,6 +86,25 @@ export async function getMyTransactionReportsAction() {
   }
 }
 
+export async function createDepositAction(data: {
+  amount: number;
+  type?: string;
+  requiredDeposit?: number;
+  notes?: string;
+  paymentMethodId?: string;
+  paymentMethodName?: string;
+  instant?: boolean;
+}) {
+  try {
+    const config = await getAuthenticatedRequestConfig();
+    const response = await api.post("/merchant/deposits", data, config);
+    revalidatePath("/dashboard/deposits");
+    return { success: true, deposit: response.data.data };
+  } catch (error: any) {
+    return { success: false, error: error.response?.data?.message || error.message };
+  }
+}
+
 export async function getMyDepositsAction() {
   try {
     const config = await getAuthenticatedRequestConfig();

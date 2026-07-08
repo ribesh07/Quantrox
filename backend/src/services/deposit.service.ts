@@ -8,15 +8,19 @@ export const DepositService = {
     type: DepositType;
     requiredDeposit?: number;
     notes?: string;
+    paymentMethodId?: string;
+    paymentMethodName?: string;
+    instant?: boolean;
   }) {
+    const isInstant = data.instant !== false;
     return prisma.deposit.create({
       data: {
         userId: data.userId,
         amount: data.amount,
         type: data.type,
-        status: 'PENDING',
-        requiredDeposit: data.requiredDeposit || 0,
-        notes: data.notes,
+        status: isInstant ? 'APPROVED' : 'PENDING',
+        requiredDeposit: data.requiredDeposit ?? data.amount,
+        notes: data.notes || (data.paymentMethodName ? `Payment method: ${data.paymentMethodName}` : undefined),
       },
     });
   },
