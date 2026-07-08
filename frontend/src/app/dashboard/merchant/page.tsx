@@ -75,6 +75,7 @@ export default function MerchantPage() {
     businessName,
     businessDescription,
     expectedDailyVolume: parseFloat(expectedDailyVolume),
+    preferredPaymentMethodId: walletConfigs.find((w) => w.paymentMethodId)?.paymentMethodId || undefined,
     wallets: walletConfigs
       .filter((w) => w.paymentMethodId)
       .map((w) => ({
