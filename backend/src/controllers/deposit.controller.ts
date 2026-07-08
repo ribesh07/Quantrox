@@ -6,17 +6,20 @@ import { paramString, queryDate, queryInt, queryString } from "../utils/request"
 
 export const createDeposit = async (req: AuthRequest, res: Response) => {
   try {
-    const { amount, type, requiredDeposit, notes } = req.body;
+    const { amount, type, requiredDeposit, notes, paymentMethodId, paymentMethodName, instant = true } = req.body;
     const deposit = await DepositService.create({
       userId: req.user!.userId,
       amount: parseFloat(amount),
-      type,
+      type: type || 'INITIAL',
       requiredDeposit: requiredDeposit ? parseFloat(requiredDeposit) : undefined,
-      notes,
+      notes: notes || (paymentMethodName ? `Payment method: ${paymentMethodName}` : undefined),
+      paymentMethodId,
+      paymentMethodName,
+      instant,
     });
     res.json({ success: true, data: deposit });
-  } catch (error) {
-    res.status(500).json({ success: false, message: 'Failed to create deposit' });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message || 'Failed to create deposit' });
   }
 };
 

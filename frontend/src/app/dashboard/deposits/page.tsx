@@ -1,14 +1,24 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, DollarSign } from "lucide-react";
-import { getMyDepositsAction, getMyTotalDepositAction } from "@/actions/merchant.actions";
-import { DepositStatus, DepositType } from "@/lib/prisma-types";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Loader2, DollarSign, PlusCircle } from "lucide-react";
+import { toast } from "sonner";
+import { createDepositAction, getMyDepositsAction, getMyTotalDepositAction } from "@/actions/merchant.actions";
+import { getPaymentMethodsAction } from "@/actions/payment.actions";
+import { DepositStatus, DepositType, PaymentMethodCategory } from "@/lib/prisma-types";
+import { useState } from "react";
 
 export default function MerchantDepositsPage() {
+  const queryClient = useQueryClient();
+  const [amount, setAmount] = useState("");
+  const [paymentMethodId, setPaymentMethodId] = useState("");
+
   const { data: deposits, isLoading: depositsLoading } = useQuery({
     queryKey: ["my-deposits"],
     queryFn: async () => {
@@ -23,6 +33,43 @@ export default function MerchantDepositsPage() {
       const result = await getMyTotalDepositAction();
       return result.success ? result.total : 0;
     },
+  });
+
+  const { data: paymentMethods } = useQuery({
+    queryKey: ["deposit-payment-methods"],
+    queryFn: async () => {
+      const result = await getPaymentMethodsAction(PaymentMethodCategory.DEPOSIT);
+      return result.success ? result.methods : [];
+    },
+  });
+
+  const createDepositMutation = useMutation({
+    mutationFn: async () => {
+      const parsedAmount = Number(amount);
+      if (!parsedAmount || parsedAmount <= 0) throw new Error("Please enter a valid deposit amount");
+      if (!paymentMethodId) throw new Error("Please select a payment method");
+
+      const selectedMethod = paymentMethods?.find((method: any) => method.id === paymentMethodId);
+      const result = await createDepositAction({
+        amount: parsedAmount,
+        type: DepositType.INITIAL,
+        requiredDeposit: parsedAmount,
+        paymentMethodId,
+        paymentMethodName: selectedMethod?.name,
+        instant: true,
+      });
+
+      if (!result.success) throw new Error(result.error);
+      return result.deposit;
+    },
+    onSuccess: () => {
+      toast.success("Deposit added instantly");
+      setAmount("");
+      setPaymentMethodId("");
+      queryClient.invalidateQueries({ queryKey: ["my-deposits"] });
+      queryClient.invalidateQueries({ queryKey: ["my-total-deposit"] });
+    },
+    onError: (error: any) => toast.error(error.message),
   });
 
   const getStatusBadge = (status: DepositStatus) => {
@@ -80,6 +127,46 @@ export default function MerchantDepositsPage() {
 
       <Card>
         <CardHeader>
+          <CardTitle>Add Instant Deposit</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-[1.2fr_1fr_auto] items-end">
+            <div className="space-y-2">
+              <Label htmlFor="deposit-amount">Amount</Label>
+              <Input
+                id="deposit-amount"
+                type="number"
+                min="1"
+                placeholder="100"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="deposit-method">Payment Method</Label>
+              <select
+                id="deposit-method"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                value={paymentMethodId}
+                onChange={(e) => setPaymentMethodId(e.target.value)}
+              >
+                <option value="">Select payment method</option>
+                {paymentMethods?.map((method: any) => (
+                  <option key={method.id} value={method.id}>{method.name}</option>
+                ))}
+              </select>
+            </div>
+            <Button onClick={() => createDepositMutation.mutate()} disabled={createDepositMutation.isPending}>
+              {createDepositMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
+              Add Deposit
+            </Button>
+          </div>
+          <p className="text-sm text-muted-foreground mt-3">Deposits are added instantly and appear in your history right away.</p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
           <CardTitle>Deposit History</CardTitle>
         </CardHeader>
         <CardContent>
@@ -95,6 +182,7 @@ export default function MerchantDepositsPage() {
                   <TableHead>Date</TableHead>
                   <TableHead>Amount</TableHead>
                   <TableHead>Type</TableHead>
+                  <TableHead>Payment</TableHead>
                   <TableHead>Required</TableHead>
                   <TableHead>Status</TableHead>
                 </TableRow>
@@ -105,6 +193,7 @@ export default function MerchantDepositsPage() {
                     <TableCell>{new Date(deposit.createdAt).toLocaleDateString()}</TableCell>
                     <TableCell>${deposit.amount.toLocaleString()}</TableCell>
                     <TableCell>{getTypeBadge(deposit.type)}</TableCell>
+                    <TableCell>{deposit.notes?.includes("Payment method:") ? deposit.notes.replace("Payment method:", "") : "—"}</TableCell>
                     <TableCell>${deposit.requiredDeposit?.toLocaleString() || 0}</TableCell>
                     <TableCell>{getStatusBadge(deposit.status)}</TableCell>
                   </TableRow>
