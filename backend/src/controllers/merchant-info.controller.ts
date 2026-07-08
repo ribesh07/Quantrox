@@ -193,6 +193,7 @@ export const updateMyMerchantInfo = async (req: AuthRequest, res: Response) => {
       businessName,
       businessDescription,
       preferredWalletId,
+      preferredPaymentMethodId,
       expectedDailyVolume: expectedDailyVolume ? parseFloat(expectedDailyVolume) : undefined,
       wallets,
     });

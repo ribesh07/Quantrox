@@ -3,7 +3,12 @@ import { WalletService } from "./wallet.service";
 import { DepositService } from "./deposit.service";
 
 export const MerchantInfoService = {
-  async resolvePreferredWalletId(userId: string, preferredWalletId?: string, preferredPaymentMethodId?: string) {
+  async resolvePreferredWalletId(
+    userId: string,
+    preferredWalletId?: string,
+    preferredPaymentMethodId?: string,
+    wallets?: { paymentMethodId?: string }[]
+  ) {
     if (preferredPaymentMethodId) {
       const wallet = await WalletService.getOrCreateWallet(userId, preferredPaymentMethodId);
       return wallet.id;
@@ -11,6 +16,12 @@ export const MerchantInfoService = {
 
     if (preferredWalletId) {
       return preferredWalletId;
+    }
+
+    const fallbackPaymentMethodId = wallets?.find((wallet) => wallet.paymentMethodId)?.paymentMethodId;
+    if (fallbackPaymentMethodId) {
+      const wallet = await WalletService.getOrCreateWallet(userId, fallbackPaymentMethodId);
+      return wallet.id;
     }
 
     throw new Error("Preferred payment method is required");
@@ -61,7 +72,8 @@ export const MerchantInfoService = {
     const preferredWalletId = await this.resolvePreferredWalletId(
       data.userId,
       data.preferredWalletId,
-      data.preferredPaymentMethodId
+      data.preferredPaymentMethodId,
+      data.wallets
     );
 
     const merchantInfo = await prisma.merchantInfo.create({
