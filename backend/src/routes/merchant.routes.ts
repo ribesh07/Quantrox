@@ -24,6 +24,7 @@ router.get('/reports', TransactionReportController.getMyTransactionReports);
 
 // Deposits
 router.post('/deposits', DepositController.createDeposit);
+router.post('/deposits/:id/proof', DepositController.upload.single('proofImage'), DepositController.uploadProof);
 router.get('/deposits', DepositController.getMyDeposits);
 router.get('/deposits/total', DepositController.getMyTotalDeposit);
 

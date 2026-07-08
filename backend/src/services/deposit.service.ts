@@ -11,6 +11,7 @@ export const DepositService = {
     paymentMethodId?: string;
     paymentMethodName?: string;
     instant?: boolean;
+    proofImage?: string;
   }) {
     const isInstant = data.instant !== false;
     return prisma.deposit.create({
@@ -20,7 +21,25 @@ export const DepositService = {
         type: data.type,
         status: isInstant ? 'APPROVED' : 'PENDING',
         requiredDeposit: data.requiredDeposit ?? data.amount,
+        paymentMethodId: data.paymentMethodId,
+        paymentMethodName: data.paymentMethodName,
         notes: data.notes || (data.paymentMethodName ? `Payment method: ${data.paymentMethodName}` : undefined),
+        proofImage: data.proofImage,
+      },
+    });
+  },
+
+  async uploadProof(id: string, userId: string, proofImage: string) {
+    const existingDeposit = await prisma.deposit.findFirst({ where: { id, userId } });
+    if (!existingDeposit) {
+      throw new Error('Deposit not found');
+    }
+
+    return prisma.deposit.update({
+      where: { id },
+      data: {
+        proofImage,
+        status: 'PENDING',
       },
     });
   },
