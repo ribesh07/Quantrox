@@ -6,13 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Loader2, CheckCircle2, AlertCircle, Wallet, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -23,7 +16,6 @@ import {
 } from "@/actions/merchant.actions";
 import { getUserWalletsAction } from "@/actions/wallet.actions";
 import { getPaymentMethodsAction } from "@/actions/payment.actions";
-import { getAllPaymentMethodsAction } from "@/actions/admin.actions";
 
 type WalletConfig = {
   paymentMethodId: string;
@@ -71,20 +63,11 @@ export default function MerchantPage() {
     }
   }, [merchantInfo]);
 
-  const { data: paymentMethods = [], isLoading: paymentMethodsLoading } = useQuery({
+  const { data: paymentMethods } = useQuery({
     queryKey: ["merchant-payment-methods"],
     queryFn: async () => {
-      const publicResult = await getPaymentMethodsAction("BOTH");
-      if (publicResult.success && Array.isArray(publicResult.methods) && publicResult.methods.length > 0) {
-        return publicResult.methods;
-      }
-
-      const adminResult = await getAllPaymentMethodsAction();
-      if (adminResult.success && Array.isArray(adminResult.methods)) {
-        return adminResult.methods.filter((method: any) => method?.active !== false && (method?.category === "BOTH" || method?.category === "DEPOSIT"));
-      }
-
-      return [];
+      const result = await getPaymentMethodsAction("BOTH");
+      return result.success ? result.methods : [];
     },
   });
 
@@ -244,18 +227,6 @@ export default function MerchantPage() {
                 </div>
               )}
 
-              {paymentMethodsLoading && (
-                <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-                  Loading payment options...
-                </div>
-              )}
-
-              {!paymentMethodsLoading && paymentMethods.length === 0 && (
-                <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-                  No payment options are currently available. Please contact admin to enable payment methods.
-                </div>
-              )}
-
               {walletConfigs.map((config, index) => (
                 <div key={index} className="p-4 rounded-lg border bg-muted/20 space-y-3">
                   <div className="flex items-center justify-between">
@@ -280,25 +251,23 @@ export default function MerchantPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div className="space-y-2">
                       <Label>Payment Method</Label>
-                      <Select
-                        value={config.paymentMethodId || undefined}
-                        onValueChange={(value) => updateWallet(index, "paymentMethodId", value)}
+                      <select
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        value={config.paymentMethodId}
+                        onChange={(e) => updateWallet(index, "paymentMethodId", e.target.value)}
+                        required
                       >
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Choose preferred payment method" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {paymentMethods.map((method: any) => (
-                            <SelectItem
-                              key={method.id}
-                              value={method.id}
-                              disabled={usedMethodIds.includes(method.id) && config.paymentMethodId !== method.id}
-                            >
-                              {method.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        <option value="">Select payment method</option>
+                        {paymentMethods?.map((method: any) => (
+                          <option
+                            key={method.id}
+                            value={method.id}
+                            disabled={usedMethodIds.includes(method.id) && config.paymentMethodId !== method.id}
+                          >
+                            {method.name}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                     <div className="space-y-2">
                       <Label>Daily Limit (USD)</Label>
