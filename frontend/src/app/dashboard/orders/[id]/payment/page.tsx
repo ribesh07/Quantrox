@@ -321,8 +321,8 @@ export default function OrderDetailsPage({ params: paramsPromise }: { params: Pr
             ) : null}
           </DialogContent>
         </Dialog>
-        </div>
       </div>
     </div>
+  </div>
   );
 }
