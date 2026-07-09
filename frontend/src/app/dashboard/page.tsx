@@ -76,10 +76,10 @@ export default async function DashboardPage() {
         bg: "bg-primary/10",
       },
       {
-        title: "Total Assets",
+        title: "Total Assets (Available)",
         value: `$${totalBalance.toFixed(2)}`,
         icon: WalletIcon,
-        description: "Across all wallets",
+        description: "Available across all wallets",
         color: "text-primary",
         bg: "bg-primary/10",
       },
@@ -193,7 +193,7 @@ export default async function DashboardPage() {
             </CardHeader>
             <CardContent className="space-y-6 relative z-10 pt-4">
               <div className="space-y-1">
-                <p className="text-xs font-bold text-primary-foreground/70 uppercase tracking-widest">Total Combined Balance</p>
+                <p className="text-xs font-bold text-primary-foreground/70 uppercase tracking-widest">Total Assets (Available)</p>
                 <div className="text-5xl font-black">${totalBalance.toFixed(2)}</div>
               </div>
               

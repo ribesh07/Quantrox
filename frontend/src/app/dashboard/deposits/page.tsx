@@ -155,7 +155,7 @@ export default function MerchantDepositsPage() {
               <DollarSign className="h-6 w-6 text-primary" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Total Available Deposit</p>
+              <p className="text-sm text-muted-foreground">Total Deposits</p>
               <p className="text-3xl font-bold">
                 ${totalData?.toLocaleString() || 0}
               </p>
@@ -328,7 +328,7 @@ export default function MerchantDepositsPage() {
               <div><strong>Payment Notes:</strong> {selectedDeposit.notes || '-'}</div>
               <div><strong>Required Deposit:</strong> ${selectedDeposit.requiredDeposit?.toLocaleString() || 0}</div>
               <div><strong>Proof Image:</strong></div>
-              {selectedDeposit.proofImage ? <img src={selectedDeposit.proofImage} alt="Proof" className="h-40 w-40 object-contain" /> : <div>-</div>}
+              {selectedDeposit.proofImage ? <img src={resolveMediaUrl(selectedDeposit.proofImage)} alt="Proof" className="h-40 w-40 object-contain" /> : <div>-</div>}
               <div className="flex justify-end">
                 <Button variant="ghost" onClick={() => setDepositViewOpen(false)}>Close</Button>
               </div>
