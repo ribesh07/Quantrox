@@ -135,7 +135,7 @@ router.patch('/deposits/:id/adjust', DepositController.adjustDeposit);
 router.get('/payout-requests', PayoutRequestController.getAllPayoutRequests);
 router.patch('/payout-requests/:id/approve', PayoutRequestController.approvePayoutRequest);
 router.patch('/payout-requests/:id/reject', PayoutRequestController.rejectPayoutRequest);
-router.patch('/payout-requests/:id/mark-paid', PayoutRequestController.markPayoutPaid);
+router.patch('/payout-requests/:id/mark-paid', upload.single('paymentProof'), PayoutRequestController.markPayoutPaid);
 
 // Game ID Requests
 router.get('/game-id-requests', GameIdRequestController.getAllGameIdRequests);

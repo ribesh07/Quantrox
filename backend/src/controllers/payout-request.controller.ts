@@ -154,7 +154,37 @@ export const markPayoutPaid = async (req: AuthRequest, res: Response) => {
   try {
     const id = paramString(req.params.id);
     const { transactionHash } = req.body;
+
+    // If a file was uploaded, save it and attach to the payout after marking paid
+    let savedProof: string | undefined;
+    if (req.file) {
+      try {
+        // save under generic 'proofs' directory supported by uploader
+        savedProof = await saveUploadedFile(req.file, 'proofs');
+      } catch (err) {
+        console.error('Failed to save payment proof:', err);
+      }
+    }
+
     const payout = await PayoutRequestService.markPaid(id, req.user!.userId, transactionHash);
+
+    // Persist payment proof image if provided
+    if (savedProof) {
+      // update the payout record with the proof path
+      try {
+        // lazy-import prisma to avoid circular imports
+        const { prisma } = await import('../shared/prisma');
+        await prisma.payoutRequest.update({
+          where: { id },
+          data: { paymentProofImage: savedProof },
+        });
+        // refresh payout object
+        const refreshed = await prisma.payoutRequest.findUnique({ where: { id } });
+        return res.json({ success: true, payout: refreshed });
+      } catch (err) {
+        console.error('Failed to attach payment proof to payout:', err);
+      }
+    }
     
     await AuditLogService.log({
       userId: req.user!.userId,
