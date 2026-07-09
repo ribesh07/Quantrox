@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getSession } from 'next-auth/react';
 
 const resolveApiBaseUrl = () => {
   const serverUrl = process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL;
@@ -17,11 +18,22 @@ const api = axios.create({
   baseURL: resolveApiBaseUrl(),
 });
 
-api.interceptors.request.use((config) => {
+api.interceptors.request.use(async (config) => {
   if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    const localToken = localStorage.getItem('token');
+    if (localToken) {
+      config.headers.Authorization = `Bearer ${localToken}`;
+      return config;
+    }
+
+    try {
+      const session = await getSession();
+      const accessToken = (session?.user as any)?.accessToken;
+      if (accessToken) {
+        config.headers.Authorization = `Bearer ${accessToken}`;
+      }
+    } catch {
+      // Ignore session lookup failures and continue without auth header.
     }
   }
   return config;
