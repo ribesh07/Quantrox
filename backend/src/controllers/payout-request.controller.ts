@@ -13,10 +13,6 @@ export const createPayoutRequest = async (req: AuthRequest, res: Response) => {
   try {
     const { amount, paymentMethodId, uid, remarks, walletAddress, walletNetwork } = req.body;
 
-    if (!uid?.trim()) {
-      return res.status(400).json({ success: false, message: "UID / account ID is required" });
-    }
-
     if (!req.file) {
       return res.status(400).json({ success: false, message: "Receiving QR code image is required" });
     }
@@ -32,7 +28,7 @@ export const createPayoutRequest = async (req: AuthRequest, res: Response) => {
       userId: req.user!.userId,
       amount: parsedAmount,
       paymentMethodId: paymentMethodId?.trim() || null,
-      uid: uid.trim(),
+      uid: uid?.trim() || undefined,
       qrCodeImage,
       remarks: remarks?.trim() || undefined,
       walletAddress: walletAddress?.trim() || undefined,
