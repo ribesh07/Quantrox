@@ -30,20 +30,55 @@ export const PayoutRequestService = {
     walletAddress?: string;
     walletNetwork?: string;
   }) {
-    const payout = await prisma.payoutRequest.create({
-      data: {
-        userId: data.userId,
-        amount: data.amount,
-        paymentMethodId: data.paymentMethodId ?? null,
-        uid: data.uid,
-        qrCodeImage: data.qrCodeImage,
-        remarks: data.remarks,
-        walletAddress: data.walletAddress,
-        walletNetwork: data.walletNetwork,
-        status: "PENDING",
-      },
-      include: { paymentMethod: true },
+    const payout = await prisma.$transaction(async (tx) => {
+      const payout = await tx.payoutRequest.create({
+        data: {
+          userId: data.userId,
+          amount: data.amount,
+          paymentMethodId: data.paymentMethodId ?? null,
+          uid: data.uid,
+          qrCodeImage: data.qrCodeImage,
+          remarks: data.remarks,
+          walletAddress: data.walletAddress,
+          walletNetwork: data.walletNetwork,
+          status: "PENDING",
+        },
+        include: { paymentMethod: true },
+      });
+
+      if (data.paymentMethodId && data.amount > 0) {
+        const wallet = await tx.wallet.upsert({
+          where: {
+            userId_paymentMethodId: {
+              userId: data.userId,
+              paymentMethodId: data.paymentMethodId,
+            },
+          },
+          update: {
+            lastActivityAt: new Date(),
+          },
+          create: {
+            userId: data.userId,
+            paymentMethodId: data.paymentMethodId,
+            balance: 0,
+            pendingBalance: 0,
+            frozenBalance: 0,
+            status: "ACTIVE",
+          },
+        });
+
+        await tx.wallet.update({
+          where: { id: wallet.id },
+          data: {
+            frozenBalance: { increment: data.amount },
+            lastActivityAt: new Date(),
+          },
+        });
+      }
+
+      return payout;
     });
+
     return withImageUrls(payout);
   },
 
@@ -140,25 +175,97 @@ export const PayoutRequestService = {
   },
 
   async approve(id: string, adminId: string) {
-    return prisma.payoutRequest.update({
-      where: { id },
-      data: {
-        status: 'APPROVED',
-        approvedAt: new Date(),
-        approvedBy: adminId,
-      },
+    const existingPayout = await prisma.payoutRequest.findUnique({ where: { id } });
+
+    if (!existingPayout) {
+      throw new Error('Payout request not found');
+    }
+
+    return prisma.$transaction(async (tx) => {
+      const payout = await tx.payoutRequest.update({
+        where: { id },
+        data: {
+          status: 'APPROVED',
+          approvedAt: new Date(),
+          approvedBy: adminId,
+        },
+      });
+
+      if (
+        existingPayout.status !== 'APPROVED' &&
+        existingPayout.status !== 'PAID' &&
+        existingPayout.paymentMethodId &&
+        existingPayout.amount > 0
+      ) {
+        const wallet = await tx.wallet.findUnique({
+          where: {
+            userId_paymentMethodId: {
+              userId: existingPayout.userId,
+              paymentMethodId: existingPayout.paymentMethodId,
+            },
+          },
+        });
+
+        if (wallet) {
+          await tx.wallet.update({
+            where: { id: wallet.id },
+            data: {
+              balance: Math.max(0, wallet.balance - existingPayout.amount),
+              frozenBalance: Math.max(0, wallet.frozenBalance - existingPayout.amount),
+              lastActivityAt: new Date(),
+            },
+          });
+        }
+      }
+
+      return payout;
     });
   },
 
   async reject(id: string, adminId: string, rejectionReason: string) {
-    return prisma.payoutRequest.update({
-      where: { id },
-      data: {
-        status: 'REJECTED',
-        rejectedAt: new Date(),
-        rejectedBy: adminId,
-        rejectionReason,
-      },
+    const existingPayout = await prisma.payoutRequest.findUnique({ where: { id } });
+
+    if (!existingPayout) {
+      throw new Error('Payout request not found');
+    }
+
+    return prisma.$transaction(async (tx) => {
+      const payout = await tx.payoutRequest.update({
+        where: { id },
+        data: {
+          status: 'REJECTED',
+          rejectedAt: new Date(),
+          rejectedBy: adminId,
+          rejectionReason,
+        },
+      });
+
+      if (
+        existingPayout.status !== 'REJECTED' &&
+        existingPayout.paymentMethodId &&
+        existingPayout.amount > 0
+      ) {
+        const wallet = await tx.wallet.findUnique({
+          where: {
+            userId_paymentMethodId: {
+              userId: existingPayout.userId,
+              paymentMethodId: existingPayout.paymentMethodId,
+            },
+          },
+        });
+
+        if (wallet) {
+          await tx.wallet.update({
+            where: { id: wallet.id },
+            data: {
+              frozenBalance: Math.max(0, wallet.frozenBalance - existingPayout.amount),
+              lastActivityAt: new Date(),
+            },
+          });
+        }
+      }
+
+      return payout;
     });
   },
 
