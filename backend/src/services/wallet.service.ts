@@ -34,6 +34,23 @@ export const WalletService = {
       this.getApprovedDepositTotals(userId),
     ]);
 
+    const walletLookup = new Map(wallets.map((wallet) => [`${wallet.userId}:${wallet.paymentMethodId}`, wallet]));
+
+    for (const [depositKey, depositTotal] of depositTotals.entries()) {
+      if (depositTotal <= 0 || walletLookup.has(depositKey)) {
+        continue;
+      }
+
+      const [, paymentMethodId] = depositKey.split(':');
+      if (!paymentMethodId) {
+        continue;
+      }
+
+      const wallet = await this.getOrCreateWallet(userId, paymentMethodId);
+      wallets.push(wallet);
+      walletLookup.set(depositKey, wallet);
+    }
+
     return wallets.map((wallet) => {
       const depositTotal = depositTotals.get(`${wallet.userId}:${wallet.paymentMethodId}`) ?? 0;
       return {
@@ -237,20 +254,3 @@ export const WalletService = {
     const [transactions, count] = await Promise.all([
       prisma.walletTransaction.findMany({
         where: { walletId },
-        orderBy: { createdAt: 'desc' },
-        take: limit,
-        skip: offset,
-      }),
-      prisma.walletTransaction.count({ where: { walletId } }),
-    ]);
-
-    return { transactions, count };
-  },
-
-  async getTotalBalance(userId: string) {
-    const wallets = await this.getUserWallets(userId);
-
-    return wallets.reduce((sum, wallet) => sum + wallet.balance, 0);
-  },
-};
-
