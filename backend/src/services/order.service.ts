@@ -1,6 +1,5 @@
 import { prisma } from "../shared/prisma";
 import { OrderType, OrderStatus } from "@prisma/client";
-import { WalletService } from "./wallet.service";
 
 const baseUrl = process.env.SERVICE_URL_BACKEND || "https://api.settlerpay.com";
 
@@ -37,21 +36,6 @@ export const OrderService = {
       fee = (amount * paymentMethod.rate * paymentMethod.feePercentage) / 100;
       receivedAmount = (amount * paymentMethod.rate) - fee;
       total = amount;
-
-      const wallet = await prisma.wallet.findUnique({
-        where: {
-          userId_paymentMethodId: {
-            userId,
-            paymentMethodId
-          }
-        }
-      });
-
-      const effectiveBalance = await WalletService.getEffectiveBalance(userId, paymentMethodId);
-
-      if (effectiveBalance < amount) {
-        throw new Error("Insufficient balance in source wallet");
-      }
     } else if (type === OrderType.GAME_TOPUP) {
       // No fees for game top-up
       fee = 0;
