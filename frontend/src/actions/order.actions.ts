@@ -13,7 +13,10 @@ export async function createOrderAction(data: any) {
     return { success: true, order: response.data.order };
   } catch (error: any) {
     console.error("Create Order Error:", error.response?.data || error.message);
-    return { success: false, error: error.response?.data?.message || "Error creating order" };
+    return {
+      success: false,
+      error: error.response?.data?.message || error.message || "Error creating order",
+    };
   }
 }
 
@@ -52,6 +55,9 @@ export async function uploadOrderProofAction(orderId: string, formData: FormData
     return { success: true, order: response.data.order };
   } catch (error: any) {
     console.error("Upload Proof Error:", error.response?.data || error.message);
-    return { success: false, error: error.response?.data?.message || "Error uploading proof" };
+    return {
+      success: false,
+      error: error.response?.data?.message || error.message || "Error uploading proof",
+    };
   }
 }
