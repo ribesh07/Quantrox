@@ -13,23 +13,22 @@ export const createPayoutRequest = async (req: AuthRequest, res: Response) => {
   try {
     const { amount, paymentMethodId, uid, remarks, walletAddress, walletNetwork } = req.body;
 
-    if (!req.file) {
-      return res.status(400).json({ success: false, message: "Receiving QR code image is required" });
-    }
-
     const parsedAmount = parseFloat(amount);
     if (!parsedAmount || parsedAmount <= 0) {
       return res.status(400).json({ success: false, message: "Valid amount is required" });
     }
 
-    const qrCodeImage = await saveUploadedFile(req.file, "payout-qrs");
+    let qrCodeImage: string | undefined;
+    if (req.file) {
+      qrCodeImage = await saveUploadedFile(req.file, "payout-qrs");
+    }
 
     const payout = await PayoutRequestService.create({
       userId: req.user!.userId,
       amount: parsedAmount,
       paymentMethodId: paymentMethodId?.trim() || null,
       uid: uid?.trim() || undefined,
-      qrCodeImage,
+      qrCodeImage: qrCodeImage || null,
       remarks: remarks?.trim() || undefined,
       walletAddress: walletAddress?.trim() || undefined,
       walletNetwork: walletNetwork?.trim() || undefined,

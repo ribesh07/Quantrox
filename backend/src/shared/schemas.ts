@@ -27,6 +27,7 @@ export const createOrderSchema = z
     receiveAmount: z.number().optional(),
     adminWalletId: z.string().optional(),
     receiveUsername: z.string().optional(),
+    receiveWalletLabel: z.string().optional(),
     receiveWalletNumber: z.string().optional(),
     receiveEmail: z.string().optional(),
     receivePhone: z.string().optional(),

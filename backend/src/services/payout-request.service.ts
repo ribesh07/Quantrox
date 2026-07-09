@@ -25,8 +25,8 @@ export const PayoutRequestService = {
     userId: string;
     amount: number;
     paymentMethodId?: string | null;
-    uid: string;
-    qrCodeImage: string;
+    uid?: string | null;
+    qrCodeImage?: string | null;
     remarks?: string;
     walletAddress?: string;
     walletNetwork?: string;
@@ -36,11 +36,11 @@ export const PayoutRequestService = {
         userId: data.userId,
         amount: data.amount,
         paymentMethodId: data.paymentMethodId ?? null,
-        uid: data.uid,
-        qrCodeImage: data.qrCodeImage,
-        remarks: data.remarks,
-        walletAddress: data.walletAddress,
-        walletNetwork: data.walletNetwork,
+        uid: data.uid?.trim() || null,
+        qrCodeImage: data.qrCodeImage ?? null,
+        remarks: data.remarks ?? null,
+        walletAddress: data.walletAddress ?? null,
+        walletNetwork: data.walletNetwork ?? null,
         status: "PENDING",
       },
       include: { paymentMethod: true },
