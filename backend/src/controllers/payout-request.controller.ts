@@ -13,10 +13,6 @@ export const createPayoutRequest = async (req: AuthRequest, res: Response) => {
   try {
     const { amount, paymentMethodId, uid, remarks, walletAddress, walletNetwork } = req.body;
 
-    if (!paymentMethodId) {
-      return res.status(400).json({ success: false, message: "Payment method is required" });
-    }
-
     if (!uid?.trim()) {
       return res.status(400).json({ success: false, message: "UID / account ID is required" });
     }
@@ -30,24 +26,12 @@ export const createPayoutRequest = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ success: false, message: "Valid amount is required" });
     }
 
-    const paymentMethod = await PaymentService.getById(paymentMethodId);
-    if (!paymentMethod || !paymentMethod.active) {
-      return res.status(400).json({ success: false, message: "Invalid or inactive payment method" });
-    }
-
-    if (parsedAmount < paymentMethod.minAmount || parsedAmount > paymentMethod.maxAmount) {
-      return res.status(400).json({
-        success: false,
-        message: `Amount must be between ${paymentMethod.minAmount} and ${paymentMethod.maxAmount}`,
-      });
-    }
-
     const qrCodeImage = await saveUploadedFile(req.file, "payout-qrs");
 
     const payout = await PayoutRequestService.create({
       userId: req.user!.userId,
       amount: parsedAmount,
-      paymentMethodId,
+      paymentMethodId: paymentMethodId?.trim() || null,
       uid: uid.trim(),
       qrCodeImage,
       remarks: remarks?.trim() || undefined,

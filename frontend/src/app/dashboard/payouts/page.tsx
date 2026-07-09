@@ -90,7 +90,7 @@ export default function MerchantPayoutsPage() {
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Payout Requests</h1>
           <p className="text-muted-foreground mt-1 text-sm sm:text-base">
-            Choose a payment method, upload your receiving QR, and submit a payout request
+            Enter your wallet details, upload your receiving QR, and submit a payout request
           </p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>

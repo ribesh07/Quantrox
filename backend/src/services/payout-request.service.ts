@@ -23,7 +23,7 @@ export const PayoutRequestService = {
   async create(data: {
     userId: string;
     amount: number;
-    paymentMethodId: string;
+    paymentMethodId?: string | null;
     uid: string;
     qrCodeImage: string;
     remarks?: string;
@@ -34,7 +34,7 @@ export const PayoutRequestService = {
       data: {
         userId: data.userId,
         amount: data.amount,
-        paymentMethodId: data.paymentMethodId,
+        paymentMethodId: data.paymentMethodId ?? null,
         uid: data.uid,
         qrCodeImage: data.qrCodeImage,
         remarks: data.remarks,
