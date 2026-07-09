@@ -121,7 +121,7 @@ export const approvePayoutRequest = async (req: AuthRequest, res: Response) => {
       userAgent: req.get('user-agent'),
     });
 
-    res.json({ success: true, data: payout });
+    res.json({ success: true, payout });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Failed to approve payout' });
   }
@@ -144,7 +144,7 @@ export const rejectPayoutRequest = async (req: AuthRequest, res: Response) => {
       userAgent: req.get('user-agent'),
     });
 
-    res.json({ success: true, data: payout });
+    res.json({ success: true, payout });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Failed to reject payout' });
   }
@@ -167,7 +167,7 @@ export const markPayoutPaid = async (req: AuthRequest, res: Response) => {
       userAgent: req.get('user-agent'),
     });
 
-    res.json({ success: true, data: payout });
+    res.json({ success: true, payout });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Failed to mark payout as paid' });
   }

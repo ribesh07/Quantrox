@@ -53,8 +53,8 @@ export const WalletService = {
 
     return wallets.map((wallet) => {
       const depositTotal = depositTotals.get(`${wallet.userId}:${wallet.paymentMethodId}`) ?? 0;
-      // prefer the stored wallet balance when present; fallback to approved deposit totals
-      const baseBalance = Math.max(wallet.balance ?? 0, depositTotal);
+      // prefer the stored wallet balance when present; fallback to approved deposit totals only if wallet is missing
+      const baseBalance = wallet.balance ?? depositTotal;
       const availableBalance = Math.max(baseBalance - (wallet.frozenBalance ?? 0), 0);
 
       return {

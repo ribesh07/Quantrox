@@ -73,6 +73,7 @@ export default function MerchantPayoutsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["my-payouts"] });
+      queryClient.invalidateQueries({ queryKey: ["my-wallets"] });
       toast.success("Payout request submitted!");
       setOpen(false);
       setAmount("");
