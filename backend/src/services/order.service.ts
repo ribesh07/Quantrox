@@ -63,10 +63,9 @@ export const OrderService = {
       total = incomingTotal ?? amount + fee;
       receivedAmount = incomingReceiveAmount ?? amount * paymentMethod.rate;
     } else if (type === OrderType.EXCHANGE) {
-      fee = incomingFee ?? (amount * paymentMethod.rate * paymentMethod.feePercentage) / 100;
-      receivedAmount = incomingReceiveAmount ?? (amount * paymentMethod.rate) - fee;
-      total = incomingTotal ?? amount;
-      orderRate = incomingRate ?? paymentMethod.rate;
+      fee = (amount * paymentMethod.rate * paymentMethod.feePercentage) / 100;
+      receivedAmount = (amount * paymentMethod.rate) - fee;
+      total = amount;
     } else if (type === OrderType.GAME_TOPUP) {
       // No fees for game top-up
       fee = 0;
