@@ -181,7 +181,8 @@ export const OrderService = {
       include: { 
         game: true, 
         paymentMethod: true,
-        user: { select: { username: true, email: true } }
+        user: { select: { username: true, email: true } },
+        proofUploads: true,
       },
     });
 
@@ -197,6 +198,10 @@ export const OrderService = {
     ? `${baseUrl}${order.screenshot}`
     : null,
       receiveQrCode: order.receiveQrCode ? `${baseUrl}${order.receiveQrCode}` : null,
+      proofUploads: order.proofUploads?.map(p => ({
+        ...p,
+        fileUrl: p.fileUrl ? `${baseUrl}${p.fileUrl}` : null,
+      })) || [],
     };
   },
 

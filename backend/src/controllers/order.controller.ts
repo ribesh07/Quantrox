@@ -90,6 +90,47 @@ export const uploadProof = async (req: AuthRequest, res: Response) => {
   }
 };
 
+export const uploadAdminProof = async (req: AuthRequest, res: Response) => {
+  try {
+    const id = req.params.id as string;
+    const file = req.file as Express.Multer.File | undefined;
+    const note = req.body.note || req.body.adminNote;
+
+    let imageUrl: string | undefined;
+    if (file) {
+      imageUrl = await saveUploadedFile({
+        tempPath: file.path,
+        originalName: file.originalname,
+        prefix: id,
+        subdirectory: 'proofs',
+      });
+
+      // create proof upload record
+      await prisma.proofUpload.create({
+        data: {
+          userId: req.user!.userId,
+          orderId: id,
+          fileUrl: imageUrl,
+          fileType: file.mimetype,
+          notes: note || undefined,
+        },
+      });
+    }
+
+    const updateData: any = {};
+    if (note) updateData.adminNote = note;
+
+    const order = await prisma.order.update({
+      where: { id },
+      data: updateData,
+    });
+
+    res.json({ success: true, order });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 export const getAllOrders = async (req: AuthRequest, res: Response) => {
   try {
     const orders = await OrderService.getAll();
