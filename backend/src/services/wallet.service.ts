@@ -254,3 +254,20 @@ export const WalletService = {
     const [transactions, count] = await Promise.all([
       prisma.walletTransaction.findMany({
         where: { walletId },
+        orderBy: { createdAt: 'desc' },
+        take: limit,
+        skip: offset,
+      }),
+      prisma.walletTransaction.count({ where: { walletId } }),
+    ]);
+
+    return { transactions, count };
+  },
+
+  async getTotalBalance(userId: string) {
+    const wallets = await this.getUserWallets(userId);
+
+    return wallets.reduce((sum, wallet) => sum + wallet.balance, 0);
+  },
+};
+
