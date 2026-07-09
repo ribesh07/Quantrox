@@ -245,7 +245,7 @@ export default function MerchantPayoutsPage() {
                     <div><strong>Remarks:</strong> {selectedPayout.remarks || '-'}</div>
                     <div><strong>Transaction Hash:</strong> {selectedPayout.transactionHash || '-'}</div>
                     {selectedPayout.qrCodeImage ? (
-                      <img src={selectedPayout.qrCodeImage} alt="QR" className="h-40 w-40 object-contain" />
+                      <img src={resolveMediaUrl(selectedPayout.qrCodeImage)} alt="QR" className="h-40 w-40 object-contain" />
                     ) : null}
                     <div className="flex justify-end">
                       <Button variant="ghost" onClick={() => setViewOpen(false)}>Close</Button>
