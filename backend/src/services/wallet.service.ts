@@ -53,9 +53,12 @@ export const WalletService = {
 
     return wallets.map((wallet) => {
       const depositTotal = depositTotals.get(`${wallet.userId}:${wallet.paymentMethodId}`) ?? 0;
+      const baseBalance = wallet.balance || depositTotal;
+      const availableBalance = Math.max(baseBalance - wallet.frozenBalance, 0);
+
       return {
         ...wallet,
-        balance: Math.max(wallet.balance, depositTotal),
+        balance: availableBalance,
       };
     });
   },
@@ -85,7 +88,8 @@ export const WalletService = {
       return approvedDepositBalance;
     }
 
-    return Math.max(wallet.balance, approvedDepositBalance);
+    const baseBalance = wallet.balance;
+    return Math.max(baseBalance - wallet.frozenBalance, 0);
   },
 
   async getBalanceByMethod(userId: string, paymentMethodId: string) {
