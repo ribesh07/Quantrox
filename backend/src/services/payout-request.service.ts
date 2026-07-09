@@ -204,6 +204,16 @@ export const PayoutRequestService = {
   },
 
   async markPaid(id: string, adminId: string, transactionHash: string) {
+    const existingPayout = await prisma.payoutRequest.findUnique({ where: { id } });
+
+    if (!existingPayout) {
+      throw new Error('Payout request not found');
+    }
+
+    if (existingPayout.status !== 'APPROVED' && existingPayout.status !== 'PAID' && existingPayout.amount > 0) {
+      await WalletService.deductCombinedBalance(existingPayout.userId, existingPayout.amount, `Payout paid #${existingPayout.id}`);
+    }
+
     const payout = await prisma.payoutRequest.update({
       where: { id },
       data: {
@@ -213,6 +223,7 @@ export const PayoutRequestService = {
         transactionHash,
       },
     });
+
     return withImageUrls(payout);
   },
 
