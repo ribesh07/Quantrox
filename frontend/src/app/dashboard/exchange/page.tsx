@@ -26,6 +26,7 @@ export default function WalletExchangePage() {
   const [amount, setAmount] = useState('');
   const [receiveUsername, setReceiveUsername] = useState('');
   const [receiveWalletNumber, setReceiveWalletNumber] = useState('');
+  const [receiveWalletLabel, setReceiveWalletLabel] = useState('');
   const [receiveEmail, setReceiveEmail] = useState('');
   const [receivePhone, setReceivePhone] = useState('');
   const [transactionReference, setTransactionReference] = useState('');
@@ -119,6 +120,7 @@ export default function WalletExchangePage() {
         fee: calculateFee(),
         receiveAmount: calculateReceive(),
         receiveUsername,
+        receiveWalletLabel,
         receiveWalletNumber,
         receiveEmail,
         receivePhone,
@@ -222,6 +224,12 @@ export default function WalletExchangePage() {
                         onChange={(e) => setReceiveUsername(e.target.value)}
                         className="h-12 bg-[#0B0E11] border-[#2B3139] text-white rounded-xl"
                         required
+                      />
+                      <Input
+                        placeholder="Wallet Name / Network (optional)"
+                        value={receiveWalletLabel}
+                        onChange={(e) => setReceiveWalletLabel(e.target.value)}
+                        className="h-12 bg-[#0B0E11] border-[#2B3139] text-white rounded-xl"
                       />
                       <Input
                         placeholder="Wallet Number / Account ID"
