@@ -2,17 +2,66 @@ import { prisma } from "../shared/prisma";
 import { TransactionType, WalletStatus } from "@prisma/client";
 
 export const WalletService = {
-  async getUserWallets(userId: string) {
-    return prisma.wallet.findMany({
-      where: { userId },
-      include: {
-        paymentMethod: true,
+  async getApprovedDepositTotals(userId: string) {
+    const deposits = await prisma.deposit.groupBy({
+      by: ['userId', 'paymentMethodId'],
+      where: {
+        userId,
+        status: { in: ['APPROVED', 'RELEASED'] },
+        paymentMethodId: { not: null },
       },
+      _sum: { amount: true },
+    });
+
+    return new Map(
+      deposits
+        .filter((deposit) => deposit.paymentMethodId)
+        .map((deposit) => [
+          `${deposit.userId}:${deposit.paymentMethodId}`,
+          deposit._sum.amount ?? 0,
+        ])
+    );
+  },
+
+  async getUserWallets(userId: string) {
+    const [wallets, depositTotals] = await Promise.all([
+      prisma.wallet.findMany({
+        where: { userId },
+        include: {
+          paymentMethod: true,
+        },
+      }),
+      this.getApprovedDepositTotals(userId),
+    ]);
+
+    const walletLookup = new Map(wallets.map((wallet) => [`${wallet.userId}:${wallet.paymentMethodId}`, wallet]));
+
+    for (const [depositKey, depositTotal] of depositTotals.entries()) {
+      if (depositTotal <= 0 || walletLookup.has(depositKey)) {
+        continue;
+      }
+
+      const [, paymentMethodId] = depositKey.split(':');
+      if (!paymentMethodId) {
+        continue;
+      }
+
+      const wallet = await this.getOrCreateWallet(userId, paymentMethodId);
+      wallets.push(wallet);
+      walletLookup.set(depositKey, wallet);
+    }
+
+    return wallets.map((wallet) => {
+      const depositTotal = depositTotals.get(`${wallet.userId}:${wallet.paymentMethodId}`) ?? 0;
+      return {
+        ...wallet,
+        balance: Math.max(wallet.balance, depositTotal),
+      };
     });
   },
 
-  async getBalanceByMethod(userId: string, paymentMethodId: string) {
-    return prisma.wallet.findUnique({
+  async getEffectiveBalance(userId: string, paymentMethodId: string) {
+    const wallet = await prisma.wallet.findUnique({
       where: {
         userId_paymentMethodId: {
           userId,
@@ -20,6 +69,45 @@ export const WalletService = {
         }
       }
     });
+
+    const depositTotal = await prisma.deposit.aggregate({
+      where: {
+        userId,
+        paymentMethodId,
+        status: { in: ['APPROVED', 'RELEASED'] },
+      },
+      _sum: { amount: true },
+    });
+
+    const approvedDepositBalance = depositTotal._sum.amount ?? 0;
+
+    if (!wallet) {
+      return approvedDepositBalance;
+    }
+
+    return Math.max(wallet.balance, approvedDepositBalance);
+  },
+
+  async getBalanceByMethod(userId: string, paymentMethodId: string) {
+    const wallet = await prisma.wallet.findUnique({
+      where: {
+        userId_paymentMethodId: {
+          userId,
+          paymentMethodId
+        }
+      }
+    });
+
+    if (!wallet) {
+      return null;
+    }
+
+    const effectiveBalance = await this.getEffectiveBalance(userId, paymentMethodId);
+
+    return {
+      ...wallet,
+      balance: effectiveBalance,
+    };
   },
 
   async getOrCreateWallet(userId: string, paymentMethodId: string) {
@@ -177,9 +265,7 @@ export const WalletService = {
   },
 
   async getTotalBalance(userId: string) {
-    const wallets = await prisma.wallet.findMany({
-      where: { userId },
-    });
+    const wallets = await this.getUserWallets(userId);
 
     return wallets.reduce((sum, wallet) => sum + wallet.balance, 0);
   },
