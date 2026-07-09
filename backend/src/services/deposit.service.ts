@@ -199,7 +199,18 @@ export const DepositService = {
     });
 
     if (existingDeposit.status !== 'APPROVED' && existingDeposit.status !== 'RELEASED') {
-      await this.creditToWallet(existingDeposit);
+      // ensure we have a paymentMethodId to credit to; if missing, try to resolve by name
+      let creditDeposit = existingDeposit;
+      if (!existingDeposit.paymentMethodId && existingDeposit.paymentMethodName) {
+        const pm = await prisma.paymentMethod.findFirst({ where: { name: existingDeposit.paymentMethodName } });
+        if (pm) {
+          // attach paymentMethodId to deposit record so wallets can be credited
+          await prisma.deposit.update({ where: { id }, data: { paymentMethodId: pm.id } });
+          creditDeposit = { ...existingDeposit, paymentMethodId: pm.id };
+        }
+      }
+
+      await this.creditToWallet(creditDeposit);
     }
 
     return deposit;
