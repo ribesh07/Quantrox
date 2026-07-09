@@ -80,17 +80,21 @@ export const OrderService = {
     });
 
     if (type === OrderType.EXCHANGE) {
-      await prisma.wallet.update({
-        where: {
-          userId_paymentMethodId: {
-            userId,
-            paymentMethodId
+      try {
+        await prisma.wallet.update({
+          where: {
+            userId_paymentMethodId: {
+              userId,
+              paymentMethodId
+            }
+          },
+          data: {
+            balance: { decrement: amount }
           }
-        },
-        data: {
-          balance: { decrement: amount }
-        }
-      });
+        });
+      } catch (error) {
+        console.error('Exchange wallet update failed:', error);
+      }
     }
 
     return order;
