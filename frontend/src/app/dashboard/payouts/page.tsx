@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { getMyPayoutRequestsAction, createPayoutRequestAction } from "@/actions/merchant.actions";
+import { getUserWalletsAction } from "@/actions/wallet.actions";
 import { getPaymentMethodsAction } from "@/actions/payment.actions";
 import { PayoutStatus } from "@/lib/prisma-types";
 import { resolveMediaUrl } from "@/lib/media";
@@ -40,9 +41,23 @@ export default function MerchantPayoutsPage() {
     },
   });
 
+  const { data: walletsData } = useQuery({
+    queryKey: ["my-wallets"],
+    queryFn: async () => {
+      const result = await getUserWalletsAction();
+      return result.success ? result.wallets : [];
+    },
+  });
+
+  const totalAvailable = (walletsData || []).reduce((sum: number, w: any) => sum + (w.availableBalance ?? w.balance ?? 0), 0);
+
   const createMutation = useMutation({
     mutationFn: async () => {
       const formData = new FormData();
+      const parsed = Number(amount);
+      if (!parsed || parsed <= 0) throw new Error("Please enter a valid payout amount");
+      if (parsed > totalAvailable) throw new Error("Insufficient funds");
+
       formData.append("amount", amount);
       formData.append("walletAddress", walletAddress);
       formData.append("walletNetwork", walletNetwork);
