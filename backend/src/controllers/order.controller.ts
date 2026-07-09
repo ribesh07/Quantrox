@@ -93,7 +93,8 @@ export const uploadProof = async (req: AuthRequest, res: Response) => {
 export const uploadAdminProof = async (req: AuthRequest, res: Response) => {
   try {
     const id = req.params.id as string;
-    const file = req.file as Express.Multer.File | undefined;
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
+    const file = files?.file?.[0] || files?.adminProof?.[0];
     const note = req.body.note || req.body.adminNote;
 
     let imageUrl: string | undefined;

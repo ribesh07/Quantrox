@@ -28,6 +28,17 @@ export async function reviewOrderAction(id: string, status: OrderStatus, adminNo
   }
 }
 
+export async function uploadOrderAdminProofAction(id: string, formData: FormData) {
+  try {
+    const config = await getAuthenticatedRequestConfig();
+    const response = await api.patch(`/admin/orders/${id}/admin-proof`, formData, config);
+    revalidatePath("/admin/orders");
+    return { success: true, order: response.data.order };
+  } catch (error: any) {
+    return { success: false, error: error.response?.data?.message || error.message };
+  }
+}
+
 // User Actions
 export async function getAllUsersAction() {
   try {
