@@ -258,6 +258,7 @@ model Order {
   transactionReference String?
 
   receiveUsername String?
+  receiveWalletLabel String?
   receiveWalletNumber String?
   receiveEmail String?
   receivePhone String?

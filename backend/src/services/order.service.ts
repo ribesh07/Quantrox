@@ -19,6 +19,7 @@ export const OrderService = {
     total?: number;
     rate?: number;
     receiveUsername?: string;
+    receiveWalletLabel?: string;
     receiveWalletNumber?: string;
     receiveEmail?: string;
     receivePhone?: string;
@@ -39,6 +40,7 @@ export const OrderService = {
       total: incomingTotal,
       rate: incomingRate,
       receiveUsername,
+      receiveWalletLabel,
       receiveWalletNumber,
       receiveEmail,
       receivePhone,
@@ -89,6 +91,7 @@ export const OrderService = {
         fromWalletId: fromWalletId || null,
         toWalletId: toWalletId || null,
         receiveUsername: receiveUsername?.trim() || null,
+        receiveWalletLabel: receiveWalletLabel?.trim() || null,
         receiveWalletNumber: receiveWalletNumber?.trim() || null,
         receiveEmail: receiveEmail?.trim() || null,
         receivePhone: receivePhone?.trim() || null,
