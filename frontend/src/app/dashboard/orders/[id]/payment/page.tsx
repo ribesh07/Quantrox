@@ -323,6 +323,5 @@ export default function OrderDetailsPage({ params: paramsPromise }: { params: Pr
         </Dialog>
       </div>
     </div>
-  </div>
   );
 }
