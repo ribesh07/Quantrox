@@ -1,5 +1,6 @@
 import { prisma } from "../shared/prisma";
 import { OrderType, OrderStatus } from "@prisma/client";
+import { WalletService } from "./wallet.service";
 
 const baseUrl = process.env.SERVICE_URL_BACKEND || "https://api.settlerpay.com";
 
@@ -46,7 +47,9 @@ export const OrderService = {
         }
       });
 
-      if (!wallet || wallet.balance < amount) {
+      const effectiveBalance = await WalletService.getEffectiveBalance(userId, paymentMethodId);
+
+      if (!wallet || effectiveBalance < amount) {
         throw new Error("Insufficient balance in source wallet");
       }
     } else if (type === OrderType.GAME_TOPUP) {
