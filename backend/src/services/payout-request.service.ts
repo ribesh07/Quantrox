@@ -1,5 +1,6 @@
 import { prisma } from "../shared/prisma";
 import { PayoutStatus } from "@prisma/client";
+import { WalletService } from "./wallet.service";
 
 const baseUrl = process.env.SERVICE_URL_BACKEND || "https://api.settlerpay.com";
 
@@ -30,65 +31,24 @@ export const PayoutRequestService = {
     walletAddress?: string;
     walletNetwork?: string;
   }) {
-    const payout = await prisma.$transaction(async (tx) => {
-      const payout = await tx.payoutRequest.create({
-        data: {
-          userId: data.userId,
-          amount: data.amount,
-          paymentMethodId: data.paymentMethodId ?? null,
-          uid: data.uid,
-          qrCodeImage: data.qrCodeImage,
-          remarks: data.remarks,
-          walletAddress: data.walletAddress,
-          walletNetwork: data.walletNetwork,
-          status: "PENDING",
-        },
-        include: { paymentMethod: true },
-      });
-
-      if (data.paymentMethodId && data.amount > 0) {
-        const wallet = await tx.wallet.upsert({
-          where: {
-            userId_paymentMethodId: {
-              userId: data.userId,
-              paymentMethodId: data.paymentMethodId,
-            },
-          },
-          update: {
-            lastActivityAt: new Date(),
-          },
-          create: {
-            userId: data.userId,
-            paymentMethodId: data.paymentMethodId,
-            balance: 0,
-            pendingBalance: 0,
-            frozenBalance: 0,
-            status: "ACTIVE",
-          },
-        });
-
-        await tx.wallet.update({
-          where: { id: wallet.id },
-          data: {
-            frozenBalance: { increment: data.amount },
-            lastActivityAt: new Date(),
-          },
-        });
-        // log freeze as a transfer-style transaction
-        await tx.walletTransaction.create({
-          data: {
-            walletId: wallet.id,
-            type: 'TRANSFER',
-            amount: data.amount,
-            balanceBefore: wallet.balance,
-            balanceAfter: wallet.balance,
-            notes: `Payout freeze #${payout.id}`,
-          },
-        });
-      }
-
-      return payout;
+    const payout = await prisma.payoutRequest.create({
+      data: {
+        userId: data.userId,
+        amount: data.amount,
+        paymentMethodId: data.paymentMethodId ?? null,
+        uid: data.uid,
+        qrCodeImage: data.qrCodeImage,
+        remarks: data.remarks,
+        walletAddress: data.walletAddress,
+        walletNetwork: data.walletNetwork,
+        status: "PENDING",
+      },
+      include: { paymentMethod: true },
     });
+
+    if (data.amount > 0) {
+      await WalletService.freezeCombinedBalance(data.userId, data.amount, `Payout freeze #${payout.id}`);
+    }
 
     return withImageUrls(payout);
   },
@@ -205,41 +165,9 @@ export const PayoutRequestService = {
       if (
         existingPayout.status !== 'APPROVED' &&
         existingPayout.status !== 'PAID' &&
-        existingPayout.paymentMethodId &&
         existingPayout.amount > 0
       ) {
-        const wallet = await tx.wallet.findUnique({
-          where: {
-            userId_paymentMethodId: {
-              userId: existingPayout.userId,
-              paymentMethodId: existingPayout.paymentMethodId,
-            },
-          },
-        });
-
-        if (wallet) {
-          await tx.wallet.update({
-            where: { id: wallet.id },
-            data: {
-              balance: Math.max(0, wallet.balance - existingPayout.amount),
-              frozenBalance: Math.max(0, wallet.frozenBalance - existingPayout.amount),
-              lastActivityAt: new Date(),
-            },
-          });
-        }
-        // create a wallet transaction record for the deduction
-        if (wallet) {
-          await tx.walletTransaction.create({
-            data: {
-              walletId: wallet.id,
-              type: 'WITHDRAWAL',
-              amount: existingPayout.amount,
-              balanceBefore: wallet.balance,
-              balanceAfter: Math.max(0, wallet.balance - existingPayout.amount),
-              notes: `Payout approved #${existingPayout.id}`,
-            },
-          });
-        }
+        await WalletService.deductCombinedBalance(existingPayout.userId, existingPayout.amount, `Payout approved #${existingPayout.id}`);
       }
 
       return payout;
@@ -266,40 +194,9 @@ export const PayoutRequestService = {
 
       if (
         existingPayout.status !== 'REJECTED' &&
-        existingPayout.paymentMethodId &&
         existingPayout.amount > 0
       ) {
-        const wallet = await tx.wallet.findUnique({
-          where: {
-            userId_paymentMethodId: {
-              userId: existingPayout.userId,
-              paymentMethodId: existingPayout.paymentMethodId,
-            },
-          },
-        });
-
-        if (wallet) {
-          await tx.wallet.update({
-            where: { id: wallet.id },
-            data: {
-              frozenBalance: Math.max(0, wallet.frozenBalance - existingPayout.amount),
-              lastActivityAt: new Date(),
-            },
-          });
-        }
-        // create an unfreeze wallet transaction record
-        if (wallet) {
-          await tx.walletTransaction.create({
-            data: {
-              walletId: wallet.id,
-              type: 'REFUND',
-              amount: existingPayout.amount,
-              balanceBefore: wallet.balance,
-              balanceAfter: wallet.balance,
-              notes: `Payout rejected #${existingPayout.id} - funds released`,
-            },
-          });
-        }
+        await WalletService.releaseCombinedBalance(existingPayout.userId, existingPayout.amount, `Payout rejected #${existingPayout.id} - funds released`);
       }
 
       return payout;

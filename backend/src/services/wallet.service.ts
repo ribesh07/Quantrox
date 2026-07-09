@@ -54,7 +54,7 @@ export const WalletService = {
     return wallets.map((wallet) => {
       const depositTotal = depositTotals.get(`${wallet.userId}:${wallet.paymentMethodId}`) ?? 0;
       // prefer the stored wallet balance when present; fallback to approved deposit totals
-      const baseBalance = (wallet.balance !== null && wallet.balance !== undefined) ? wallet.balance : depositTotal;
+      const baseBalance = Math.max(wallet.balance ?? 0, depositTotal);
       const availableBalance = Math.max(baseBalance - (wallet.frozenBalance ?? 0), 0);
 
       return {
@@ -269,6 +269,145 @@ export const WalletService = {
     const wallets = await this.getUserWallets(userId);
 
     return wallets.reduce((sum, wallet) => sum + wallet.balance, 0);
+  },
+
+  async freezeCombinedBalance(userId: string, amount: number, note?: string) {
+    const wallets = (await this.getUserWallets(userId))
+      .filter((wallet) => (wallet.availableBalance ?? 0) > 0)
+      .sort((a, b) => (b.availableBalance ?? 0) - (a.availableBalance ?? 0));
+
+    let remaining = amount;
+    const actions: any[] = [];
+
+    for (const wallet of wallets) {
+      if (remaining <= 0) break;
+      const available = wallet.availableBalance ?? wallet.balance ?? 0;
+      const freezeAmount = Math.min(available, remaining);
+      if (freezeAmount <= 0) continue;
+
+      actions.push(
+        prisma.wallet.update({
+          where: { id: wallet.id },
+          data: {
+            frozenBalance: { increment: freezeAmount },
+            lastActivityAt: new Date(),
+          },
+        })
+      );
+      actions.push(
+        prisma.walletTransaction.create({
+          data: {
+            walletId: wallet.id,
+            type: 'TRANSFER',
+            amount: freezeAmount,
+            balanceBefore: wallet.balance ?? 0,
+            balanceAfter: Math.max(0, (wallet.balance ?? 0) - freezeAmount),
+            notes: note || `Payout freeze`,
+          },
+        })
+      );
+
+      remaining -= freezeAmount;
+    }
+
+    if (remaining > 0) {
+      throw new Error('Insufficient available balance');
+    }
+
+    await prisma.$transaction(actions);
+  },
+
+  async deductCombinedBalance(userId: string, amount: number, note?: string) {
+    const wallets = (await this.getUserWallets(userId))
+      .filter((wallet) => (wallet.frozenBalance ?? 0) > 0)
+      .sort((a, b) => (b.frozenBalance ?? 0) - (a.frozenBalance ?? 0));
+
+    let remaining = amount;
+    const actions: any[] = [];
+
+    for (const wallet of wallets) {
+      if (remaining <= 0) break;
+      const frozen = wallet.frozenBalance ?? 0;
+      const deduction = Math.min(frozen, remaining);
+      if (deduction <= 0) continue;
+
+      actions.push(
+        prisma.wallet.update({
+          where: { id: wallet.id },
+          data: {
+            balance: { decrement: deduction },
+            frozenBalance: { decrement: deduction },
+            lastActivityAt: new Date(),
+          },
+        })
+      );
+      actions.push(
+        prisma.walletTransaction.create({
+          data: {
+            walletId: wallet.id,
+            type: 'WITHDRAWAL',
+            amount: deduction,
+            balanceBefore: wallet.balance ?? 0,
+            balanceAfter: Math.max(0, (wallet.balance ?? 0) - deduction),
+            notes: note || `Payout approved`,
+          },
+        })
+      );
+
+      remaining -= deduction;
+    }
+
+    if (remaining > 0) {
+      throw new Error('Insufficient frozen balance');
+    }
+
+    await prisma.$transaction(actions);
+  },
+
+  async releaseCombinedBalance(userId: string, amount: number, note?: string) {
+    const wallets = (await this.getUserWallets(userId))
+      .filter((wallet) => (wallet.frozenBalance ?? 0) > 0)
+      .sort((a, b) => (b.frozenBalance ?? 0) - (a.frozenBalance ?? 0));
+
+    let remaining = amount;
+    const actions: any[] = [];
+
+    for (const wallet of wallets) {
+      if (remaining <= 0) break;
+      const frozen = wallet.frozenBalance ?? 0;
+      const releaseAmount = Math.min(frozen, remaining);
+      if (releaseAmount <= 0) continue;
+
+      actions.push(
+        prisma.wallet.update({
+          where: { id: wallet.id },
+          data: {
+            frozenBalance: { decrement: releaseAmount },
+            lastActivityAt: new Date(),
+          },
+        })
+      );
+      actions.push(
+        prisma.walletTransaction.create({
+          data: {
+            walletId: wallet.id,
+            type: 'REFUND',
+            amount: releaseAmount,
+            balanceBefore: wallet.balance ?? 0,
+            balanceAfter: wallet.balance ?? 0,
+            notes: note || `Payout release`,
+          },
+        })
+      );
+
+      remaining -= releaseAmount;
+    }
+
+    if (remaining > 0) {
+      throw new Error('Insufficient frozen balance to release');
+    }
+
+    await prisma.$transaction(actions);
   },
 };
 
