@@ -43,6 +43,34 @@ export const WalletService = {
     });
   },
 
+  async getEffectiveBalance(userId: string, paymentMethodId: string) {
+    const wallet = await prisma.wallet.findUnique({
+      where: {
+        userId_paymentMethodId: {
+          userId,
+          paymentMethodId
+        }
+      }
+    });
+
+    const depositTotal = await prisma.deposit.aggregate({
+      where: {
+        userId,
+        paymentMethodId,
+        status: { in: ['APPROVED', 'RELEASED'] },
+      },
+      _sum: { amount: true },
+    });
+
+    const approvedDepositBalance = depositTotal._sum.amount ?? 0;
+
+    if (!wallet) {
+      return approvedDepositBalance;
+    }
+
+    return Math.max(wallet.balance, approvedDepositBalance);
+  },
+
   async getBalanceByMethod(userId: string, paymentMethodId: string) {
     const wallet = await prisma.wallet.findUnique({
       where: {
@@ -57,18 +85,11 @@ export const WalletService = {
       return null;
     }
 
-    const depositTotal = await prisma.deposit.aggregate({
-      where: {
-        userId,
-        paymentMethodId,
-        status: { in: ['APPROVED', 'RELEASED'] },
-      },
-      _sum: { amount: true },
-    });
+    const effectiveBalance = await this.getEffectiveBalance(userId, paymentMethodId);
 
     return {
       ...wallet,
-      balance: Math.max(wallet.balance, depositTotal._sum.amount ?? 0),
+      balance: effectiveBalance,
     };
   },
 
