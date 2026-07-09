@@ -17,6 +17,8 @@ import { ReportStatus } from "@/lib/prisma-types";
 export default function MerchantReportsPage() {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [selectedReport, setSelectedReport] = useState<any | null>(null);
+  const [reportViewOpen, setReportViewOpen] = useState(false);
   const [transactionDate, setTransactionDate] = useState(new Date().toISOString().split('T')[0]);
   const [totalTransactions, setTotalTransactions] = useState("");
   const [totalAmount, setTotalAmount] = useState("");
@@ -166,6 +168,7 @@ export default function MerchantReportsPage() {
                   <TableHead>Amount</TableHead>
                   <TableHead>Proof</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -182,6 +185,11 @@ export default function MerchantReportsPage() {
                       )}
                     </TableCell>
                     <TableCell>{getStatusBadge(report.status)}</TableCell>
+                    <TableCell>
+                      <Button variant="ghost" size="sm" onClick={() => { setSelectedReport(report); setReportViewOpen(true); }}>
+                        View
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -189,6 +197,26 @@ export default function MerchantReportsPage() {
           )}
         </CardContent>
       </Card>
+      <Dialog open={reportViewOpen} onOpenChange={setReportViewOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Report Details</DialogTitle>
+          </DialogHeader>
+          {selectedReport ? (
+            <div className="space-y-4">
+              <div><strong>Date:</strong> {new Date(selectedReport.transactionDate).toLocaleDateString()}</div>
+              <div><strong>Total Transactions:</strong> {selectedReport.totalTransactions}</div>
+              <div><strong>Total Amount:</strong> ${selectedReport.totalAmount.toLocaleString()}</div>
+              <div><strong>Notes:</strong> {selectedReport.notes || '-'}</div>
+              <div><strong>Proof:</strong></div>
+              {selectedReport.proofImage ? <img src={selectedReport.proofImage} alt="Proof" className="h-40 w-40 object-contain" /> : <div>-</div>}
+              <div className="flex justify-end">
+                <Button variant="ghost" onClick={() => setReportViewOpen(false)}>Close</Button>
+              </div>
+            </div>
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

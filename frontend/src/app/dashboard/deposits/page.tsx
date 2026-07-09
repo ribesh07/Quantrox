@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Loader2, DollarSign, PlusCircle, UploadCloud, ShieldCheck, QrCode, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import Image from "next/image";
@@ -25,6 +26,8 @@ export default function MerchantDepositsPage() {
   const [depositId, setDepositId] = useState<string | null>(null);
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [proofPreview, setProofPreview] = useState<string | null>(null);
+  const [selectedDeposit, setSelectedDeposit] = useState<any | null>(null);
+  const [depositViewOpen, setDepositViewOpen] = useState(false);
 
   const { data: deposits, isLoading: depositsLoading } = useQuery({
     queryKey: ["my-deposits"],
@@ -289,6 +292,7 @@ export default function MerchantDepositsPage() {
                   <TableHead>Payment</TableHead>
                   <TableHead>Required</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -300,6 +304,11 @@ export default function MerchantDepositsPage() {
                     <TableCell>{deposit.notes?.includes("Payment method:") ? deposit.notes.replace("Payment method:", "") : "—"}</TableCell>
                     <TableCell>${deposit.requiredDeposit?.toLocaleString() || 0}</TableCell>
                     <TableCell>{getStatusBadge(deposit.status)}</TableCell>
+                    <TableCell>
+                      <Button variant="ghost" size="sm" onClick={() => { setSelectedDeposit(deposit); setDepositViewOpen(true); }}>
+                        View
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -307,6 +316,26 @@ export default function MerchantDepositsPage() {
           )}
         </CardContent>
       </Card>
+      <Dialog open={depositViewOpen} onOpenChange={setDepositViewOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Deposit Details</DialogTitle>
+          </DialogHeader>
+          {selectedDeposit ? (
+            <div className="space-y-4">
+              <div><strong>Amount:</strong> ${selectedDeposit.amount.toLocaleString()}</div>
+              <div><strong>Status:</strong> {selectedDeposit.status}</div>
+              <div><strong>Payment Notes:</strong> {selectedDeposit.notes || '-'}</div>
+              <div><strong>Required Deposit:</strong> ${selectedDeposit.requiredDeposit?.toLocaleString() || 0}</div>
+              <div><strong>Proof Image:</strong></div>
+              {selectedDeposit.proofImage ? <img src={selectedDeposit.proofImage} alt="Proof" className="h-40 w-40 object-contain" /> : <div>-</div>}
+              <div className="flex justify-end">
+                <Button variant="ghost" onClick={() => setDepositViewOpen(false)}>Close</Button>
+              </div>
+            </div>
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
