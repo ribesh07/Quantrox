@@ -49,7 +49,7 @@ export const OrderService = {
 
       const effectiveBalance = await WalletService.getEffectiveBalance(userId, paymentMethodId);
 
-      if (!wallet || effectiveBalance < amount) {
+      if (effectiveBalance < amount) {
         throw new Error("Insufficient balance in source wallet");
       }
     } else if (type === OrderType.GAME_TOPUP) {
