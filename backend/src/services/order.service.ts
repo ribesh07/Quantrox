@@ -1,6 +1,5 @@
 import { prisma } from "../shared/prisma";
 import { OrderType, OrderStatus } from "@prisma/client";
-import { WalletService } from "./wallet.service";
 
 const baseUrl = process.env.SERVICE_URL_BACKEND || "https://api.settlerpay.com";
 
@@ -13,8 +12,38 @@ export const OrderService = {
     gameId?: string;
     gameUsername?: string;
     walletAddress?: string;
+    fromWalletId?: string;
+    toWalletId?: string;
+    fee?: number;
+    receiveAmount?: number;
+    total?: number;
+    rate?: number;
+    receiveUsername?: string;
+    receiveWalletNumber?: string;
+    receiveEmail?: string;
+    receivePhone?: string;
+    transactionReference?: string;
   }) {
-    const { userId, type, paymentMethodId, amount, gameId, gameUsername, walletAddress } = data;
+    const {
+      userId,
+      type,
+      paymentMethodId,
+      amount,
+      gameId,
+      gameUsername,
+      walletAddress,
+      fromWalletId,
+      toWalletId,
+      fee: incomingFee,
+      receiveAmount: incomingReceiveAmount,
+      total: incomingTotal,
+      rate: incomingRate,
+      receiveUsername,
+      receiveWalletNumber,
+      receiveEmail,
+      receivePhone,
+      transactionReference,
+    } = data;
 
     const paymentMethod = await prisma.paymentMethod.findUnique({
       where: { id: paymentMethodId }
@@ -24,34 +53,20 @@ export const OrderService = {
       throw new Error("Invalid payment method");
     }
 
-    let fee = 0;
-    let total = amount;
-    let receivedAmount = 0;
-    let orderRate = paymentMethod.rate;
+    let fee = incomingFee ?? 0;
+    let total = incomingTotal ?? amount;
+    let receivedAmount = incomingReceiveAmount ?? 0;
+    let orderRate = incomingRate ?? paymentMethod.rate;
 
     if (type === OrderType.DEPOSIT) {
-      fee = (amount * paymentMethod.feePercentage) / 100;
-      total = amount + fee;
-      receivedAmount = amount * paymentMethod.rate;
+      fee = incomingFee ?? (amount * paymentMethod.feePercentage) / 100;
+      total = incomingTotal ?? amount + fee;
+      receivedAmount = incomingReceiveAmount ?? amount * paymentMethod.rate;
     } else if (type === OrderType.EXCHANGE) {
-      fee = (amount * paymentMethod.rate * paymentMethod.feePercentage) / 100;
-      receivedAmount = (amount * paymentMethod.rate) - fee;
-      total = amount;
-
-      const wallet = await prisma.wallet.findUnique({
-        where: {
-          userId_paymentMethodId: {
-            userId,
-            paymentMethodId
-          }
-        }
-      });
-
-      const effectiveBalance = await WalletService.getEffectiveBalance(userId, paymentMethodId);
-
-      if (effectiveBalance < amount) {
-        throw new Error("Insufficient balance in source wallet");
-      }
+      fee = incomingFee ?? (amount * paymentMethod.rate * paymentMethod.feePercentage) / 100;
+      receivedAmount = incomingReceiveAmount ?? (amount * paymentMethod.rate) - fee;
+      total = incomingTotal ?? amount;
+      orderRate = incomingRate ?? paymentMethod.rate;
     } else if (type === OrderType.GAME_TOPUP) {
       // No fees for game top-up
       fee = 0;
@@ -72,6 +87,13 @@ export const OrderService = {
         gameId: gameId || null,
         gameUsername: gameUsername?.trim() || null,
         walletAddress: walletAddress || null,
+        fromWalletId: fromWalletId || null,
+        toWalletId: toWalletId || null,
+        receiveUsername: receiveUsername?.trim() || null,
+        receiveWalletNumber: receiveWalletNumber?.trim() || null,
+        receiveEmail: receiveEmail?.trim() || null,
+        receivePhone: receivePhone?.trim() || null,
+        transactionReference: transactionReference?.trim() || null,
         status:
           type === OrderType.DEPOSIT || type === OrderType.GAME_TOPUP
             ? OrderStatus.PENDING_PAYMENT

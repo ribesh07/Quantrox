@@ -22,6 +22,7 @@ export const createOrderSchema = z
     fromWalletId: z.string().optional(),
     toWalletId: z.string().optional(),
     exchangeRate: z.number().optional(),
+    rate: z.number().optional(),
     fee: z.number().optional(),
     receiveAmount: z.number().optional(),
     adminWalletId: z.string().optional(),
