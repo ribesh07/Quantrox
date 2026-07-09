@@ -2,6 +2,49 @@ import { prisma } from "../shared/prisma";
 import { DepositType, DepositStatus } from "@prisma/client";
 
 export const DepositService = {
+  async creditToWallet(deposit: { id: string; userId: string; paymentMethodId: string | null; amount: number }) {
+    if (!deposit.paymentMethodId) return;
+
+    const walletKey = {
+      userId: deposit.userId,
+      paymentMethodId: deposit.paymentMethodId,
+    };
+
+    const existingWallet = await prisma.wallet.findUnique({
+      where: { userId_paymentMethodId: walletKey },
+    });
+
+    const previousBalance = existingWallet?.balance ?? 0;
+    const nextBalance = previousBalance + deposit.amount;
+
+    const wallet = await prisma.wallet.upsert({
+      where: { userId_paymentMethodId: walletKey },
+      update: {
+        balance: { increment: deposit.amount },
+        lastActivityAt: new Date(),
+      },
+      create: {
+        userId: deposit.userId,
+        paymentMethodId: deposit.paymentMethodId,
+        balance: deposit.amount,
+        pendingBalance: 0,
+        frozenBalance: 0,
+        status: 'ACTIVE',
+      },
+    });
+
+    await prisma.walletTransaction.create({
+      data: {
+        walletId: wallet.id,
+        type: 'DEPOSIT',
+        amount: deposit.amount,
+        balanceBefore: previousBalance,
+        balanceAfter: nextBalance,
+        notes: `Deposit approved #${deposit.id}`,
+      },
+    });
+  },
+
   async create(data: {
     userId: string;
     amount: number;
@@ -117,7 +160,13 @@ export const DepositService = {
   },
 
   async approve(id: string, adminId: string) {
-    return prisma.deposit.update({
+    const existingDeposit = await prisma.deposit.findUnique({ where: { id } });
+
+    if (!existingDeposit) {
+      throw new Error('Deposit not found');
+    }
+
+    const deposit = await prisma.deposit.update({
       where: { id },
       data: {
         status: 'APPROVED',
@@ -125,6 +174,12 @@ export const DepositService = {
         adjustedBy: adminId,
       },
     });
+
+    if (existingDeposit.status !== 'APPROVED' && existingDeposit.status !== 'RELEASED') {
+      await this.creditToWallet(existingDeposit);
+    }
+
+    return deposit;
   },
 
   async reject(id: string, adminId: string) {
@@ -150,7 +205,13 @@ export const DepositService = {
   },
 
   async release(id: string, adminId: string) {
-    return prisma.deposit.update({
+    const existingDeposit = await prisma.deposit.findUnique({ where: { id } });
+
+    if (!existingDeposit) {
+      throw new Error('Deposit not found');
+    }
+
+    const deposit = await prisma.deposit.update({
       where: { id },
       data: {
         status: 'RELEASED',
@@ -158,6 +219,12 @@ export const DepositService = {
         releasedBy: adminId,
       },
     });
+
+    if (existingDeposit.status !== 'APPROVED' && existingDeposit.status !== 'RELEASED') {
+      await this.creditToWallet(existingDeposit);
+    }
+
+    return deposit;
   },
 
   async adjust(id: string, amount: number, adminId: string, notes?: string) {
