@@ -15,8 +15,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-import { createOrderAction, uploadOrderProofAction } from '@/actions/order.actions';
 import { getPaymentMethodsAction } from '@/actions/payment.actions';
+import api from '@/lib/api';
 
 export default function WalletExchangePage() {
   const router = useRouter();
@@ -77,9 +77,8 @@ export default function WalletExchangePage() {
 
   const createOrderMutation = useMutation({
     mutationFn: async (data: any) => {
-      const res = await createOrderAction(data);
-      if (!res.success) throw new Error(res.error);
-      return res.order;
+      const res = await api.post('/orders', data);
+      return res.data.order;
     },
     onSuccess: (order) => {
       setOrderId(order.id);
@@ -98,10 +97,8 @@ export default function WalletExchangePage() {
       formData.append('file', paymentProof);
       if (receiveQr) formData.append('receiveQrCode', receiveQr);
 
-      const result = await uploadOrderProofAction(orderId, formData);
-      if (!result.success) throw new Error(result.error);
-
-      return result.order;
+      const result = await api.post(`/orders/${orderId}/proof`, formData);
+      return result.data.order;
     },
     onSuccess: () => {
       toast.success('Exchange request submitted successfully!');
