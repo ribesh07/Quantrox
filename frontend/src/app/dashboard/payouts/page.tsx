@@ -32,6 +32,8 @@ export default function MerchantPayoutsPage() {
   const [walletNetwork, setWalletNetwork] = useState("");
   const [remarks, setRemarks] = useState("");
   const [file, setFile] = useState<File | null>(null);
+  const [selectedPayout, setSelectedPayout] = useState<any | null>(null);
+  const [viewOpen, setViewOpen] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ["my-payouts"],
@@ -213,10 +215,13 @@ export default function MerchantPayoutsPage() {
                         <FileText className="h-5 w-5 text-muted-foreground" />
                       )}
                     </TableCell>
-                    <TableCell>{getStatusBadge(payout.status)}</TableCell>
-                    <TableCell className="font-mono text-xs">
-                      {payout.transactionHash || "-"}
-                    </TableCell>
+                          <TableCell>{getStatusBadge(payout.status)}</TableCell>
+                          <TableCell className="font-mono text-xs">{payout.transactionHash || "-"}</TableCell>
+                          <TableCell>
+                            <Button variant="ghost" size="sm" onClick={() => { setSelectedPayout(payout); setViewOpen(true); }}>
+                              View
+                            </Button>
+                          </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -224,6 +229,30 @@ export default function MerchantPayoutsPage() {
           )}
         </CardContent>
       </Card>
+            <Dialog open={viewOpen} onOpenChange={setViewOpen}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Payout Details</DialogTitle>
+                </DialogHeader>
+                {selectedPayout ? (
+                  <div className="space-y-4">
+                    <div><strong>Amount:</strong> ${selectedPayout.amount.toLocaleString()}</div>
+                    <div><strong>Status:</strong> {selectedPayout.status}</div>
+                    <div><strong>Wallet Address:</strong> {selectedPayout.walletAddress || '-'}</div>
+                    <div><strong>Wallet Network:</strong> {selectedPayout.walletNetwork || '-'}</div>
+                    <div><strong>UID/Account:</strong> {selectedPayout.uid || '-'}</div>
+                    <div><strong>Remarks:</strong> {selectedPayout.remarks || '-'}</div>
+                    <div><strong>Transaction Hash:</strong> {selectedPayout.transactionHash || '-'}</div>
+                    {selectedPayout.qrCodeImage ? (
+                      <img src={selectedPayout.qrCodeImage} alt="QR" className="h-40 w-40 object-contain" />
+                    ) : null}
+                    <div className="flex justify-end">
+                      <Button variant="ghost" onClick={() => setViewOpen(false)}>Close</Button>
+                    </div>
+                  </div>
+                ) : null}
+              </DialogContent>
+            </Dialog>
     </div>
   );
 }

@@ -74,6 +74,17 @@ export const PayoutRequestService = {
             lastActivityAt: new Date(),
           },
         });
+        // log freeze as a transfer-style transaction
+        await tx.walletTransaction.create({
+          data: {
+            walletId: wallet.id,
+            type: 'TRANSFER',
+            amount: data.amount,
+            balanceBefore: wallet.balance,
+            balanceAfter: wallet.balance,
+            notes: `Payout freeze #${payout.id}`,
+          },
+        });
       }
 
       return payout;
@@ -216,6 +227,19 @@ export const PayoutRequestService = {
             },
           });
         }
+        // create a wallet transaction record for the deduction
+        if (wallet) {
+          await tx.walletTransaction.create({
+            data: {
+              walletId: wallet.id,
+              type: 'WITHDRAWAL',
+              amount: existingPayout.amount,
+              balanceBefore: wallet.balance,
+              balanceAfter: Math.max(0, wallet.balance - existingPayout.amount),
+              notes: `Payout approved #${existingPayout.id}`,
+            },
+          });
+        }
       }
 
       return payout;
@@ -260,6 +284,19 @@ export const PayoutRequestService = {
             data: {
               frozenBalance: Math.max(0, wallet.frozenBalance - existingPayout.amount),
               lastActivityAt: new Date(),
+            },
+          });
+        }
+        // create an unfreeze wallet transaction record
+        if (wallet) {
+          await tx.walletTransaction.create({
+            data: {
+              walletId: wallet.id,
+              type: 'REFUND',
+              amount: existingPayout.amount,
+              balanceBefore: wallet.balance,
+              balanceAfter: wallet.balance,
+              notes: `Payout rejected #${existingPayout.id} - funds released`,
             },
           });
         }
