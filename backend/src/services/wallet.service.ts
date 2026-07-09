@@ -153,10 +153,6 @@ export const WalletService = {
   async withdraw(userId: string, paymentMethodId: string, amount: number, notes?: string) {
     const wallet = await this.getOrCreateWallet(userId, paymentMethodId);
 
-    if (wallet.balance < amount) {
-      throw new Error('Insufficient balance');
-    }
-
     return prisma.walletTransaction.create({
       data: {
         walletId: wallet.id,
@@ -172,10 +168,6 @@ export const WalletService = {
   async transfer(fromUserId: string, toUserId: string, paymentMethodId: string, amount: number) {
     const fromWallet = await this.getOrCreateWallet(fromUserId, paymentMethodId);
     const toWallet = await this.getOrCreateWallet(toUserId, paymentMethodId);
-
-    if (fromWallet.balance < amount) {
-      throw new Error('Insufficient balance');
-    }
 
     return prisma.$transaction(async (tx) => {
       const fromTx = await tx.walletTransaction.create({
