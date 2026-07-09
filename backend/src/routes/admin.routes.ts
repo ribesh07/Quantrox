@@ -31,6 +31,7 @@ router.use(authenticate, authorize(['SUPER_ADMIN', 'STAFF_ADMIN', 'SUB_ADMIN','V
 router.get('/orders', OrderController.getAllOrders);
 router.get('/orders/pending', OrderController.getPendingOrders);
 router.patch('/orders/:id/review', OrderController.reviewOrder);
+router.patch('/orders/:id/admin-proof', upload.single('file'), OrderController.uploadAdminProof);
 
 // Users
 router.get('/users', UserController.getAllUsers);

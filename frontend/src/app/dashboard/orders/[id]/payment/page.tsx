@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Check, Copy, Info, Upload, Loader2, ArrowLeft, ShieldCheck, QrCode } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useState, use } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -29,6 +30,8 @@ export default function OrderDetailsPage({ params: paramsPromise }: { params: Pr
   const [uploading, setUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [adminProofOpen, setAdminProofOpen] = useState(false);
+  const [selectedAdminProof, setSelectedAdminProof] = useState<any | null>(null);
 
   const { data: order, isLoading: orderLoading } = useQuery({
     queryKey: ["order", params.id],
@@ -180,6 +183,23 @@ export default function OrderDetailsPage({ params: paramsPromise }: { params: Pr
             </Card>
           )}
 
+          {order.proofUploads && order.proofUploads.length > 0 && (
+            <Card className="border-none shadow-xl bg-card/50 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle>Admin Proofs</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex gap-2 flex-wrap">
+                  {order.proofUploads.map((p: any) => (
+                    <div key={p.id} className="cursor-pointer" onClick={() => { setSelectedAdminProof(p); setAdminProofOpen(true); }}>
+                      <img src={resolveMediaUrl(p.fileUrl)} alt={p.fileType} className="h-20 w-20 object-contain rounded" />
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {order.adminNote && (
             <Card className="border-red-200 bg-red-50 text-red-900 shadow-sm">
               <CardHeader className="pb-2">
@@ -281,6 +301,26 @@ export default function OrderDetailsPage({ params: paramsPromise }: { params: Pr
               </form>
             </Card>
           )}
+        </div>
+
+        <Dialog open={adminProofOpen} onOpenChange={setAdminProofOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Admin Proof</DialogTitle>
+            </DialogHeader>
+            {selectedAdminProof ? (
+              <div className="space-y-4">
+                <div className="relative aspect-video w-full overflow-hidden rounded-2xl border bg-black">
+                  <Image src={resolveMediaUrl(selectedAdminProof.fileUrl)} alt="Admin Proof" fill className="object-contain" />
+                </div>
+                <div><strong>Notes:</strong> {selectedAdminProof.notes || '-'}</div>
+                <div className="flex justify-end">
+                  <Button variant="ghost" onClick={() => setAdminProofOpen(false)}>Close</Button>
+                </div>
+              </div>
+            ) : null}
+          </DialogContent>
+        </Dialog>
         </div>
       </div>
     </div>

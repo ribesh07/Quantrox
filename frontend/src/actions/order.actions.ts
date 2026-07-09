@@ -61,3 +61,16 @@ export async function uploadOrderProofAction(orderId: string, formData: FormData
     };
   }
 }
+
+export async function uploadOrderAdminProofAction(id: string, formData: FormData) {
+  try {
+    const config = await getAuthenticatedRequestConfig();
+    // Let axios set the multipart Content-Type (including boundary)
+    const response = await api.patch(`/admin/orders/${id}/admin-proof`, formData, config);
+    revalidatePath("/admin/orders");
+    return { success: true, order: response.data.order };
+  } catch (error: any) {
+    console.error("Upload Admin Proof Error:", error.response?.data || error.message);
+    return { success: false, error: error.response?.data?.message || error.message };
+  }
+}
